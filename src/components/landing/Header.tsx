@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Gamepad2, Sparkles, Menu, X, ArrowRight, Globe } from "lucide-react";
+import { Gamepad2, Sparkles, Menu, X, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
 
@@ -19,154 +19,158 @@ export default function Header({ onCreateRoom }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-surfaceBorder/70 bg-[#0B0F14]/80 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Logo */}
-        <a href="#" className="flex items-center gap-3 group">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-purple via-[#7C3AED] to-neon-cyan flex items-center justify-center shadow-lg shadow-brand-purple/25 transition-transform duration-300 group-hover:scale-105 group-hover:shadow-glow-purple">
-            <Gamepad2 className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-wider text-white">
-              STREAM<span className="text-neon-cyan">SYNC</span>
-            </span>
-            <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase -mt-1">
-              {t.header.tagline}
-            </span>
-          </div>
-        </a>
-
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
-          <a
-            href="#como-funciona"
-            className="hover:text-neon-cyan transition-colors duration-200"
-          >
-            {t.header.howItWorks}
+    <header className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 pointer-events-none">
+      <div className="max-w-6xl mx-auto flex flex-col items-center">
+        {/* Floating Liquid Glass Island */}
+        <div className="w-full glass-panel rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-2xl shadow-black/80 pointer-events-auto transition-all duration-300">
+          {/* Logo */}
+          <a href="#" className="flex items-center gap-3 group">
+            <div className="relative h-9 w-9 rounded-full bg-gradient-to-tr from-brand-purple via-[#7C3AED] to-neon-cyan p-[1px] shadow-lg shadow-brand-purple/20 transition-transform duration-300 group-hover:scale-105">
+              <div className="h-full w-full rounded-full bg-[#070A10] flex items-center justify-center">
+                <Gamepad2 className="h-4 w-4 text-neon-cyan group-hover:rotate-12 transition-transform duration-300" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-base font-black tracking-wider text-white flex items-center gap-0.5">
+                STREAM<span className="text-neon-cyan">SYNC</span>
+              </span>
+              <span className="text-[9px] font-semibold tracking-widest text-gray-400 uppercase -mt-0.5 hidden sm:inline">
+                {t.header.tagline}
+              </span>
+            </div>
           </a>
-          <a
-            href="#caracteristicas"
-            className="hover:text-neon-cyan transition-colors duration-200"
-          >
-            {t.header.features}
-          </a>
-          <a
-            href="#testimonios"
-            className="hover:text-neon-cyan transition-colors duration-200"
-          >
-            {t.header.community}
-          </a>
-          <a
-            href="#contacto"
-            className="hover:text-neon-cyan transition-colors duration-200"
-          >
-            {t.header.contact}
-          </a>
-        </nav>
 
-        {/* Desktop Right: Language Selector & CTA */}
-        <div className="hidden md:flex items-center gap-4">
-          {/* Language Toggle */}
-          <div className="flex items-center bg-surface border border-surfaceBorder rounded-xl p-1 text-xs font-bold">
-            <button
-              onClick={() => setLanguage("es")}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                language === "es"
-                  ? "bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              ES
-            </button>
-            <button
-              onClick={() => setLanguage("en")}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                language === "en"
-                  ? "bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              EN
-            </button>
-          </div>
-
-          <button
-            onClick={handleCreateRoom}
-            className="relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-purple to-[#6D28D9] border border-purple-500/30 hover:border-neon-cyan/60 shadow-lg shadow-brand-purple/30 hover:shadow-glow-purple transition-all duration-300 active:scale-95 group"
-          >
-            <Sparkles className="h-4 w-4 text-neon-cyan transition-transform group-hover:rotate-12" />
-            <span>{t.header.createRoom}</span>
-            <ArrowRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-0.5" />
-          </button>
-        </div>
-
-        {/* Mobile menu toggle */}
-        <div className="flex md:hidden items-center gap-2">
-          {/* Mobile Language toggle */}
-          <button
-            onClick={() => setLanguage(language === "es" ? "en" : "es")}
-            className="px-2.5 py-1.5 rounded-lg border border-surfaceBorder bg-surface text-xs font-bold text-neon-cyan"
-          >
-            {language.toUpperCase()}
-          </button>
-
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-surface border border-surfaceBorder"
-            aria-label="Abrir menú"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Dropdown */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-surfaceBorder bg-[#0B0F14]/95 backdrop-blur-2xl px-6 py-5 space-y-4">
-          <nav className="flex flex-col gap-4 text-base font-medium text-gray-300">
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-1 text-xs font-medium text-gray-300">
             <a
               href="#como-funciona"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-neon-cyan transition-colors"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/[0.05] transition-all duration-200"
             >
               {t.header.howItWorks}
             </a>
             <a
               href="#caracteristicas"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-neon-cyan transition-colors"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/[0.05] transition-all duration-200"
             >
               {t.header.features}
             </a>
             <a
               href="#testimonios"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-neon-cyan transition-colors"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/[0.05] transition-all duration-200"
             >
               {t.header.community}
             </a>
             <a
               href="#contacto"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-neon-cyan transition-colors"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/[0.05] transition-all duration-200"
             >
               {t.header.contact}
             </a>
           </nav>
-          <div className="pt-2">
+
+          {/* Right: Language Pill & Liquid Button */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Glass Language Toggle */}
+            <div className="flex items-center glass-pill rounded-full p-0.5 text-[11px] font-bold">
+              <button
+                onClick={() => setLanguage("es")}
+                className={`px-2 py-0.5 rounded-full transition-all duration-200 ${
+                  language === "es"
+                    ? "bg-neon-cyan/20 text-neon-cyan shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                ES
+              </button>
+              <button
+                onClick={() => setLanguage("en")}
+                className={`px-2 py-0.5 rounded-full transition-all duration-200 ${
+                  language === "en"
+                    ? "bg-neon-cyan/20 text-neon-cyan shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                EN
+              </button>
+            </div>
+
+            {/* Liquid Button */}
+            <button
+              onClick={handleCreateRoom}
+              className="liquid-btn-primary rounded-full px-5 py-2 text-xs font-bold text-white flex items-center gap-1.5 group cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-white animate-pulse" />
+              <span>{t.header.createRoom}</span>
+              <ArrowRight className="h-3.5 w-3.5 text-white/80 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+
+          {/* Mobile Right Controls */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => setLanguage(language === "es" ? "en" : "es")}
+              className="glass-pill px-2.5 py-1 rounded-full text-xs font-bold text-neon-cyan"
+            >
+              {language.toUpperCase()}
+            </button>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 rounded-full glass-pill text-gray-300 hover:text-white"
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Glass Card */}
+        {mobileMenuOpen && (
+          <div className="w-full mt-2 glass-panel rounded-3xl p-5 space-y-4 shadow-2xl pointer-events-auto md:hidden animate-in fade-in zoom-in-95 duration-200">
+            <nav className="flex flex-col gap-2 text-sm font-medium text-gray-300">
+              <a
+                href="#como-funciona"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-white/[0.05] hover:text-white transition"
+              >
+                {t.header.howItWorks}
+              </a>
+              <a
+                href="#caracteristicas"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-white/[0.05] hover:text-white transition"
+              >
+                {t.header.features}
+              </a>
+              <a
+                href="#testimonios"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-white/[0.05] hover:text-white transition"
+              >
+                {t.header.community}
+              </a>
+              <a
+                href="#contacto"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-white/[0.05] hover:text-white transition"
+              >
+                {t.header.contact}
+              </a>
+            </nav>
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 handleCreateRoom();
               }}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-purple to-[#6D28D9] shadow-lg shadow-purple-900/40"
+              className="w-full liquid-btn-primary rounded-xl py-3 text-xs font-bold text-white flex items-center justify-center gap-2"
             >
-              <Sparkles className="h-4 w-4 text-neon-cyan" />
+              <Sparkles className="h-4 w-4 text-white" />
               <span>{t.header.createRoomFree}</span>
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </header>
   );
 }

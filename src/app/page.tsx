@@ -41,11 +41,11 @@ function LandingContent() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0B0F14] text-[#F3F4F6] flex flex-col justify-between selection:bg-brand-purple selection:text-white">
-      {/* Persistent global subtle top ambient gradient */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-neon-cyan via-brand-purple to-neon-pink z-50" />
+    <div className="relative min-h-screen bg-[#05070B] text-[#F8FAFC] flex flex-col justify-between selection:bg-neon-cyan selection:text-black">
+      {/* Subtle top ambient refractive highlight */}
+      <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-brand-purple to-neon-pink z-50 opacity-90" />
 
-      {/* Header */}
+      {/* Floating Island Header */}
       <Header onCreateRoom={handleCreateRoom} />
 
       {/* Main Content Sections */}

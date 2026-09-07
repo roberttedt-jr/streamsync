@@ -9,10 +9,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0B0F14",
-        foreground: "#F3F4F6",
-        surface: "#0F141C",
-        surfaceBorder: "#1F2937",
+        background: "#05070B",
+        foreground: "#F8FAFC",
+        surface: "#0D121D",
+        surfaceBorder: "rgba(255, 255, 255, 0.08)",
         neon: {
           cyan: "#22D3EE",
           purple: "#A78BFA",
@@ -21,9 +21,9 @@ const config: Config = {
         brand: {
           purple: "#9146FF",
           red: "#FF0000",
-          dark: "#0B0F14",
-          card: "#0F141C",
-          border: "#1F2937",
+          dark: "#05070B",
+          card: "#0D121D",
+          border: "rgba(255, 255, 255, 0.08)",
           accent: "#22D3EE",
         },
       },
