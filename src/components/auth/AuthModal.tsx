@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Check, AlertCircle, Gamepad2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Check, AlertCircle, Gamepad2, Upload, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const PRESET_AVATARS = [
-  "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=150&auto=format&fit=crop&q=80",
+  { label: "Robot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=MechaZero&backgroundColor=0d0f17" },
+  { label: "Héroe", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=ApexHero&backgroundColor=0d0f17" },
+  { label: "Lobo", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=ShadowWolf&backgroundColor=0d0f17" },
+  { label: "Zorro", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=CyberFox&backgroundColor=0d0f17" },
+  { label: "Panda", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=GamerPanda&backgroundColor=0d0f17" },
+  { label: "Pixel", url: "https://api.dicebear.com/7.x/pixel-art/svg?seed=PixelWarrior&backgroundColor=0d0f17" },
 ];
 
 interface AuthModalProps {
@@ -42,13 +42,37 @@ export default function AuthModal({
   const [regUsername, setRegUsername] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0].url);
   const [customAvatarUrl, setCustomAvatarUrl] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("La imagen no debe superar los 2MB de tamaño.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setCustomAvatarUrl(reader.result);
+        setSelectedAvatar(reader.result);
+        setUploadedFileName(file.name);
+        setError(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,39 +187,62 @@ export default function AuthModal({
           <form onSubmit={handleRegister} className="p-6 space-y-4">
             <div>
               <label className="block text-xs font-medium text-gray-300 mb-2">
-                Foto de Perfil / Avatar
+                Elige tu Avatar Gamer (o sube tu dibujo/foto)
               </label>
-              <div className="flex items-center gap-2.5 mb-2.5 overflow-x-auto pb-1">
+              
+              <div className="flex items-center gap-2.5 mb-3 overflow-x-auto pb-1">
                 {PRESET_AVATARS.map((av, idx) => (
                   <button
                     key={idx}
                     type="button"
+                    title={av.label}
                     onClick={() => {
-                      setSelectedAvatar(av);
+                      setSelectedAvatar(av.url);
                       setCustomAvatarUrl("");
+                      setUploadedFileName(null);
                     }}
-                    className={`relative h-11 w-11 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                      selectedAvatar === av && !customAvatarUrl
-                        ? "border-white scale-105 shadow-md"
-                        : "border-transparent opacity-60 hover:opacity-100"
+                    className={`relative h-12 w-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-[#121620] cursor-pointer flex flex-col items-center justify-center p-1 ${
+                      selectedAvatar === av.url && !customAvatarUrl
+                        ? "border-white scale-105 shadow-lg bg-white/[0.08]"
+                        : "border-white/[0.08] opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <img src={av} alt={`Avatar ${idx + 1}`} className="h-full w-full object-cover" />
-                    {selectedAvatar === av && !customAvatarUrl && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Check className="h-3.5 w-3.5 text-white stroke-[3]" />
+                    <img src={av.url} alt={av.label} className="h-full w-full object-contain" />
+                    {selectedAvatar === av.url && !customAvatarUrl && (
+                      <div className="absolute top-0.5 right-0.5 h-3.5 w-3.5 bg-white text-black rounded-full flex items-center justify-center">
+                        <Check className="h-2.5 w-2.5 stroke-[3]" />
                       </div>
                     )}
                   </button>
                 ))}
               </div>
-              <input
-                type="url"
-                placeholder="O pega una URL de imagen personalizada..."
-                value={customAvatarUrl}
-                onChange={(e) => setCustomAvatarUrl(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30"
-              />
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="modal-avatar-file"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs text-gray-300 hover:text-white transition cursor-pointer"
+                >
+                  <Upload className="h-3.5 w-3.5 text-gray-400" />
+                  <span className="truncate">
+                    {uploadedFileName ? `Imagen: ${uploadedFileName}` : "Cargar imagen desde tu dispositivo"}
+                  </span>
+                </button>
+
+                {customAvatarUrl && (
+                  <div className="h-9 w-9 rounded-lg overflow-hidden border border-white/20 shrink-0 bg-[#121620]">
+                    <img src={customAvatarUrl} alt="Preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -215,7 +262,7 @@ export default function AuthModal({
                 <input
                   type="text"
                   required
-                  placeholder="ej. gamerpro"
+                  placeholder="ej. roboto_gg"
                   value={regUsername}
                   onChange={(e) => setRegUsername(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30 font-mono"

@@ -1,4 +1,7 @@
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import os from "os";
 import { prisma } from "@/lib/prisma";
 
 export interface UserProfile {
@@ -18,16 +21,40 @@ interface StoredUser extends UserProfile {
   salt: string;
 }
 
-const memoryUsers = new Map<string, StoredUser>();
+const STORAGE_FILE = path.join(os.tmpdir(), "streamsync_users_store.json");
+
+function loadStoredUsers(): Map<string, StoredUser> {
+  const map = new Map<string, StoredUser>();
+  try {
+    if (fs.existsSync(STORAGE_FILE)) {
+      const data = JSON.parse(fs.readFileSync(STORAGE_FILE, "utf-8"));
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          if (item && item.id) map.set(item.id, item);
+        }
+      }
+    }
+  } catch {}
+  return map;
+}
+
+function persistUsersToFile(map: Map<string, StoredUser>) {
+  try {
+    const list = Array.from(map.values());
+    fs.writeFileSync(STORAGE_FILE, JSON.stringify(list), "utf-8");
+  } catch {}
+}
+
+const memoryUsers = loadStoredUsers();
 const activeSessions = new Map<string, string>();
 
-const DEFAULT_AVATARS = [
-  "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=150&auto=format&fit=crop&q=80",
+export const DEFAULT_AVATARS = [
+  "https://api.dicebear.com/7.x/bottts/svg?seed=MechaZero&backgroundColor=0d0f17",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=ApexHero&backgroundColor=0d0f17",
+  "https://api.dicebear.com/7.x/thumbs/svg?seed=ShadowWolf&backgroundColor=0d0f17",
+  "https://api.dicebear.com/7.x/thumbs/svg?seed=CyberFox&backgroundColor=0d0f17",
+  "https://api.dicebear.com/7.x/thumbs/svg?seed=GamerPanda&backgroundColor=0d0f17",
+  "https://api.dicebear.com/7.x/pixel-art/svg?seed=PixelWarrior&backgroundColor=0d0f17",
 ];
 
 export function getDefaultAvatars(): string[] {
@@ -88,6 +115,7 @@ export async function createUser(data: {
   };
 
   memoryUsers.set(id, newUser);
+  persistUsersToFile(memoryUsers);
 
   try {
     await prisma.user.create({
@@ -116,6 +144,17 @@ export async function authenticateUser(
     if (user.email === cleanId || user.username === cleanId) {
       foundUser = user;
       break;
+    }
+  }
+
+  if (!foundUser) {
+    const refreshed = loadStoredUsers();
+    for (const user of refreshed.values()) {
+      if (user.email === cleanId || user.username === cleanId) {
+        foundUser = user;
+        memoryUsers.set(user.id, user);
+        break;
+      }
     }
   }
 
@@ -159,7 +198,12 @@ export function verifySession(token: string): UserProfile | null {
   const userId = activeSessions.get(token);
   if (!userId) return null;
 
-  const user = memoryUsers.get(userId);
+  let user = memoryUsers.get(userId);
+  if (!user) {
+    const refreshed = loadStoredUsers();
+    user = refreshed.get(userId);
+    if (user) memoryUsers.set(userId, user);
+  }
   if (!user) return null;
 
   const { passwordHash: _, salt: __, ...publicProfile } = user;
@@ -174,7 +218,11 @@ export async function updateUserProfile(
   userId: string,
   updates: Partial<Pick<UserProfile, "name" | "username" | "avatar" | "bio" | "twitchUsername" | "youtubeHandle">>
 ): Promise<UserProfile> {
-  const user = memoryUsers.get(userId);
+  let user = memoryUsers.get(userId);
+  if (!user) {
+    const refreshed = loadStoredUsers();
+    user = refreshed.get(userId);
+  }
   if (!user) {
     throw new Error("Usuario no encontrado");
   }
@@ -206,6 +254,7 @@ export async function updateUserProfile(
   }
 
   memoryUsers.set(userId, user);
+  persistUsersToFile(memoryUsers);
 
   try {
     await prisma.user.update({
