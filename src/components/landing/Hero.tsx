@@ -7,13 +7,14 @@ import {
   Sparkles,
   Users,
   Mic,
-  Tv,
   Volume2,
   Radio,
   Trophy,
   Flame,
   ShieldCheck,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { trackEvent } from "@/lib/analytics";
 
 interface HeroProps {
   onCreateRoom: () => void;
@@ -21,6 +22,17 @@ interface HeroProps {
 
 export default function Hero({ onCreateRoom }: HeroProps) {
   const [activeTab, setActiveTab] = useState<"twitch" | "youtube">("twitch");
+  const { t } = useLanguage();
+
+  const handleCreateRoom = () => {
+    trackEvent("create_room_click", { location: "hero" });
+    onCreateRoom();
+  };
+
+  const handleSwitchTab = (tab: "twitch" | "youtube") => {
+    setActiveTab(tab);
+    trackEvent("stream_switch", { platform: tab, location: "hero_mockup" });
+  };
 
   return (
     <section className="relative pt-12 pb-24 lg:pt-20 lg:pb-32 overflow-hidden">
@@ -35,41 +47,42 @@ export default function Hero({ onCreateRoom }: HeroProps) {
           <div className="inline-flex items-center gap-2.5 rounded-full border border-neon-cyan/30 bg-[#0F141C]/90 px-4 py-1.5 text-xs font-semibold text-gray-200 mb-8 shadow-lg shadow-cyan-950/30 backdrop-blur-md hover:border-neon-cyan/60 transition-colors">
             <span className="flex h-2 w-2 rounded-full bg-neon-cyan animate-ping" />
             <span className="text-neon-cyan font-bold uppercase tracking-wider text-[11px]">
-              Voz en directo + Overlay
+              {t.hero.badgeTag}
             </span>
             <span className="text-gray-500">•</span>
-            <span>Watch Parties Gaming en Tiempo Real</span>
+            <span>{t.hero.badgeText}</span>
           </div>
 
-          {/* H1 Title (7 words) */}
+          {/* H1 Title */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] mb-6">
-            Mira Twitch y YouTube{" "}
+            {t.hero.titleStart}{" "}
             <span className="bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink bg-clip-text text-transparent drop-shadow-sm">
-              sincronizado con amigos
+              {t.hero.titleGradient}
             </span>
           </h1>
 
-          {/* Subtitle (1-2 lines) */}
+          {/* Subtitle */}
           <p className="text-lg sm:text-xl text-gray-300 max-w-2xl font-normal leading-relaxed mb-10">
-            Disfruta de directos y torneos al mismo milisegundo. Habla por voz en ultra baja latencia y consulta estadísticas en vivo sin spoilers ni desajustes.
+            {t.hero.subtitle}
           </p>
 
           {/* 2 CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center mb-16">
             <button
-              onClick={onCreateRoom}
+              onClick={handleCreateRoom}
               className="relative inline-flex items-center justify-center gap-3 w-full sm:w-auto px-9 py-4 rounded-2xl text-base font-black text-white bg-gradient-to-r from-brand-purple via-[#7C3AED] to-neon-cyan border border-white/20 shadow-xl shadow-brand-purple/40 hover:shadow-glow-purple hover:scale-[1.02] active:scale-95 transition-all duration-300 group"
             >
               <Play className="h-5 w-5 fill-current text-white transition-transform group-hover:scale-110" />
-              <span>Crear sala gratis</span>
+              <span>{t.hero.ctaPrimary}</span>
               <Sparkles className="h-4 w-4 text-neon-cyan animate-pulse" />
             </button>
 
             <a
               href="#como-funciona"
+              onClick={() => trackEvent("how_it_works_click", { location: "hero" })}
               className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-4 rounded-2xl text-base font-semibold text-gray-300 bg-surface/90 hover:bg-surface border border-surfaceBorder hover:border-gray-600 hover:text-white transition-all duration-200"
             >
-              <span>Cómo funciona</span>
+              <span>{t.hero.ctaSecondary}</span>
               <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
@@ -78,15 +91,15 @@ export default function Hero({ onCreateRoom }: HeroProps) {
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400 font-medium mb-12">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="h-4 w-4 text-neon-cyan" />
-              <span>Sin registro obligatorio</span>
+              <span>{t.hero.trustNoRegister}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Flame className="h-4 w-4 text-neon-pink" />
-              <span>Cero lag entre pantallas</span>
+              <span>{t.hero.trustNoLag}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Mic className="h-4 w-4 text-neon-purple" />
-              <span>Voz WebRTC integrada</span>
+              <span>{t.hero.trustVoice}</span>
             </div>
           </div>
         </div>
@@ -112,18 +125,18 @@ export default function Hero({ onCreateRoom }: HeroProps) {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Sincronizado • 4ms</span>
+                  <span>{t.hero.mockupSynced}</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface border border-surfaceBorder text-gray-300 text-xs">
                   <Users className="h-3.5 w-3.5 text-neon-cyan" />
-                  <span>4 gamers</span>
+                  <span>{t.hero.mockupGamers}</span>
                 </div>
               </div>
             </div>
 
             {/* Mockup Main Display: Stream + Overlays */}
             <div className="relative aspect-[16/9] w-full bg-gradient-to-b from-[#111827] to-[#0B0F14] overflow-hidden flex flex-col justify-between p-4 sm:p-6">
-              {/* Game Background Graphics (Simulated tournament scene) */}
+              {/* Game Background Graphics */}
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950/40 via-[#0B0F14]/80 to-[#0B0F14] pointer-events-none" />
               <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
@@ -136,10 +149,10 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                   </div>
                   <div>
                     <h3 className="text-white text-sm sm:text-base font-bold drop-shadow">
-                      VALORANT Champions Tour — Grand Finals
+                      {t.hero.mockupTourney}
                     </h3>
                     <p className="text-xs text-gray-300 flex items-center gap-2">
-                      <span className="text-neon-cyan font-semibold">Fnatic vs Sentinels</span>
+                      <span className="text-neon-cyan font-semibold">{t.hero.mockupTeams}</span>
                       <span>•</span>
                       <span className="text-gray-400">Canal: VCT_ES (Twitch)</span>
                     </p>
@@ -149,7 +162,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                 {/* Stream Switcher Demo */}
                 <div className="flex items-center gap-1 bg-[#0F141C]/90 p-1 rounded-xl border border-surfaceBorder text-xs">
                   <button
-                    onClick={() => setActiveTab("twitch")}
+                    onClick={() => handleSwitchTab("twitch")}
                     className={`px-3 py-1 rounded-lg font-bold transition ${
                       activeTab === "twitch"
                         ? "bg-brand-purple text-white shadow"
@@ -159,7 +172,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                     Twitch
                   </button>
                   <button
-                    onClick={() => setActiveTab("youtube")}
+                    onClick={() => handleSwitchTab("youtube")}
                     className={`px-3 py-1 rounded-lg font-bold transition ${
                       activeTab === "youtube"
                         ? "bg-red-600 text-white shadow"
@@ -176,7 +189,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                 <div className="flex items-center justify-between border-b border-surfaceBorder/60 pb-2 mb-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-neon-cyan uppercase tracking-wider">
                     <Trophy className="h-3.5 w-3.5" />
-                    Overlay de Partida en Vivo
+                    {t.hero.mockupOverlayTitle}
                   </div>
                   <span className="text-[10px] bg-neon-cyan/10 text-neon-cyan font-mono px-2 py-0.5 rounded">
                     MAPA 3 • BIND
@@ -184,15 +197,15 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="bg-surface/70 p-1.5 rounded-lg border border-surfaceBorder">
-                    <div className="text-[10px] text-gray-400 uppercase">Rondas</div>
+                    <div className="text-[10px] text-gray-400 uppercase">{t.hero.mockupRounds}</div>
                     <div className="font-bold text-white text-sm">11 - 10</div>
                   </div>
                   <div className="bg-surface/70 p-1.5 rounded-lg border border-surfaceBorder">
-                    <div className="text-[10px] text-gray-400 uppercase">Top Fragger</div>
+                    <div className="text-[10px] text-gray-400 uppercase">{t.hero.mockupTopFragger}</div>
                     <div className="font-bold text-neon-pink text-sm">Chronicle</div>
                   </div>
                   <div className="bg-surface/70 p-1.5 rounded-lg border border-surfaceBorder">
-                    <div className="text-[10px] text-gray-400 uppercase">Economía</div>
+                    <div className="text-[10px] text-gray-400 uppercase">{t.hero.mockupEconomy}</div>
                     <div className="font-bold text-emerald-400 text-sm">Full Buy</div>
                   </div>
                 </div>
@@ -234,9 +247,9 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                   <div className="hidden md:flex flex-col">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-neon-cyan animate-pulse" />
-                      Alex está hablando...
+                      {t.hero.mockupVoiceActive}
                     </span>
-                    <span className="text-[11px] text-gray-400">Sala de voz: Squad Alpha</span>
+                    <span className="text-[11px] text-gray-400">{t.hero.mockupVoiceRoom}</span>
                   </div>
                 </div>
 

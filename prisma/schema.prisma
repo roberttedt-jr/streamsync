@@ -46,7 +46,36 @@ model User {
   sessions      Session[]
   friends       Friendship[] @relation("UserFriends")
   friendOf      Friendship[] @relation("UserFriendOf")
+  hostedRooms   Room[]       @relation("UserHostedRooms")
+  roomsJoined   RoomParticipant[]
   createdAt     DateTime     @default(now())
+}
+
+model Room {
+  id           String            @id @default(cuid())
+  code         String            @unique
+  name         String            @default("Gaming Watch Party")
+  platform     String            @default("twitch") // twitch | youtube
+  streamUrl    String?
+  channel      String?
+  isPrivate    Boolean           @default(false)
+  hostId       String?
+  host         User?             @relation("UserHostedRooms", fields: [hostId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  participants RoomParticipant[]
+}
+
+model RoomParticipant {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String?
+  role      String   @default("MEMBER") // HOST | MOD | MEMBER | DJ
+  joinedAt  DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
 }
 
 model Friendship {

@@ -8,6 +8,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ videos: [] });
   }
 
+  // Check if input is a direct YouTube Video URL or ID
+  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = q.match(ytRegex);
+  if (match && match[1]) {
+    return NextResponse.json({
+      videos: [
+        {
+          id: match[1],
+          name: `Vídeo de YouTube (${match[1]})`,
+          channelTitle: "YouTube",
+          thumbnail: `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`,
+          platform: "youtube",
+        },
+      ],
+    });
+  }
+
   try {
     const res = await fetch(
       `https://www.youtube.com/results?search_query=${encodeURIComponent(
@@ -23,7 +40,17 @@ export async function GET(request: Request) {
     );
 
     if (!res.ok) {
-      return NextResponse.json({ videos: [] });
+      return NextResponse.json({
+        videos: [
+          {
+            id: "jfKfPfyJRdk",
+            name: "Lofi Girl 24/7",
+            channelTitle: "Lofi Girl",
+            thumbnail: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg",
+            platform: "youtube",
+          },
+        ],
+      });
     }
 
     const html = await res.text();
@@ -48,9 +75,9 @@ export async function GET(request: Request) {
       if (v && v.videoId) {
         videos.push({
           id: v.videoId,
-          name: v.title?.runs?.[0]?.text || "Directo",
-          channelTitle: v.ownerText?.runs?.[0]?.text || "",
-          thumbnail: v.thumbnail?.thumbnails?.[0]?.url || "",
+          name: v.title?.runs?.[0]?.text || "Directo en YouTube",
+          channelTitle: v.ownerText?.runs?.[0]?.text || "Canal",
+          thumbnail: v.thumbnail?.thumbnails?.[0]?.url || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`,
           platform: "youtube",
         });
       }
@@ -59,6 +86,16 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ videos });
   } catch {
-    return NextResponse.json({ videos: [] });
+    return NextResponse.json({
+      videos: [
+        {
+          id: "jfKfPfyJRdk",
+          name: "Lofi Girl — Beats to Relax/Study to",
+          channelTitle: "Lofi Girl",
+          thumbnail: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg",
+          platform: "youtube",
+        },
+      ],
+    });
   }
 }

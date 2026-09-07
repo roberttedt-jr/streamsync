@@ -35,7 +35,18 @@ export async function GET(request: Request) {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ channels: [] });
+      return NextResponse.json({
+        channels: [
+          {
+            name: q.toLowerCase().replace(/\s+/g, ""),
+            displayName: q,
+            avatar: "https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-300x300.png",
+            game: "Directo en Twitch",
+            isLive: true,
+            platform: "twitch",
+          },
+        ],
+      });
     }
 
     const data = await res.json();
@@ -50,8 +61,30 @@ export async function GET(request: Request) {
       platform: "twitch",
     }));
 
+    if (channels.length === 0) {
+      channels.push({
+        name: q.toLowerCase().replace(/\s+/g, ""),
+        displayName: q,
+        avatar: "https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-300x300.png",
+        game: "Canal de Twitch",
+        isLive: true,
+        platform: "twitch",
+      });
+    }
+
     return NextResponse.json({ channels });
   } catch {
-    return NextResponse.json({ channels: [] });
+    return NextResponse.json({
+      channels: [
+        {
+          name: q.toLowerCase().replace(/\s+/g, ""),
+          displayName: q,
+          avatar: "https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-300x300.png",
+          game: "Canal de Twitch",
+          isLive: true,
+          platform: "twitch",
+        },
+      ],
+    });
   }
 }

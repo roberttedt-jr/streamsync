@@ -2,60 +2,39 @@
 
 import React from "react";
 import { Zap, Mic, BarChart3, ShieldCheck, Gamepad2 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Features() {
+  const { t } = useLanguage();
+
   const features = [
     {
+      ...t.features.feat1,
       icon: Zap,
-      accent: "neon-cyan",
       borderColor: "hover:border-neon-cyan/50",
       glowColor: "hover:shadow-glow-cyan",
       iconBg: "bg-neon-cyan/10 text-neon-cyan border-neon-cyan/30",
-      title: "Sincronización Total",
-      subtitle: "WebSockets bidireccionales",
-      description:
-        "Play, pausa y saltos temporales sincronizados al milisegundo en todos los dispositivos de la sala.",
-      example:
-        "Ejemplo: Si tu amigo pausa para ir por agua o retrocede una repetición épica, todos quedan sincronizados sin spoilers ni desajustes.",
     },
     {
+      ...t.features.feat2,
       icon: Mic,
-      accent: "neon-purple",
       borderColor: "hover:border-neon-purple/50",
       glowColor: "hover:shadow-glow-purple",
       iconBg: "bg-neon-purple/10 text-neon-purple border-neon-purple/30",
-      title: "Voz en Directo",
-      subtitle: "Audio WebRTC ultra rápido",
-      description:
-        "Salas de voz integradas con calidad cristalina y latencia casi nula, sin saturar tu ancho de banda.",
-      example:
-        "Ejemplo: Grita y celebra cada clutch o remontada en directo con tus amigos exactamente al segundo en que sucede en el stream.",
     },
     {
+      ...t.features.feat3,
       icon: BarChart3,
-      accent: "neon-pink",
       borderColor: "hover:border-neon-pink/50",
       glowColor: "hover:shadow-glow-pink",
       iconBg: "bg-neon-pink/10 text-neon-pink border-neon-pink/30",
-      title: "Overlay de Estadísticas",
-      subtitle: "Datos competitivos en pantalla",
-      description:
-        "Información del juego, categoría, estado del directo y métricas de partidas directamente sobre la interfaz.",
-      example:
-        "Ejemplo: Conoce el mapa, ronda, puntuación y detalles de torneos sin tener que abrir pestañas secundarias en tu navegador.",
     },
     {
+      ...t.features.feat4,
       icon: ShieldCheck,
-      accent: "emerald",
       borderColor: "hover:border-emerald-500/50",
       glowColor: "hover:shadow-lg hover:shadow-emerald-950/40",
       iconBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-      title: "Privacidad y Control",
-      subtitle: "Sin almacenamiento de streams",
-      description:
-        "No almacenamos ni retransmitimos vídeo; solo sincronizamos los eventos de reproducción de forma segura y privada.",
-      example:
-        "Ejemplo: Salas con enlaces privados para ti y tus amigos, o abiertas para congregar a toda tu comunidad de Discord.",
     },
   ];
 
@@ -69,16 +48,16 @@ export default function Features() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-bold uppercase tracking-widest mb-4">
             <Gamepad2 className="h-3.5 w-3.5" />
-            Potencia Gaming
+            {t.features.badge}
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
-            Tecnología pensada para{" "}
+            {t.features.titleStart}{" "}
             <span className="bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
-              gamers exigentes
+              {t.features.titleHighlight}
             </span>
           </h2>
           <p className="text-base sm:text-lg text-gray-400">
-            Cada detalle de StreamSync está optimizado para que la experiencia compartida sea tan fluida como estar sentados en el mismo sofá.
+            {t.features.subtitle}
           </p>
         </div>
 
@@ -113,8 +92,8 @@ export default function Features() {
                     </p>
 
                     <div className="rounded-xl bg-[#0B0F14]/70 border border-surfaceBorder/80 p-3.5 text-xs text-gray-400 leading-relaxed">
-                      <span className="font-semibold text-gray-200">En la práctica: </span>
-                      {feat.example.replace("Ejemplo: ", "")}
+                      <span className="font-semibold text-gray-200">{t.features.practiceLabel} </span>
+                      {feat.example}
                     </div>
                   </div>
                 </div>

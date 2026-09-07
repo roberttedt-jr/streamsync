@@ -2,12 +2,21 @@
 
 import React from "react";
 import { Play, Sparkles, Shield, Zap, Users } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { trackEvent } from "@/lib/analytics";
 
 interface CTAProps {
   onCreateRoom: () => void;
 }
 
 export default function CTA({ onCreateRoom }: CTAProps) {
+  const { t } = useLanguage();
+
+  const handleCreateRoom = () => {
+    trackEvent("create_room_click", { location: "final_cta" });
+    onCreateRoom();
+  };
+
   return (
     <section className="relative py-20 lg:py-28 overflow-hidden">
       {/* Background radial lighting */}
@@ -26,30 +35,30 @@ export default function CTA({ onCreateRoom }: CTAProps) {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-surfaceBorder text-gray-300 text-xs font-semibold mb-6 shadow-sm">
             <Sparkles className="h-3.5 w-3.5 text-neon-cyan animate-pulse" />
-            <span>Listo en menos de 10 segundos</span>
+            <span>{t.cta.badge}</span>
           </div>
 
           {/* Title */}
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
-            Crea tu primera{" "}
+            {t.cta.titleStart}{" "}
             <span className="bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink bg-clip-text text-transparent">
-              watch party hoy
+              {t.cta.titleHighlight}
             </span>
           </h2>
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg text-gray-300 max-w-xl mx-auto mb-10 leading-relaxed">
-            Reúne a tu squad, comparte el enlace y vive cada partida o torneo en directo sin desajustes.
+            {t.cta.subtitle}
           </p>
 
           {/* Big CTA Button */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <button
-              onClick={onCreateRoom}
+              onClick={handleCreateRoom}
               className="relative inline-flex items-center justify-center gap-3 w-full sm:w-auto px-10 py-4 sm:py-5 rounded-2xl text-lg font-black text-white bg-gradient-to-r from-brand-purple via-[#7C3AED] to-neon-cyan border border-white/20 shadow-2xl shadow-brand-purple/50 hover:shadow-glow-purple hover:scale-[1.03] active:scale-95 transition-all duration-300 group"
             >
               <Play className="h-5 w-5 fill-current text-white transition-transform group-hover:scale-110" />
-              <span>Crear sala gratis</span>
+              <span>{t.cta.button}</span>
               <Sparkles className="h-4 w-4 text-neon-cyan" />
             </button>
           </div>
@@ -58,15 +67,15 @@ export default function CTA({ onCreateRoom }: CTAProps) {
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400 font-medium pt-4 border-t border-surfaceBorder/60 max-w-md mx-auto">
             <div className="flex items-center gap-1.5">
               <Zap className="h-4 w-4 text-neon-cyan" />
-              <span>100% Gratis</span>
+              <span>{t.cta.trustFree}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Shield className="h-4 w-4 text-neon-purple" />
-              <span>Sin instalaciones</span>
+              <span>{t.cta.trustNoInstall}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Users className="h-4 w-4 text-neon-pink" />
-              <span>Ilimitado para tu grupo</span>
+              <span>{t.cta.trustUnlimited}</span>
             </div>
           </div>
         </div>
