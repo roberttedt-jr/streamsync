@@ -2,8 +2,24 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "StreamSync | Gaming Watch Parties",
-  description: "Mira streams de Twitch y YouTube sincronizados con amigos con voice chat.",
+  metadataBase: new URL("https://streamsync-livid.vercel.app"),
+  title: "StreamSync | Watch Parties de Gaming en Directo",
+  description:
+    "Mira directos de Twitch y vídeos de YouTube sincronizados con amigos. Chat de voz integrado, cero lag y overlay de estadísticas para tu squad gamer.",
+  keywords: [
+    "watch party gaming",
+    "ver Twitch con amigos",
+    "ver YouTube con amigos",
+    "stream sincronizado",
+    "watch party español",
+  ],
+  openGraph: {
+    title: "StreamSync | Watch Parties de Gaming en Directo",
+    description:
+      "Mira directos de Twitch y vídeos de YouTube sincronizados con amigos. Chat de voz integrado, cero lag y overlay de estadísticas.",
+    type: "website",
+    url: "https://streamsync-livid.vercel.app",
+  },
 };
 
 export default function RootLayout({
