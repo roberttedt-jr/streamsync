@@ -1,55 +1,55 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { verifySession, updateUserProfile } from "@/lib/userStore";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieStore = cookies();
+  const token = cookieStore.get("streamsync_session")?.value;
+
+  if (!token) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: {
-      friends: {
-        include: {
-          friend: true,
-        },
-      },
-    },
-  });
+  const user = verifySession(token);
+  if (!user) {
+    return NextResponse.json({ error: "Sesión expirada" }, { status: 401 });
+  }
 
   return NextResponse.json({ user });
 }
 
 export async function PATCH(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const cookieStore = cookies();
+    const token = cookieStore.get("streamsync_session")?.value;
+    const body = await request.json();
+
+    let userId = token ? verifySession(token)?.id : null;
+    if (!userId && body.userId) {
+      userId = body.userId;
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const { name, username, avatar, bio, twitchUsername, youtubeHandle } = body;
+
+    const updated = await updateUserProfile(userId, {
+      name,
+      username,
+      avatar,
+      bio,
+      twitchUsername,
+      youtubeHandle,
+    });
+
+    return NextResponse.json({ success: true, user: updated });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || "Error al actualizar el perfil" },
+      { status: 400 }
+    );
   }
-
-  const body = await request.json();
-  const { username } = body;
-
-  if (!username || typeof username !== "string" || username.trim().length < 3) {
-    return NextResponse.json({ error: "Invalid username" }, { status: 400 });
-  }
-
-  const normalized = username.trim().toLowerCase();
-
-  const existing = await prisma.user.findUnique({
-    where: { username: normalized },
-  });
-
-  if (existing && existing.email !== session.user.email) {
-    return NextResponse.json({ error: "Username already taken" }, { status: 409 });
-  }
-
-  const updated = await prisma.user.update({
-    where: { email: session.user.email },
-    data: { username: normalized },
-  });
-
-  return NextResponse.json({ user: updated });
 }

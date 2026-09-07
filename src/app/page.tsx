@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { AuthProvider } from "@/context/AuthContext";
 import Header from "@/components/landing/Header";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -19,7 +20,7 @@ function LandingContent() {
     trackEvent("landing_view");
   }, []);
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = async (platform: "twitch" | "youtube" = "twitch", channel: string = "ibai") => {
     const randomCode = Math.random().toString(36).substring(2, 8);
 
     try {
@@ -29,8 +30,8 @@ function LandingContent() {
         body: JSON.stringify({
           code: randomCode,
           name: `Watch Party ${randomCode.toUpperCase()}`,
-          platform: "twitch",
-          channel: "ibai",
+          platform,
+          channel,
         }),
       }).catch(() => {});
     } catch {}
@@ -38,16 +39,22 @@ function LandingContent() {
     router.push(`/party/${randomCode}`);
   };
 
+  const handleOpenRoomWithChannel = (platform: "twitch" | "youtube", channel: string) => {
+    handleCreateRoom(platform, channel);
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#05070B] text-[#F8FAFC] flex flex-col justify-between selection:bg-neon-cyan selection:text-black">
-      <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-brand-purple to-neon-pink z-50 opacity-90" />
-      <Header onCreateRoom={handleCreateRoom} />
+    <div className="relative min-h-screen bg-[#090B10] text-[#F8FAFC] flex flex-col justify-between selection:bg-white selection:text-black">
+      <Header
+        onCreateRoom={() => handleCreateRoom("twitch", "ibai")}
+        onOpenRoomWithChannel={handleOpenRoomWithChannel}
+      />
       <main className="flex-1 flex flex-col">
-        <Hero onCreateRoom={handleCreateRoom} />
-        <HowItWorks onCreateRoom={handleCreateRoom} />
+        <Hero onCreateRoom={() => handleCreateRoom("twitch", "ibai")} />
+        <HowItWorks onCreateRoom={() => handleCreateRoom("twitch", "ibai")} />
         <Features />
         <Testimonials />
-        <CTA onCreateRoom={handleCreateRoom} />
+        <CTA onCreateRoom={() => handleCreateRoom("twitch", "ibai")} />
       </main>
       <Footer />
     </div>
@@ -56,8 +63,10 @@ function LandingContent() {
 
 export default function HomePage() {
   return (
-    <LanguageProvider>
-      <LandingContent />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <LandingContent />
+      </LanguageProvider>
+    </AuthProvider>
   );
 }

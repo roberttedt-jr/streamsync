@@ -27,6 +27,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 interface SuggestionItem {
   name: string;
@@ -49,10 +50,11 @@ const POPULAR_CHANNELS: SuggestionItem[] = [
   { name: "GameSpot Live", id: "0qL3w2eG6Jk", platform: "youtube", category: "Gaming / Directo" },
 ];
 
-export default function PartyPage() {
+function PartyRoomContent() {
   const router = useRouter();
   const routeParams: any = useParams();
   const roomId = routeParams?.roomId ? String(routeParams.roomId) : "default";
+  const { user } = useAuth();
 
   const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
   const [activeStream, setActiveStream] = useState<string | null>("ibai");
@@ -71,7 +73,7 @@ export default function PartyPage() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioDucking, setAudioDucking] = useState(true);
 
-  const [showStatsOverlay, setShowStatsOverlay] = useState(true);
+  const [showStatsOverlay, setShowStatsOverlay] = useState(false);
   const [gameStats, setGameStats] = useState<any>({
     game: "VALORANT",
     event: "VCT International Tournament",
@@ -332,10 +334,11 @@ export default function PartyPage() {
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
+    const senderName = user?.name || "GamerPro";
     const newMsg = {
       id: Date.now(),
-      sender: "GamerPro",
-      color: "#22D3EE",
+      sender: senderName,
+      color: "#38BDF8",
       isBadge: false,
       text,
       time: timeStr,
@@ -351,7 +354,7 @@ export default function PartyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "send_message",
-          user: "GamerPro",
+          user: senderName,
           text,
           role: "MEMBER",
         }),
@@ -521,12 +524,20 @@ export default function PartyPage() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-1.5 p-1 rounded-full hover:ring-2 hover:ring-neon-cyan/50 transition"
+              className="flex items-center gap-1.5 p-0.5 rounded-full hover:ring-2 hover:ring-white/20 transition cursor-pointer"
             >
               <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-brand-purple to-neon-cyan border border-white/20 flex items-center justify-center font-bold text-xs text-white">
-                  GP
-                </div>
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="h-8 w-8 rounded-full object-cover border border-white/20"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-white/[0.08] border border-white/20 flex items-center justify-center font-bold text-xs text-white">
+                    {user?.name ? user.name.slice(0, 2).toUpperCase() : "GP"}
+                  </div>
+                )}
                 <span
                   className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#0B0F14] ${
                     userStatus === "online"
@@ -541,16 +552,58 @@ export default function PartyPage() {
             </button>
 
             {showProfileMenu && (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-[#1F2937] bg-[#141a26] shadow-2xl p-2 z-50">
-                <div className="p-2 border-b border-[#1F2937] flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-brand-purple to-neon-cyan flex items-center justify-center font-black text-sm text-white shadow">
-                    GP
-                  </div>
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-white/[0.08] bg-[#0D0F17] shadow-2xl p-2 z-50 animate-in fade-in duration-150">
+                <div className="p-2 border-b border-white/[0.06] flex items-center gap-3">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="h-10 w-10 rounded-full object-cover border border-white/20"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-white/[0.08] flex items-center justify-center font-black text-sm text-white shadow">
+                      {user?.name ? user.name.slice(0, 2).toUpperCase() : "GP"}
+                    </div>
+                  )}
                   <div className="overflow-hidden">
-                    <p className="font-bold text-sm text-white truncate">GamerPro</p>
-                    <p className="text-[11px] text-gray-400 truncate">@gamerpro_live</p>
+                    <p className="font-bold text-sm text-white truncate">{user?.name || "Invitado"}</p>
+                    <p className="text-[11px] text-gray-400 truncate">@{user?.username || "gamer"}</p>
                   </div>
                 </div>
+
+                {(user?.twitchUsername || user?.youtubeHandle) && (
+                  <div className="py-2 px-1 border-b border-white/[0.06] space-y-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 px-2 mb-1">
+                      Mis Streams Vinculados
+                    </p>
+                    {user.twitchUsername && (
+                      <button
+                        onClick={() => {
+                          setPlatform("twitch");
+                          setActiveStream(user.twitchUsername!);
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[#9146FF] hover:bg-white/[0.05] rounded-lg transition"
+                      >
+                        <Radio className="h-3.5 w-3.5" />
+                        <span className="truncate">Cargar mi Twitch: {user.twitchUsername}</span>
+                      </button>
+                    )}
+                    {user.youtubeHandle && (
+                      <button
+                        onClick={() => {
+                          setPlatform("youtube");
+                          setActiveStream(user.youtubeHandle!);
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-red-400 hover:bg-white/[0.05] rounded-lg transition"
+                      >
+                        <Tv className="h-3.5 w-3.5" />
+                        <span className="truncate">Cargar mi YouTube: {user.youtubeHandle}</span>
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="py-2 px-1 border-b border-[#1F2937]">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 px-2 mb-1">
@@ -792,5 +845,13 @@ export default function PartyPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+export default function PartyPage() {
+  return (
+    <AuthProvider>
+      <PartyRoomContent />
+    </AuthProvider>
   );
 }
