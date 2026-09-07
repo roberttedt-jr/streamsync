@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import TwitchPlayer from "@/components/video/TwitchPlayer";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
 import {
@@ -39,12 +39,13 @@ interface SuggestionItem {
 }
 
 const POPULAR_CHANNELS: SuggestionItem[] = [
-  { name: "ibai", platform: "twitch", category: "Charlando / Eventos" },
+  { name: "valorant", platform: "twitch", category: "VCT / Esports" },
+  { name: "eslcs", platform: "twitch", category: "Counter-Strike 2 / Pro" },
+  { name: "rocketleague", platform: "twitch", category: "RLCS / Torneo" },
   { name: "elxokas", platform: "twitch", category: "Gaming / Variedad" },
   { name: "auronplay", platform: "twitch", category: "Minecraft / GTA" },
   { name: "illojuan", platform: "twitch", category: "Variedad / Retro" },
   { name: "rubius", platform: "twitch", category: "Gaming / Directos" },
-  { name: "kingsleague", platform: "twitch", category: "Fútbol / Kings" },
   { name: "midudev", platform: "twitch", category: "Programación / Tech" },
   { name: "Lofi Girl", id: "jfKfPfyJRdk", platform: "youtube", category: "Música / Chill 24/7" },
   { name: "Synthwave Radio", id: "4xDzrJKXOOY", platform: "youtube", category: "Música / Synth 24/7" },
@@ -53,12 +54,16 @@ const POPULAR_CHANNELS: SuggestionItem[] = [
 
 function PartyRoomContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const routeParams: any = useParams();
   const roomId = routeParams?.roomId ? String(routeParams.roomId) : "default";
   const { user, logout } = useAuth();
 
-  const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
-  const [activeStream, setActiveStream] = useState<string | null>("ibai");
+  const urlStream = searchParams?.get("stream") || null;
+  const urlPlatform = (searchParams?.get("platform") as "twitch" | "youtube") || "twitch";
+
+  const [platform, setPlatform] = useState<"twitch" | "youtube">(urlPlatform);
+  const [activeStream, setActiveStream] = useState<string | null>(urlStream);
 
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -127,33 +132,53 @@ function PartyRoomContent() {
   }, []);
 
   useEffect(() => {
+    if (!urlStream) {
+      fetch(`/api/rooms?code=${roomId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.room?.channel && data.room.channel.trim()) {
+            setActiveStream(data.room.channel);
+            if (data.room.platform) setPlatform(data.room.platform);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [roomId, urlStream]);
+
+  useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/rooms/${roomId}/sync`);
         if (res.ok) {
           const data = await res.json();
-          if (data.state && Array.isArray(data.state.messages) && data.state.messages.length > 0) {
-            setChatMessages((prev) => {
-              const existingIds = new Set(prev.map((m) => String(m.id)));
-              const newMsgs = data.state.messages
-                .filter((m: any) => !existingIds.has(String(m.id)))
-                .map((m: any) => ({
-                  id: m.id,
-                  sender: m.user,
-                  color: m.role === "BOT" ? "#38BDF8" : "#A78BFA",
-                  isBadge: m.role === "BOT",
-                  text: m.text,
-                  time: m.time || "Ahora",
-                }));
-              return [...prev, ...newMsgs];
-            });
+          if (data.state) {
+            if (data.state.channel && data.state.channel.trim() && !activeStream) {
+              setActiveStream(data.state.channel);
+              if (data.state.platform) setPlatform(data.state.platform);
+            }
+            if (Array.isArray(data.state.messages) && data.state.messages.length > 0) {
+              setChatMessages((prev) => {
+                const existingIds = new Set(prev.map((m) => String(m.id)));
+                const newMsgs = data.state.messages
+                  .filter((m: any) => !existingIds.has(String(m.id)))
+                  .map((m: any) => ({
+                    id: m.id,
+                    sender: m.user,
+                    color: m.role === "BOT" ? "#38BDF8" : "#A78BFA",
+                    isBadge: m.role === "BOT",
+                    text: m.text,
+                    time: m.time || "Ahora",
+                  }));
+                return [...prev, ...newMsgs];
+              });
+            }
           }
         }
       } catch {}
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [roomId]);
+  }, [roomId, activeStream]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -298,19 +323,32 @@ function PartyRoomContent() {
     if (e && e.preventDefault) e.preventDefault();
     if (!query.trim()) return;
 
+    let targetStream = "";
     if (platform === "twitch") {
-      const cleaned = query
+      targetStream = query
         .replace("https://www.twitch.tv/", "")
         .replace("https://twitch.tv/", "")
         .replace("@", "")
         .trim();
-      setActiveStream(cleaned);
-      trackEvent("stream_switch", { platform: "twitch", channel: cleaned });
+      setActiveStream(targetStream);
+      trackEvent("stream_switch", { platform: "twitch", channel: targetStream });
     } else {
-      const ytid = extractYouTubeId(query);
-      setActiveStream(ytid);
-      trackEvent("stream_switch", { platform: "youtube", videoId: ytid });
+      targetStream = extractYouTubeId(query);
+      setActiveStream(targetStream);
+      trackEvent("stream_switch", { platform: "youtube", videoId: targetStream });
     }
+
+    try {
+      fetch(`/api/rooms/${roomId}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_playback",
+          channel: targetStream,
+          platform,
+        }),
+      }).catch(() => {});
+    } catch {}
 
     setQuery("");
     setShowSuggestions(false);
@@ -318,13 +356,22 @@ function PartyRoomContent() {
 
   const handleSelectQuickStream = (suggestion: SuggestionItem) => {
     setPlatform(suggestion.platform);
-    if (suggestion.platform === "twitch") {
-      setActiveStream(suggestion.name);
-      trackEvent("stream_switch", { platform: "twitch", channel: suggestion.name });
-    } else if (suggestion.id) {
-      setActiveStream(suggestion.id);
-      trackEvent("stream_switch", { platform: "youtube", videoId: suggestion.id });
-    }
+    const target = suggestion.platform === "twitch" ? suggestion.name : (suggestion.id || suggestion.name);
+    setActiveStream(target);
+    trackEvent("stream_switch", { platform: suggestion.platform, channel: target });
+
+    try {
+      fetch(`/api/rooms/${roomId}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_playback",
+          channel: target,
+          platform: suggestion.platform,
+        }),
+      }).catch(() => {});
+    } catch {}
+
     setQuery("");
     setShowSuggestions(false);
   };
@@ -519,6 +566,26 @@ function PartyRoomContent() {
             <Trophy className="h-3.5 w-3.5" />
             <span className="hidden lg:inline text-[11px]">HUD Stats</span>
           </button>
+
+          {activeStream && (
+            <button
+              onClick={() => {
+                setActiveStream(null);
+                try {
+                  fetch(`/api/rooms/${roomId}/sync`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "update_playback", channel: "" }),
+                  }).catch(() => {});
+                } catch {}
+              }}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-gray-300 hover:text-white transition cursor-pointer"
+              title="Volver a la pantalla de espera"
+            >
+              <RadioTower className="h-3.5 w-3.5 text-gray-400" />
+              <span className="hidden lg:inline text-[11px]">Pantalla de Espera</span>
+            </button>
+          )}
 
           <button
             onClick={handleCopyLink}
@@ -795,28 +862,231 @@ function PartyRoomContent() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-6 text-center max-w-lg">
-              <div className="h-16 w-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white mb-4">
-                <RadioTower className="h-8 w-8 text-gray-400" />
+            <div className="flex flex-col items-center justify-center p-6 text-center max-w-xl w-full mx-auto my-auto animate-in fade-in duration-300 overflow-y-auto">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono mb-5 text-gray-300">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <span className="tracking-wider uppercase font-semibold text-gray-200">Pantalla de Espera</span>
+                <span className="text-white/20">•</span>
+                <span className="text-emerald-400">Sincronización Lista (0ms)</span>
               </div>
 
-              <h2 className="text-xl font-bold text-white">
-                Sala Lista y Conectada
+              <div className="relative mb-5">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.1] shadow-2xl flex items-center justify-center text-white backdrop-blur-xl">
+                  <RadioTower className="h-8 w-8 sm:h-9 sm:w-9 text-gray-200 animate-pulse" />
+                </div>
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-black"></span>
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
+                Esperando retransmisión
               </h2>
-              <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-                Usa el buscador para sincronizar cualquier directo de Twitch o vídeo de YouTube:
+              <p className="text-xs sm:text-sm text-gray-400 max-w-md leading-relaxed mb-6 font-normal">
+                Esta sala está conectada. Elige un canal o vídeo para comenzar a verlo sincronizado con todos los miembros de la sala.
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-2 justify-center">
-                {POPULAR_CHANNELS.slice(0, 4).map((ch, idx) => (
+              {/* Selector interactivo dentro de la pantalla de espera */}
+              <div className="w-full bg-[#0D0F17] border border-white/[0.08] rounded-2xl p-4 mb-5 text-left shadow-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-gray-300">Iniciar emisión en la sala:</span>
+                  <div className="flex items-center gap-1 bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.06] text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setPlatform("twitch")}
+                      className={`px-2.5 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                        platform === "twitch" ? "bg-[#9146FF] text-white" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Twitch
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPlatform("youtube")}
+                      className={`px-2.5 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                        platform === "youtube" ? "bg-[#FF0000] text-white" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      YouTube
+                    </button>
+                  </div>
+                </div>
+
+                <form onSubmit={handleLoadStream} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={
+                      platform === "twitch"
+                        ? "Escribe streamer o canal (ej. valorant, eslcs)..."
+                        : "Pega enlace o ID de vídeo de YouTube..."
+                    }
+                    className="flex-1 bg-white/[0.03] border border-white/[0.08] focus:border-white/30 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 outline-none transition"
+                  />
                   <button
-                    key={idx}
-                    onClick={() => handleSelectQuickStream(ch)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/[0.04] border border-white/[0.08] hover:border-white/30 text-gray-300 hover:text-white transition cursor-pointer"
+                    type="submit"
+                    disabled={!query.trim()}
+                    className="px-4 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                   >
-                    {ch.name}
+                    Reproducir
                   </button>
-                ))}
+                </form>
+
+                {user && (user.twitchUsername || user.youtubeHandle) && (
+                  <div className="mt-3 pt-3 border-t border-white/[0.06] flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-[11px] text-gray-500">Tus canales:</span>
+                    {user.twitchUsername && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPlatform("twitch");
+                          setActiveStream(user.twitchUsername!);
+                          try {
+                            fetch(`/api/rooms/${roomId}/sync`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ action: "update_playback", channel: user.twitchUsername, platform: "twitch" }),
+                            }).catch(() => {});
+                          } catch {}
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-[#9146FF]/20 hover:bg-[#9146FF]/30 border border-[#9146FF]/30 text-[#A970FF] text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Radio className="h-3 w-3" />
+                        <span>Cargar mi Twitch (@{user.twitchUsername})</span>
+                      </button>
+                    )}
+                    {user.youtubeHandle && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPlatform("youtube");
+                          setActiveStream(user.youtubeHandle!);
+                          try {
+                            fetch(`/api/rooms/${roomId}/sync`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ action: "update_playback", channel: user.youtubeHandle, platform: "youtube" }),
+                            }).catch(() => {});
+                          } catch {}
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 text-red-400 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Tv className="h-3 w-3" />
+                        <span>Cargar mi YouTube (@{user.youtubeHandle})</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Grid de sugerencias */}
+              <div className="w-full text-left mb-5">
+                <p className="text-[11px] font-mono text-gray-500 uppercase tracking-wider mb-2">
+                  Sugerencias Populares
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {POPULAR_CHANNELS.slice(0, 6).map((ch, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectQuickStream(ch)}
+                      className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/20 hover:bg-white/[0.04] transition text-left cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`h-1.5 w-1.5 rounded-full ${ch.platform === "twitch" ? "bg-[#9146FF]" : "bg-red-500"}`} />
+                        <span className="text-xs font-bold text-gray-200 group-hover:text-white truncate">
+                          {ch.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-gray-500 block truncate">
+                        {ch.category}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* HUD de Voz y Enlace */}
+              <div className="w-full flex flex-col sm:flex-row items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/[0.06] gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className={`h-7 w-7 rounded-full object-cover border border-white/20 transition-all ${
+                          isSpeaking ? "ring-2 ring-emerald-400 scale-105" : ""
+                        }`}
+                      />
+                    ) : (
+                      <div
+                        className={`h-7 w-7 rounded-full bg-white/[0.08] flex items-center justify-center font-bold text-xs text-white transition-all ${
+                          isSpeaking ? "ring-2 ring-emerald-400 scale-105" : ""
+                        }`}
+                      >
+                        {user?.name ? user.name.slice(0, 2).toUpperCase() : "IN"}
+                      </div>
+                    )}
+                    {isSpeaking && (
+                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                    )}
+                  </div>
+
+                  <div className="text-left">
+                    <span className="text-xs font-semibold text-white block">
+                      {isSpeaking ? (
+                        <span className="text-emerald-400">Hablando...</span>
+                      ) : micEnabled ? (
+                        <span className="text-gray-300">Voz Activa • {user?.name || "Tú"}</span>
+                      ) : (
+                        <span className="text-red-400">Micrófono silenciado</span>
+                      )}
+                    </span>
+                    <span className="text-[10px] text-gray-500">Audio WebRTC integrado</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => {
+                      setMicEnabled(!micEnabled);
+                      trackEvent("voice_toggle", { enabled: !micEnabled });
+                    }}
+                    className={`p-1.5 rounded-xl border transition cursor-pointer ${
+                      micEnabled
+                        ? "bg-white/[0.06] border-white/[0.08] text-white"
+                        : "bg-red-500/20 border-red-500/40 text-red-400"
+                    }`}
+                    title={micEnabled ? "Silenciar micrófono" : "Activar micrófono"}
+                  >
+                    {micEnabled ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
+                  </button>
+
+                  <button
+                    onClick={() => setDeafened(!deafened)}
+                    className={`p-1.5 rounded-xl border transition cursor-pointer ${
+                      deafened
+                        ? "bg-red-500/20 border-red-500/40 text-red-400"
+                        : "bg-white/[0.06] border-white/[0.08] text-gray-300 hover:text-white"
+                    }`}
+                    title={deafened ? "Reactivar sonido" : "Ensordecer"}
+                  >
+                    {deafened ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                  </button>
+
+                  <button
+                    onClick={handleCopyLink}
+                    className="ml-1 px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-gray-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5 text-gray-400" />}
+                    <span>{copied ? "¡Copiado!" : "Invitar amigos"}</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -36,7 +36,7 @@ function LandingContent() {
     }
   }, [isLoading, user]);
 
-  const executeCreateRoom = async (platform: "twitch" | "youtube" = "twitch", channel: string = "ibai") => {
+  const executeCreateRoom = async (platform: "twitch" | "youtube" = "twitch", channel: string = "") => {
     const randomCode = Math.random().toString(36).substring(2, 8);
 
     try {
@@ -53,10 +53,14 @@ function LandingContent() {
       }).catch(() => {});
     } catch {}
 
-    router.push(`/party/${randomCode}`);
+    if (channel && channel.trim()) {
+      router.push(`/party/${randomCode}?stream=${encodeURIComponent(channel)}&platform=${platform}`);
+    } else {
+      router.push(`/party/${randomCode}`);
+    }
   };
 
-  const handleCreateRoomRequest = (platform: "twitch" | "youtube" = "twitch", channel: string = "ibai") => {
+  const handleCreateRoomRequest = (platform: "twitch" | "youtube" = "twitch", channel: string = "") => {
     if (!user) {
       setPendingRoomCreate({ platform, channel });
       setAuthModalTab("register");
@@ -86,12 +90,12 @@ function LandingContent() {
   return (
     <div className="relative min-h-screen bg-[#090B10] text-[#F8FAFC] flex flex-col justify-between selection:bg-white selection:text-black">
       <Header
-        onCreateRoom={() => handleCreateRoomRequest("twitch", "ibai")}
+        onCreateRoom={() => handleCreateRoomRequest()}
         onOpenRoomWithChannel={(plat, chan) => handleCreateRoomRequest(plat, chan)}
       />
       <main className="flex-1 flex flex-col">
-        <Hero onCreateRoom={() => handleCreateRoomRequest("twitch", "ibai")} />
-        <HowItWorks onCreateRoom={() => handleCreateRoomRequest("twitch", "ibai")} />
+        <Hero onCreateRoom={() => handleCreateRoomRequest()} />
+        <HowItWorks onCreateRoom={() => handleCreateRoomRequest()} />
         <Features />
       </main>
       <Footer />

@@ -117,7 +117,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                     <p className="text-[11px] text-gray-400 flex items-center gap-1.5">
                       <span>{t.hero.mockupTeams}</span>
                       <span>•</span>
-                      <span>{activeTab === "twitch" ? "ibai • Twitch" : "Directo Especial • YouTube"}</span>
+                      <span>{activeTab === "twitch" ? "En Vivo • Twitch" : "Directo Especial • YouTube"}</span>
                     </p>
                   </div>
                 </div>

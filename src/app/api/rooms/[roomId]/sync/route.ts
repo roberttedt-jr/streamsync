@@ -26,7 +26,7 @@ export async function GET(
   const roomId = params.roomId;
   const state = roomSyncCache.get(roomId) || {
     platform: "twitch",
-    channel: "ibai",
+    channel: "",
     isPlaying: true,
     currentTime: 0,
     updatedAt: Date.now(),
@@ -58,7 +58,7 @@ export async function POST(
     const body = await request.json();
     const existing = roomSyncCache.get(roomId) || {
       platform: "twitch",
-      channel: "ibai",
+      channel: "",
       isPlaying: true,
       currentTime: 0,
       updatedAt: Date.now(),

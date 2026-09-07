@@ -314,7 +314,7 @@ export default function AuthModal({
                 </svg>
                 <input
                   type="text"
-                  placeholder="Canal de Twitch (ej. ibai)"
+                  placeholder="Canal de Twitch (ej. tu_canal)"
                   value={regTwitch}
                   onChange={(e) => setRegTwitch(e.target.value)}
                   className="w-full bg-transparent text-xs text-white placeholder-gray-500 outline-none"

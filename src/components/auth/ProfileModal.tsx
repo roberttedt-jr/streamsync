@@ -314,7 +314,7 @@ export default function ProfileModal({
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="ej. ibai o nombre_de_tu_canal"
+                  placeholder="ej. tu_canal o usuario_twitch"
                   value={twitchInput}
                   onChange={(e) => setTwitchInput(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30"
