@@ -1,9 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import TwitchPlayer from "@/components/video/TwitchPlayer";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
-import { Tv, Radio, Send, Users, Mic, Volume2 } from "lucide-react";
+import {
+  Tv,
+  Radio,
+  Send,
+  Users,
+  Mic,
+  MicOff,
+  Copy,
+  Check,
+  Search,
+  Sparkles,
+  Volume2,
+  Gamepad2,
+} from "lucide-react";
+
+// Lista curada de recomendaciones populares para el autocompletado
+const POPULAR_CHANNELS = [
+  { name: "ibai", platform: "twitch", category: "Charlando / Eventos" },
+  { name: "elxokas", platform: "twitch", category: "Gaming / Variedad" },
+  { name: "auronplay", platform: "twitch", category: "Minecraft / GTA" },
+  { name: "illojuan", platform: "twitch", category: "Variedad / Retro" },
+  { name: "rubius", platform: "twitch", category: "Gaming / Directos" },
+  { name: "kingsleague", platform: "twitch", category: "Fútbol / Entretenimiento" },
+  { name: "midudev", platform: "twitch", category: "Programación / Tech" },
+  { name: "Lofi Girl (Stream 24/7)", id: "jfKfPfyJRdk", platform: "youtube", category: "Música / Chill" },
+  { name: "Synthwave Radio 24/7", id: "4xDzrJKXOOY", platform: "youtube", category: "Música / Beats" },
+  { name: "GameSpot Live", id: "0qL3w2eG6Jk", platform: "youtube", category: "Gaming / Noticias" },
+];
 
 export default function PartyPage({
   params,
@@ -15,129 +42,313 @@ export default function PartyPage({
   const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
   const [twitchChannel, setTwitchChannel] = useState("ibai");
   const [youtubeVideoId, setYoutubeVideoId] = useState("jfKfPfyJRdk");
-  const [inputUrl, setInputUrl] = useState("");
+  const [query, setQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
 
-  const handleLoadStream = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputUrl.trim()) return;
+  // Chat de prueba local
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; time: string }>>([
+    { sender: "Sistema", text: `¡Bienvenidos a la sala ${roomId}! Elige un stream y comparte el enlace.`, time: "Ahora" },
+  ]);
+  const [messageInput, setMessageInput] = useState("");
+
+  // Copiar enlace al portapapeles
+  const handleCopyLink = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Filtrado de sugerencias en tiempo real según lo que escribe el usuario
+  const filteredSuggestions = useMemo(() => {
+    if (!query.trim()) return [];
+    return POPULAR_CHANNELS.filter(
+      (item) =>
+        item.platform === platform &&
+        item.name.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, platform]);
+
+  // Parser inteligente para extraer IDs de cualquier formato de YouTube
+  const extractYouTubeId = (input: string): string => {
+    const trimmed = input.trim();
+    // Enlace tipo: https://www.youtube.com/watch?v=VIDEO_ID
+    if (trimmed.includes("v=")) {
+      return trimmed.split("v=")[1].split("&")[0];
+    }
+    // Enlace corto tipo: https://youtu.be/VIDEO_ID
+    if (trimmed.includes("youtu.be/")) {
+      return trimmed.split("youtu.be/")[1].split("?")[0];
+    }
+    // Enlace de directo tipo: https://www.youtube.com/live/VIDEO_ID
+    if (trimmed.includes("youtube.com/live/")) {
+      return trimmed.split("youtube.com/live/")[1].split("?")[0];
+    }
+    // Enlace embed tipo: https://www.youtube.com/embed/VIDEO_ID
+    if (trimmed.includes("youtube.com/embed/")) {
+      return trimmed.split("youtube.com/embed/")[1].split("?")[0];
+    }
+    // Si ya es un ID de 11 caracteres suelto
+    return trimmed;
+  };
+
+  // Enviar y cargar el stream
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!query.trim()) return;
 
     if (platform === "twitch") {
-      const cleaned = inputUrl
+      const cleaned = query
         .replace("https://www.twitch.tv/", "")
         .replace("https://twitch.tv/", "")
+        .replace("@", "")
         .trim();
       setTwitchChannel(cleaned);
     } else {
-      let extractedId = inputUrl.trim();
-      if (inputUrl.includes("v=")) {
-        extractedId = inputUrl.split("v=")[1].split("&")[0];
-      } else if (inputUrl.includes("youtu.be/")) {
-        extractedId = inputUrl.split("youtu.be/")[1].split("?")[0];
-      }
+      const extractedId = extractYouTubeId(query);
       setYoutubeVideoId(extractedId);
     }
-    setInputUrl("");
+
+    setQuery("");
+    setShowSuggestions(false);
+  };
+
+  // Seleccionar sugerencia
+  const handleSelectSuggestion = (suggestion: typeof POPULAR_CHANNELS[0]) => {
+    if (suggestion.platform === "twitch") {
+      setTwitchChannel(suggestion.name);
+    } else if (suggestion.id) {
+      setYoutubeVideoId(suggestion.id);
+    }
+    setQuery("");
+    setShowSuggestions(false);
+  };
+
+  // Enviar mensaje al chat simulado
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageInput.trim()) return;
+    setChatMessages((prev) => [
+      ...prev,
+      { sender: "Tú", text: messageInput.trim(), time: "Ahora" },
+    ]);
+    setMessageInput("");
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-background overflow-hidden">
-      <div className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-surfaceBorder mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
-              <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-                Sala: <span className="text-brand-purple">{roomId}</span>
-              </h1>
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-background text-gray-100 overflow-hidden font-sans">
+      {/* SECCIÓN PRINCIPAL (Vídeo + Controles) */}
+      <div className="flex-1 flex flex-col min-w-0 p-4 lg:p-6 overflow-y-auto">
+        {/* Barra superior de la sala */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-surfaceBorder/80 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-surface border border-surfaceBorder flex items-center justify-center text-brand-purple">
+              <Gamepad2 className="h-5 w-5" />
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">Sincronización activa</p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                <h1 className="text-lg lg:text-xl font-extrabold text-white">
+                  Sala <span className="text-brand-purple">#{roomId}</span>
+                </h1>
+              </div>
+              <p className="text-xs text-gray-400">Transmisión sincronizada en vivo</p>
+            </div>
           </div>
 
-          <div className="flex items-center bg-surface border border-surfaceBorder p-1 rounded-lg">
+          <div className="flex items-center gap-2">
+            {/* Botón copiar enlace */}
             <button
-              onClick={() => setPlatform("twitch")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                platform === "twitch"
-                  ? "bg-brand-purple text-white shadow-sm"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              onClick={handleCopyLink}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-surfaceBorder hover:border-gray-600 transition text-gray-300"
             >
-              <Radio className="h-3.5 w-3.5" />
-              Twitch
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-green-400" />
+                  <span className="text-green-400">¡Enlace Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5 text-gray-400" />
+                  <span>Invitar amigos</span>
+                </>
+              )}
             </button>
-            <button
-              onClick={() => setPlatform("youtube")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                platform === "youtube"
-                  ? "bg-brand-red text-white shadow-sm"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Tv className="h-3.5 w-3.5" />
-              YouTube
-            </button>
+
+            {/* Pestañas de Plataforma */}
+            <div className="flex items-center bg-surface border border-surfaceBorder p-1 rounded-lg">
+              <button
+                onClick={() => {
+                  setPlatform("twitch");
+                  setQuery("");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition ${
+                  platform === "twitch"
+                    ? "bg-brand-purple text-white shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Radio className="h-3 w-3" />
+                Twitch
+              </button>
+              <button
+                onClick={() => {
+                  setPlatform("youtube");
+                  setQuery("");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition ${
+                  platform === "youtube"
+                    ? "bg-brand-red text-white shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Tv className="h-3 w-3" />
+                YouTube
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Reproductor de Vídeo */}
         <div className="w-full flex-1 flex items-center justify-center">
-          {platform === "twitch" ? (
-            <TwitchPlayer channel={twitchChannel} />
-          ) : (
-            <YouTubePlayer videoId={youtubeVideoId} />
+          <div className="w-full max-w-5xl">
+            {platform === "twitch" ? (
+              <TwitchPlayer channel={twitchChannel} />
+            ) : (
+              <YouTubePlayer videoId={youtubeVideoId} />
+            )}
+          </div>
+        </div>
+
+        {/* Barra de Búsqueda y Sugerencias */}
+        <div className="relative mt-4 w-full max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={query}
+                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                placeholder={
+                  platform === "twitch"
+                    ? "Busca un streamer o canal (ej: ibai, auronplay, elxokas)..."
+                    : "Pega enlace de YouTube (live, vídeo, watch?v=...)"
+                }
+                className="w-full bg-surface border border-surfaceBorder focus:border-brand-purple rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none transition shadow-inner"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-brand-purple hover:bg-purple-600 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition shadow-md shadow-purple-900/30"
+            >
+              Cargar
+            </button>
+          </form>
+
+          {/* Menú de Recomendaciones en Vivo */}
+          {showSuggestions && filteredSuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-surface/95 backdrop-blur-md border border-surfaceBorder rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="p-2 border-b border-surfaceBorder/60 flex items-center gap-1.5 text-[11px] font-semibold text-gray-400">
+                <Sparkles className="h-3 w-3 text-brand-purple" />
+                Canales recomendados para {platform === "twitch" ? "Twitch" : "YouTube"}
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {filteredSuggestions.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(item)}
+                    className="w-full px-3 py-2 text-left hover:bg-surfaceBorder/50 flex items-center justify-between text-xs transition group"
+                  >
+                    <span className="font-semibold text-gray-200 group-hover:text-white">
+                      {item.name}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{item.category}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-
-        <form onSubmit={handleLoadStream} className="mt-4 flex gap-2 w-full max-w-2xl mx-auto">
-          <input
-            type="text"
-            value={inputUrl}
-            onChange={(e) => setInputUrl(e.target.value)}
-            placeholder={
-              platform === "twitch"
-                ? "Escribe canal de Twitch (ej: ibai, auronplay)"
-                : "Pega enlace de YouTube (ej: https://www.youtube.com/watch?v=...)"
-            }
-            className="flex-1 bg-surface border border-surfaceBorder rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-purple"
-          />
-          <button
-            type="submit"
-            className="bg-surfaceBorder hover:bg-gray-700 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition"
-          >
-            Cargar
-          </button>
-        </form>
       </div>
 
-      <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-surfaceBorder bg-surface flex flex-col h-72 lg:h-full">
-        <div className="p-3 border-b border-surfaceBorder flex items-center justify-between text-xs text-gray-300 font-semibold">
+      {/* BARRA LATERAL (Voz y Chat) */}
+      <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-surfaceBorder bg-surface/70 backdrop-blur-md flex flex-col h-80 lg:h-full">
+        {/* Cabecera de participantes y voz */}
+        <div className="p-4 border-b border-surfaceBorder flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-brand-purple" />
-            <span>Participantes (1)</span>
+            <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">
+              En Sala (2)
+            </span>
           </div>
+
           <div className="flex items-center gap-2">
-            <Mic className="h-4 w-4 text-green-400" />
-            <Volume2 className="h-4 w-4 text-gray-400" />
+            <button
+              onClick={() => setMicEnabled(!micEnabled)}
+              title={micEnabled ? "Silenciar micrófono" : "Activar micrófono"}
+              className={`p-1.5 rounded-lg border transition ${
+                micEnabled
+                  ? "bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20"
+                  : "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+              }`}
+            >
+              {micEnabled ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
+            </button>
+            <div className="p-1.5 rounded-lg bg-surface border border-surfaceBorder text-gray-400">
+              <Volume2 className="h-3.5 w-3.5" />
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
-          <div className="bg-background/60 p-2 rounded-lg border border-surfaceBorder/50">
-            <span className="font-bold text-brand-purple">Sistema: </span>
-            <span className="text-gray-300">Bienvenido a la sala {roomId}.</span>
+        {/* Lista de Usuarios conectados */}
+        <div className="px-4 py-2 bg-surfaceBorder/20 border-b border-surfaceBorder/40 flex items-center gap-2 text-xs">
+          <div className="h-6 w-6 rounded-full bg-brand-purple flex items-center justify-center font-bold text-[10px] text-white">
+            TÚ
           </div>
+          <span className="text-gray-300 font-medium text-xs">Host de la Sala</span>
+          <span className="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
+            En directo
+          </span>
         </div>
 
-        <div className="p-3 border-t border-surfaceBorder bg-surface">
-          <div className="flex items-center gap-2 bg-background border border-surfaceBorder rounded-lg px-3 py-2">
+        {/* Mensajes del Chat */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+          {chatMessages.map((msg, index) => (
+            <div key={index} className="flex flex-col gap-0.5">
+              <div className="flex items-baseline gap-2">
+                <span className="font-bold text-brand-purple text-[11px]">{msg.sender}</span>
+                <span className="text-[9px] text-gray-500">{msg.time}</span>
+              </div>
+              <p className="text-gray-300 bg-background/50 p-2 rounded-lg border border-surfaceBorder/40 break-words leading-relaxed">
+                {msg.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Input del Chat */}
+        <form onSubmit={handleSendMessage} className="p-3 border-t border-surfaceBorder bg-surface">
+          <div className="flex items-center gap-2 bg-background border border-surfaceBorder rounded-xl px-3 py-1.5 focus-within:border-brand-purple transition">
             <input
               type="text"
-              placeholder="Enviar un mensaje..."
-              disabled
-              className="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none disabled:opacity-50"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              placeholder="Escribe en el chat..."
+              className="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
             />
-            <Send className="h-4 w-4 text-gray-500" />
+            <button type="submit" className="text-gray-400 hover:text-brand-purple transition">
+              <Send className="h-4 w-4" />
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
