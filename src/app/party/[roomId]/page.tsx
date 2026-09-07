@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import TwitchPlayer from "@/components/video/TwitchPlayer";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
 import {
@@ -11,17 +11,31 @@ import {
   Users,
   Mic,
   MicOff,
-  Copy,
   Check,
   Search,
   Sparkles,
-  Volume2,
   Gamepad2,
-  Maximize2,
-  Share2
+  Share2,
+  Home,
+  LogOut,
+  User,
+  Settings,
+  Heart,
+  Volume2,
+  RadioTower,
+  ChevronDown,
+  Circle,
+  HelpCircle,
 } from "lucide-react";
 
-const POPULAR_CHANNELS = [
+interface SuggestionItem {
+  name: string;
+  platform: "twitch" | "youtube";
+  category: string;
+  id?: string;
+}
+
+const POPULAR_CHANNELS: SuggestionItem[] = [
   { name: "ibai", platform: "twitch", category: "Charlando / Eventos" },
   { name: "elxokas", platform: "twitch", category: "Gaming / Variedad" },
   { name: "auronplay", platform: "twitch", category: "Minecraft / GTA" },
@@ -30,28 +44,47 @@ const POPULAR_CHANNELS = [
   { name: "kingsleague", platform: "twitch", category: "Fútbol / Kings" },
   { name: "midudev", platform: "twitch", category: "Programación / Tech" },
   { name: "Lofi Girl (Stream 24/7)", id: "jfKfPfyJRdk", platform: "youtube", category: "Música / Chill" },
-  { name: "Synthwave Radio 24/7", id: "4xDzrJKXOOY", platform: "youtube", category: "Música / Beats" },
+  { name: "Synthwave Beats 24/7", id: "4xDzrJKXOOY", platform: "youtube", category: "Música / Beats" },
   { name: "GameSpot Live", id: "0qL3w2eG6Jk", platform: "youtube", category: "Gaming / Directo" },
 ];
 
 export default function PartyPage() {
+  const router = useRouter();
   const routeParams: any = useParams();
   const roomId = routeParams?.roomId ? String(routeParams.roomId) : "default";
 
+  // Plataforma y stream actual (empieza vacío para mostrar la pantalla de espera)
   const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
-  const [twitchChannel, setTwitchChannel] = useState("ibai");
-  const [youtubeVideoId, setYoutubeVideoId] = useState("jfKfPfyJRdk");
+  const [activeStream, setActiveStream] = useState<string | null>(null);
+
+  // Búsqueda y sugerencias
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Perfil del usuario y estado estilo Twitch
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userStatus, setUserStatus] = useState<"online" | "idle" | "dnd">("online");
   const [micEnabled, setMicEnabled] = useState(true);
 
-  // Chat con formato estilo Twitch (badges, colores y scroll)
+  // Mensajes de chat
   const [chatMessages, setChatMessages] = useState<any[]>([
-    { id: 1, sender: "StreamSyncBot", color: "#a855f7", isBadge: true, text: `¡Bienvenidos a la sala #${roomId}! Modo cine activado.`, time: "18:00" },
-    { id: 2, sender: "Moderador", color: "#22c55e", isBadge: true, text: "Usa el buscador superior para cambiar de directo al instante.", time: "18:01" },
+    { id: 1, sender: "StreamSyncBot", color: "#a855f7", isBadge: true, text: `¡Bienvenidos a la sala #${roomId}! Elige un directo arriba para empezar.`, time: "19:00" },
   ]);
   const [messageInput, setMessageInput] = useState("");
+
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar dropdown de perfil si se hace click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
@@ -79,7 +112,7 @@ export default function PartyPage() {
     return trimmed;
   };
 
-  const handleSubmit = (e?: any) => {
+  const handleLoadStream = (e?: any) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!query.trim()) return;
 
@@ -89,21 +122,22 @@ export default function PartyPage() {
         .replace("https://twitch.tv/", "")
         .replace("@", "")
         .trim();
-      setTwitchChannel(cleaned);
+      setActiveStream(cleaned);
     } else {
       const extractedId = extractYouTubeId(query);
-      setYoutubeVideoId(extractedId);
+      setActiveStream(extractedId);
     }
 
     setQuery("");
     setShowSuggestions(false);
   };
 
-  const handleSelectSuggestion = (suggestion: any) => {
+  const handleSelectQuickStream = (suggestion: SuggestionItem) => {
+    setPlatform(suggestion.platform);
     if (suggestion.platform === "twitch") {
-      setTwitchChannel(suggestion.name);
+      setActiveStream(suggestion.name);
     } else if (suggestion.id) {
-      setYoutubeVideoId(suggestion.id);
+      setActiveStream(suggestion.id);
     }
     setQuery("");
     setShowSuggestions(false);
@@ -112,46 +146,68 @@ export default function PartyPage() {
   const handleSendMessage = (e: any) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!messageInput.trim()) return;
-    
+
     const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
     setChatMessages((prev) => [
       ...prev,
       {
         id: Date.now(),
-        sender: "Tú",
+        sender: "GamerPro",
         color: "#38bdf8",
         isBadge: false,
         text: messageInput.trim(),
-        time: timeStr
+        time: timeStr,
       },
     ]);
     setMessageInput("");
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#090b10] text-gray-100 overflow-hidden select-none font-sans">
+    <div className="flex flex-col h-screen w-full bg-[#080a0f] text-gray-100 overflow-hidden font-sans select-none">
       
-      {/* 1. BARRA SUPERIOR COMPACTA (Estilo Twitch Header) */}
-      <header className="h-14 border-b border-surfaceBorder bg-[#0e131d] px-4 flex items-center justify-between gap-4 z-30 shrink-0">
-        <div className="flex items-center gap-3 min-w-fit">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-brand-purple to-indigo-600 flex items-center justify-center text-white font-bold shadow">
-            <Gamepad2 className="h-4 w-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="font-extrabold text-sm text-white tracking-wide">
-                SALA #{roomId}
-              </span>
+      {/* ========================================================================= */}
+      {/* 1. BARRA DE NAVEGACIÓN SUPERIOR (Estilo Twitch Pro) */}
+      {/* ========================================================================= */}
+      <header className="h-14 border-b border-[#1f2637] bg-[#0d111a] px-3 lg:px-4 flex items-center justify-between gap-3 z-40 shrink-0">
+        
+        {/* LADO IZQUIERDO: Logo y botón para volver a la Home */}
+        <div className="flex items-center gap-2 lg:gap-3">
+          <button
+            onClick={() => router.push("/")}
+            title="Ir a la página principal"
+            className="flex items-center gap-2 hover:opacity-80 transition group"
+          >
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand-purple to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-900/30">
+              <Gamepad2 className="h-5 w-5 transition-transform group-hover:scale-105" />
             </div>
+            <span className="font-black text-sm lg:text-base tracking-wider hidden sm:inline text-white">
+              STREAM<span className="text-brand-purple">SYNC</span>
+            </span>
+          </button>
+
+          <div className="h-4 w-[1px] bg-[#1f2637] mx-1 hidden sm:block" />
+
+          {/* Botón rápido Home */}
+          <button
+            onClick={() => router.push("/")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#161c28] transition"
+          >
+            <Home className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">Inicio</span>
+          </button>
+
+          {/* Badge de la sala */}
+          <div className="flex items-center gap-1.5 bg-[#161c28] border border-[#1f2637] px-2.5 py-1 rounded-md text-[11px] text-gray-300">
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="font-bold text-white">#{roomId}</span>
           </div>
         </div>
 
-        {/* Buscador central integrado en la barra superior */}
-        <div className="relative flex-1 max-w-xl mx-2">
-          <form onSubmit={handleSubmit} className="flex items-center relative">
+        {/* CENTRO: Buscador con autocompletado */}
+        <div className="relative flex-1 max-w-lg mx-2">
+          <form onSubmit={handleLoadStream} className="flex items-center relative">
             <Search className="absolute left-3 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
             <input
               type="text"
@@ -163,33 +219,33 @@ export default function PartyPage() {
               }}
               placeholder={
                 platform === "twitch"
-                  ? "Escribe canal de Twitch (ej: ibai, auronplay, xokas)..."
-                  : "Pega link o ID de YouTube..."
+                  ? "Buscar streamer de Twitch (ibai, rubius, xokas...)"
+                  : "Pegar enlace o ID de YouTube..."
               }
-              className="w-full bg-[#161c28] border border-surfaceBorder focus:border-brand-purple rounded-lg pl-9 pr-20 py-1.5 text-xs text-white placeholder-gray-500 outline-none transition"
+              className="w-full bg-[#141a26] border border-[#1f2637] focus:border-brand-purple rounded-lg pl-9 pr-16 py-1.5 text-xs text-white placeholder-gray-500 outline-none transition"
             />
             <button
               type="submit"
-              className="absolute right-1 px-3 py-1 bg-brand-purple hover:bg-purple-600 text-[11px] font-bold text-white rounded-md transition"
+              className="absolute right-1 px-2.5 py-1 bg-brand-purple hover:bg-purple-600 text-[11px] font-bold text-white rounded-md transition shadow"
             >
               Cargar
             </button>
           </form>
 
-          {/* Sugerencias flotantes */}
+          {/* Menú de sugerencias flotantes */}
           {showSuggestions && filteredSuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#161c28] border border-surfaceBorder rounded-lg shadow-2xl z-50 overflow-hidden">
-              <div className="p-2 border-b border-surfaceBorder/60 flex items-center gap-1.5 text-[10px] font-semibold text-gray-400">
+            <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#141a26] border border-[#1f2637] rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="p-2 border-b border-[#1f2637] flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                 <Sparkles className="h-3 w-3 text-brand-purple" />
-                Sugerencias rápidas
+                Streamers recomendados
               </div>
-              <div className="max-h-48 overflow-y-auto">
+              <div className="max-h-52 overflow-y-auto">
                 {filteredSuggestions.map((item, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => handleSelectSuggestion(item)}
-                    className="w-full px-3 py-1.5 text-left hover:bg-surfaceBorder/50 flex items-center justify-between text-xs transition"
+                    onClick={() => handleSelectQuickStream(item)}
+                    className="w-full px-3 py-2 text-left hover:bg-[#1f2637] flex items-center justify-between text-xs transition"
                   >
                     <span className="font-semibold text-gray-200">{item.name}</span>
                     <span className="text-[10px] text-gray-400">{item.category}</span>
@@ -200,79 +256,226 @@ export default function PartyPage() {
           )}
         </div>
 
-        {/* Controles de plataforma y compartir */}
-        <div className="flex items-center gap-2 min-w-fit">
-          <div className="flex items-center bg-[#161c28] border border-surfaceBorder p-0.5 rounded-lg">
+        {/* LADO DERECHO: Selector de plataforma, compartir y PERFIL DE USUARIO */}
+        <div className="flex items-center gap-2">
+          {/* Selector Twitch / YouTube */}
+          <div className="flex items-center bg-[#141a26] border border-[#1f2637] p-0.5 rounded-lg">
             <button
               onClick={() => {
                 setPlatform("twitch");
                 setQuery("");
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition ${
                 platform === "twitch"
-                  ? "bg-brand-purple text-white shadow-sm"
+                  ? "bg-brand-purple text-white shadow"
                   : "text-gray-400 hover:text-white"
               }`}
             >
               <Radio className="h-3 w-3" />
-              Twitch
+              <span className="hidden sm:inline">Twitch</span>
             </button>
             <button
               onClick={() => {
                 setPlatform("youtube");
                 setQuery("");
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition ${
                 platform === "youtube"
-                  ? "bg-brand-red text-white shadow-sm"
+                  ? "bg-brand-red text-white shadow"
                   : "text-gray-400 hover:text-white"
               }`}
             >
               <Tv className="h-3 w-3" />
-              YouTube
+              <span className="hidden sm:inline">YouTube</span>
             </button>
           </div>
 
+          {/* Botón Compartir Sala */}
           <button
             onClick={handleCopyLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#161c28] border border-surfaceBorder hover:border-gray-500 transition text-gray-200"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141a26] border border-[#1f2637] hover:border-gray-500 transition text-gray-300"
+            title="Copiar enlace de invitación"
           >
             {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-green-400" />
-                <span className="text-green-400 text-[11px]">Copiado</span>
-              </>
+              <Check className="h-3.5 w-3.5 text-green-400" />
             ) : (
-              <>
-                <Share2 className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-[11px] hidden sm:inline">Invitar</span>
-              </>
+              <Share2 className="h-3.5 w-3.5 text-gray-400" />
             )}
+            <span className="hidden md:inline text-[11px]">{copied ? "¡Copiado!" : "Invitar"}</span>
           </button>
+
+          {/* ============================================================= */}
+          {/* PERFIL DE USUARIO ESTILO TWITCH CON TODAS LAS OPCIONES */}
+          {/* ============================================================= */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-1.5 p-1 rounded-full hover:ring-2 hover:ring-brand-purple/50 transition"
+            >
+              <div className="relative">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 border border-purple-400/40 flex items-center justify-center font-bold text-xs text-white">
+                  GP
+                </div>
+                {/* Indicador de estado */}
+                <span
+                  className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#0d111a] ${
+                    userStatus === "online"
+                      ? "bg-green-500"
+                      : userStatus === "idle"
+                      ? "bg-amber-400"
+                      : "bg-red-500"
+                  }`}
+                />
+              </div>
+              <ChevronDown className="h-3 w-3 text-gray-400 hidden sm:block" />
+            </button>
+
+            {/* Menú desplegable completo */}
+            {showProfileMenu && (
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-[#1f2637] bg-[#141a26] shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                {/* Cabecera del perfil */}
+                <div className="p-2 border-b border-[#1f2637] flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-black text-sm text-white shadow">
+                    GP
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="font-bold text-sm text-white truncate">GamerPro</p>
+                    <p className="text-[11px] text-gray-400 truncate">@gamerpro_live</p>
+                  </div>
+                </div>
+
+                {/* Selector de estado (Online, Ausente, No molestar) */}
+                <div className="py-2 px-1 border-b border-[#1f2637]">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 px-2 mb-1">
+                    Estado
+                  </p>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      onClick={() => setUserStatus("online")}
+                      className={`flex items-center justify-center gap-1 py-1 rounded text-[10px] font-semibold transition ${
+                        userStatus === "online" ? "bg-green-500/20 text-green-400 border border-green-500/30" : "text-gray-400 hover:bg-[#1f2637]"
+                      }`}
+                    >
+                      <Circle className="h-2 w-2 fill-green-500 text-green-500" />
+                      Online
+                    </button>
+                    <button
+                      onClick={() => setUserStatus("idle")}
+                      className={`flex items-center justify-center gap-1 py-1 rounded text-[10px] font-semibold transition ${
+                        userStatus === "idle" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "text-gray-400 hover:bg-[#1f2637]"
+                      }`}
+                    >
+                      <Circle className="h-2 w-2 fill-amber-400 text-amber-400" />
+                      Ausente
+                    </button>
+                    <button
+                      onClick={() => setUserStatus("dnd")}
+                      className={`flex items-center justify-center gap-1 py-1 rounded text-[10px] font-semibold transition ${
+                        userStatus === "dnd" ? "bg-red-500/20 text-red-400 border border-red-500/30" : "text-gray-400 hover:bg-[#1f2637]"
+                      }`}
+                    >
+                      <Circle className="h-2 w-2 fill-red-500 text-red-500" />
+                      Ocupado
+                    </button>
+                  </div>
+                </div>
+
+                {/* Enlaces de acciones estilo Twitch */}
+                <div className="py-1 border-b border-[#1f2637] text-xs">
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1f2637] rounded-lg transition">
+                    <User className="h-4 w-4 text-brand-purple" />
+                    <span>Mi Perfil de Jugador</span>
+                  </button>
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1f2637] rounded-lg transition">
+                    <Users className="h-4 w-4 text-brand-accent" />
+                    <span>Amigos y Watch Parties</span>
+                    <span className="ml-auto text-[10px] bg-brand-purple/20 text-brand-purple px-1.5 py-0.2 rounded font-bold">2</span>
+                  </button>
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1f2637] rounded-lg transition">
+                    <Heart className="h-4 w-4 text-rose-400" />
+                    <span>Canales Favoritos</span>
+                  </button>
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1f2637] rounded-lg transition">
+                    <Settings className="h-4 w-4 text-gray-400" />
+                    <span>Ajustes de Audio y Vídeo</span>
+                  </button>
+                </div>
+
+                {/* Salir y ayuda */}
+                <div className="pt-1 text-xs">
+                  <button
+                    onClick={() => router.push("/")}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Salir de la Sala</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* 2. ÁREA CENTRAL (VÍDEO A PANTALLA COMPLETA + CHAT DERECHO) */}
+      {/* ========================================================================= */}
+      {/* 2. ÁREA DE PANTALLA PRINCIPAL + CHAT DERECHO */}
+      {/* ========================================================================= */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 w-full overflow-hidden">
         
-        {/* REPRODUCTOR: OCUPA EL 100% DEL ESPACIO DISPONIBLE HASTA EL CHAT */}
+        {/* SECCIÓN DEL REPRODUCTOR (100% Pantalla Cine o Animación de Espera) */}
         <main className="flex-1 bg-black relative flex items-center justify-center min-h-0 overflow-hidden">
-          <div className="w-full h-full">
-            {platform === "twitch" ? (
-              <TwitchPlayer channel={twitchChannel} />
-            ) : (
-              <YouTubePlayer videoId={youtubeVideoId} />
-            )}
-          </div>
+          {activeStream ? (
+            /* Si hay stream cargado: ocupa el 100% absoluto de la pantalla */
+            <div className="w-full h-full">
+              {platform === "twitch" ? (
+                <TwitchPlayer channel={activeStream} />
+              ) : (
+                <YouTubePlayer videoId={activeStream} />
+              )}
+            </div>
+          ) : (
+            /* ANIMACIÓN DE ESPERA GAMER (Si aún no se ha buscado nada) */
+            <div className="flex flex-col items-center justify-center p-6 text-center max-w-lg">
+              <div className="relative mb-6">
+                <div className="h-24 w-24 rounded-full bg-brand-purple/10 border border-brand-purple/30 flex items-center justify-center text-brand-purple animate-pulse">
+                  <RadioTower className="h-10 w-10" />
+                </div>
+                <div className="absolute inset-0 rounded-full border border-brand-purple/20 animate-ping" />
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                Sala Lista y Conectada
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
+                Usa el buscador de arriba para poner cualquier directo de Twitch o vídeo de YouTube, o haz clic en un canal recomendado:
+              </p>
+
+              {/* Botones de acceso rápido a directos populares */}
+              <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                {POPULAR_CHANNELS.slice(0, 4).map((ch, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSelectQuickStream(ch)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#141a26] border border-[#1f2637] hover:border-brand-purple hover:text-brand-purple transition shadow"
+                  >
+                    <Sparkles className="h-3 w-3 text-brand-purple" />
+                    <span>{ch.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </main>
 
-        {/* CHAT LATERAL ESTILO TWITCH (ANCHO FIJO 340px) */}
-        <aside className="w-full lg:w-[340px] border-t lg:border-t-0 lg:border-l border-surfaceBorder bg-[#0e131d] flex flex-col shrink-0 h-64 lg:h-full z-20">
+        {/* ========================================================================= */}
+        {/* 3. CHAT LATERAL ESTILO TWITCH */}
+        {/* ========================================================================= */}
+        <aside className="w-full lg:w-[340px] border-t lg:border-t-0 lg:border-l border-[#1f2637] bg-[#0d111a] flex flex-col shrink-0 h-64 lg:h-full z-20">
           
           {/* Cabecera del chat */}
-          <div className="h-11 px-3 border-b border-surfaceBorder flex items-center justify-between bg-[#121824]">
+          <div className="h-11 px-3 border-b border-[#1f2637] flex items-center justify-between bg-[#121824]">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-200">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-gray-200">
                 CHAT DEL STREAM
               </span>
             </div>
@@ -285,25 +488,25 @@ export default function PartyPage() {
                     ? "bg-green-500/10 border-green-500/30 text-green-400"
                     : "bg-red-500/10 border-red-500/30 text-red-400"
                 }`}
-                title={micEnabled ? "Voz activa" : "Micrófono apagado"}
+                title={micEnabled ? "Micrófono activado" : "Micrófono silenciado"}
               >
                 {micEnabled ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
               </button>
-              <div className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold px-1.5 py-0.5 rounded bg-surface border border-surfaceBorder">
+              <div className="flex items-center gap-1 text-[11px] text-gray-400 font-bold px-1.5 py-0.5 rounded bg-[#161c28] border border-[#1f2637]">
                 <Users className="h-3 w-3 text-brand-purple" />
-                <span>3</span>
+                <span>1</span>
               </div>
             </div>
           </div>
 
-          {/* Contenedor de mensajes estilo Twitch */}
+          {/* Lista de mensajes */}
           <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs font-normal selection:bg-purple-900/50">
             {chatMessages.map((msg) => (
               <div key={msg.id} className="leading-relaxed hover:bg-white/[0.02] -mx-2 px-2 py-0.5 rounded">
                 <span className="text-[10px] text-gray-500 mr-1.5">{msg.time}</span>
                 {msg.isBadge && (
                   <span className="bg-brand-purple/20 text-brand-purple border border-brand-purple/30 text-[9px] font-bold px-1 py-0.2 rounded mr-1.5">
-                    MOD
+                    BOT
                   </span>
                 )}
                 <span className="font-bold mr-1.5" style={{ color: msg.color }}>
@@ -314,14 +517,14 @@ export default function PartyPage() {
             ))}
           </div>
 
-          {/* Formulario para enviar mensaje */}
-          <form onSubmit={handleSendMessage} className="p-2.5 border-t border-surfaceBorder bg-[#121824]">
-            <div className="flex items-center gap-2 bg-[#161c28] border border-surfaceBorder rounded-lg px-2.5 py-1.5 focus-within:border-brand-purple transition">
+          {/* Input para escribir */}
+          <form onSubmit={handleSendMessage} className="p-2.5 border-t border-[#1f2637] bg-[#121824]">
+            <div className="flex items-center gap-2 bg-[#161c28] border border-[#1f2637] rounded-lg px-2.5 py-1.5 focus-within:border-brand-purple transition">
               <input
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                placeholder="Enviar mensaje..."
+                placeholder="Enviar mensaje al chat..."
                 className="w-full bg-transparent text-xs text-white placeholder-gray-500 outline-none"
               />
               <button
