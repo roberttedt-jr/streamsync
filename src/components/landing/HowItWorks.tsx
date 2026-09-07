@@ -40,11 +40,9 @@ export default function HowItWorks({ onCreateRoom }: HowItWorksProps) {
 
   return (
     <section id="como-funciona" className="relative py-24 lg:py-32 overflow-hidden border-t border-white/[0.05]">
-      {/* Ambient background light */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-brand-purple/10 blur-[150px] rounded-full pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
           <div className="inline-flex items-center gap-2 glass-pill px-4 py-1.5 rounded-full text-neon-purple text-xs font-bold uppercase tracking-widest mb-5">
             <Sparkles className="h-3.5 w-3.5" />
@@ -61,7 +59,6 @@ export default function HowItWorks({ onCreateRoom }: HowItWorksProps) {
           </p>
         </div>
 
-        {/* 3 Liquid Glass Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-16">
           {steps.map((step, idx) => {
             const Icon = step.icon;
@@ -70,17 +67,14 @@ export default function HowItWorks({ onCreateRoom }: HowItWorksProps) {
                 key={idx}
                 className="group relative rounded-3xl glass-card p-8 flex flex-col justify-between overflow-hidden"
               >
-                {/* Top glossy edge reflection */}
                 <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
-                {/* Ambient glow on hover */}
                 <div
                   className={`absolute -top-20 -right-20 w-44 h-44 rounded-full bg-gradient-to-br ${step.accentGlow} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`}
                 />
 
                 <div>
                   <div className="flex items-center justify-between mb-8">
-                    {/* Glass Icon Capsule */}
                     <div
                       className={`h-14 w-14 rounded-2xl border flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${step.iconBg}`}
                     >
@@ -100,7 +94,6 @@ export default function HowItWorks({ onCreateRoom }: HowItWorksProps) {
                   </p>
                 </div>
 
-                {/* Details List */}
                 <ul className="space-y-2.5 pt-5 border-t border-white/[0.06]">
                   {step.details.map((detail, dIdx) => (
                     <li key={dIdx} className="flex items-center gap-2.5 text-xs text-gray-300">
@@ -114,7 +107,6 @@ export default function HowItWorks({ onCreateRoom }: HowItWorksProps) {
           })}
         </div>
 
-        {/* Center Liquid CTA */}
         <div className="flex justify-center">
           <button
             onClick={handleCreateRoom}

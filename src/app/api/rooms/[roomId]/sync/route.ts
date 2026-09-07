@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-// In-memory sync state store (cross-participant communication bridge)
 const roomSyncCache = new Map<
   string,
   {
@@ -81,7 +80,6 @@ export async function POST(
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         role: body.role || "MEMBER",
       });
-      // Keep last 50 messages
       if (existing.messages.length > 50) {
         existing.messages.shift();
       }

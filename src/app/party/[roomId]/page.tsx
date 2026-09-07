@@ -18,17 +18,13 @@ import {
   Share2,
   Home,
   LogOut,
-  Settings,
-  Heart,
   Volume2,
   VolumeX,
   RadioTower,
   ChevronDown,
   Circle,
-  Tv2,
   Trophy,
   Loader2,
-  Flame,
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
@@ -67,17 +63,14 @@ export default function PartyPage() {
   const [apiSuggestions, setApiSuggestions] = useState<SuggestionItem[]>([]);
   const [copied, setCopied] = useState(false);
 
-  // Profile & User State
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [userStatus, setUserStatus] = useState<"online" | "idle" | "dnd">("online");
 
-  // Voice Chat & Audio State
   const [micEnabled, setMicEnabled] = useState(true);
   const [deafened, setDeafened] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioDucking, setAudioDucking] = useState(true);
 
-  // Game Stats Overlay State
   const [showStatsOverlay, setShowStatsOverlay] = useState(true);
   const [gameStats, setGameStats] = useState<any>({
     game: "VALORANT",
@@ -88,7 +81,6 @@ export default function PartyPage() {
     economy: "Full Buy",
   });
 
-  // Chat and Sync State
   const [chatMessages, setChatMessages] = useState<any[]>([
     {
       id: 1,
@@ -106,12 +98,10 @@ export default function PartyPage() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
 
-  // Initial event tracking
   useEffect(() => {
     trackEvent("room_joined", { roomId, platform });
   }, [roomId, platform]);
 
-  // Click outside profile menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -122,7 +112,6 @@ export default function PartyPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch Live Game Stats
   useEffect(() => {
     fetch("/api/game-stats?game=valorant")
       .then((res) => res.json())
@@ -132,7 +121,6 @@ export default function PartyPage() {
       .catch(() => {});
   }, []);
 
-  // Real-time Room Sync Polling
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -165,7 +153,6 @@ export default function PartyPage() {
     return () => clearInterval(interval);
   }, [roomId]);
 
-  // Real-time Voice Activity Detection (VAD)
   useEffect(() => {
     if (!micEnabled) {
       setIsSpeaking(false);
@@ -208,15 +195,12 @@ export default function PartyPage() {
             sum += dataArray[i];
           }
           const average = sum / dataArray.length;
-          // Threshold for speech detection
           setIsSpeaking(average > 18);
           animationFrameId = requestAnimationFrame(checkAudio);
         };
 
         checkAudio();
-      } catch {
-        // Fallback simulated speaking pulse for browser permission block
-      }
+      } catch {}
     }
 
     initMic();
@@ -233,7 +217,6 @@ export default function PartyPage() {
     };
   }, [micEnabled]);
 
-  // Debounced Search API query
   useEffect(() => {
     if (!query.trim()) {
       setApiSuggestions([]);
@@ -362,7 +345,6 @@ export default function PartyPage() {
     setMessageInput("");
     trackEvent("chat_message_sent", { roomId });
 
-    // Sync to backend
     try {
       fetch(`/api/rooms/${roomId}/sync`, {
         method: "POST",
@@ -379,7 +361,6 @@ export default function PartyPage() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-[#0B0F14] text-gray-100 overflow-hidden font-sans select-none">
-      {/* Top Navbar */}
       <header className="h-14 border-b border-[#1F2937] bg-[#0F141C]/90 backdrop-blur-md px-3 lg:px-4 flex items-center justify-between gap-3 z-40 shrink-0">
         <div className="flex items-center gap-2 lg:gap-3">
           <button
@@ -410,7 +391,6 @@ export default function PartyPage() {
           </div>
         </div>
 
-        {/* Center: Search input */}
         <div className="relative flex-1 max-w-lg mx-2">
           <form onSubmit={handleLoadStream} className="flex items-center relative">
             <Search className="absolute left-3 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
@@ -443,7 +423,6 @@ export default function PartyPage() {
             )}
           </form>
 
-          {/* Search Dropdown */}
           {showSuggestions && filteredSuggestions.length > 0 && (
             <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#141a26] border border-[#1F2937] rounded-xl shadow-2xl z-50 overflow-hidden">
               <div className="p-2 border-b border-[#1F2937] flex items-center justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -483,9 +462,7 @@ export default function PartyPage() {
           )}
         </div>
 
-        {/* Right Controls: Platform, Invite, Stats Toggle, Profile */}
         <div className="flex items-center gap-2">
-          {/* Platform Switch */}
           <div className="flex items-center bg-[#141a26] border border-[#1F2937] p-0.5 rounded-lg">
             <button
               onClick={() => {
@@ -517,7 +494,6 @@ export default function PartyPage() {
             </button>
           </div>
 
-          {/* Stats Overlay Toggle Button */}
           <button
             onClick={() => setShowStatsOverlay(!showStatsOverlay)}
             className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
@@ -525,13 +501,11 @@ export default function PartyPage() {
                 ? "bg-neon-cyan/15 text-neon-cyan border-neon-cyan/40"
                 : "bg-surface border-surfaceBorder text-gray-400 hover:text-white"
             }`}
-            title="Activar/Desactivar Overlay de Stats"
           >
             <Trophy className="h-3.5 w-3.5" />
             <span className="hidden lg:inline text-[11px]">Overlay Stats</span>
           </button>
 
-          {/* Invite Button */}
           <button
             onClick={handleCopyLink}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141a26] border border-[#1F2937] hover:border-neon-cyan/50 transition text-gray-300"
@@ -544,7 +518,6 @@ export default function PartyPage() {
             <span className="hidden md:inline text-[11px]">{copied ? "Copiado" : "Invitar"}</span>
           </button>
 
-          {/* User Profile Menu */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -638,9 +611,7 @@ export default function PartyPage() {
         </div>
       </header>
 
-      {/* Main Area: Stream & Chat */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 w-full overflow-hidden">
-        {/* Stream Area */}
         <main className="flex-1 bg-black relative flex items-center justify-center min-h-0 overflow-hidden">
           {activeStream ? (
             <div className="w-full h-full relative">
@@ -650,7 +621,6 @@ export default function PartyPage() {
                 <YouTubePlayer videoId={activeStream} />
               )}
 
-              {/* Live Game Stats HUD Overlay */}
               {showStatsOverlay && (
                 <div className="absolute top-4 left-4 z-30 max-w-xs sm:max-w-sm rounded-xl border border-neon-cyan/40 bg-[#0B0F14]/85 backdrop-blur-md p-3 shadow-2xl shadow-black/80 pointer-events-auto transition-all">
                   <div className="flex items-center justify-between border-b border-surfaceBorder/60 pb-2 mb-2">
@@ -679,9 +649,7 @@ export default function PartyPage() {
                 </div>
               )}
 
-              {/* Voice Channel Bottom Floating Bar */}
               <div className="absolute bottom-4 left-4 z-30 flex items-center gap-3 bg-[#0B0F14]/90 backdrop-blur-xl border border-surfaceBorder/80 px-4 py-2 rounded-2xl shadow-2xl">
-                {/* Active speaker avatar */}
                 <div className="relative">
                   <div
                     className={`h-9 w-9 rounded-full bg-gradient-to-tr from-brand-purple to-neon-cyan flex items-center justify-center font-bold text-xs text-white transition-all ${
@@ -708,7 +676,6 @@ export default function PartyPage() {
                   <span className="text-[10px] text-gray-400">Canal de voz WebRTC • Ultra baja latencia</span>
                 </div>
 
-                {/* Mic & Deafen toggles */}
                 <div className="flex items-center gap-1.5 ml-2">
                   <button
                     onClick={() => {
@@ -720,7 +687,6 @@ export default function PartyPage() {
                         ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
                         : "bg-red-500/20 border-red-500/40 text-red-400"
                     }`}
-                    title={micEnabled ? "Silenciar micrófono" : "Activar micrófono"}
                   >
                     {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                   </button>
@@ -732,7 +698,6 @@ export default function PartyPage() {
                         ? "bg-red-500/20 border-red-500/40 text-red-400"
                         : "bg-surface border-surfaceBorder text-gray-400 hover:text-white"
                     }`}
-                    title={deafened ? "Desensordecer" : "Ensordecer"}
                   >
                     {deafened ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                   </button>
@@ -771,7 +736,6 @@ export default function PartyPage() {
           )}
         </main>
 
-        {/* Sidebar: Chat */}
         <aside className="w-full lg:w-[340px] border-t lg:border-t-0 lg:border-l border-[#1F2937] bg-[#0F141C] flex flex-col shrink-0 h-64 lg:h-full z-20">
           <div className="h-11 px-3 border-b border-[#1F2937] flex items-center justify-between bg-[#121824]">
             <div className="flex items-center gap-2">
@@ -791,7 +755,6 @@ export default function PartyPage() {
             </div>
           </div>
 
-          {/* Chat Messages Log */}
           <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs font-normal selection:bg-purple-900/50">
             {chatMessages.map((msg) => (
               <div key={msg.id} className="leading-relaxed hover:bg-white/[0.02] -mx-2 px-2 py-0.5 rounded">
@@ -809,7 +772,6 @@ export default function PartyPage() {
             ))}
           </div>
 
-          {/* Chat Form Input */}
           <form onSubmit={handleSendMessage} className="p-2.5 border-t border-[#1F2937] bg-[#121824]">
             <div className="flex items-center gap-2 bg-[#161c28] border border-[#1F2937] rounded-lg px-2.5 py-1.5 focus-within:border-neon-cyan transition">
               <input

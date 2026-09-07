@@ -24,7 +24,6 @@ export async function GET(request: Request) {
     });
 
     if (!room) {
-      // Return default transient room representation
       return NextResponse.json({
         room: {
           code,
@@ -39,7 +38,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ room });
   } catch (error) {
-    // Database connection fallback
     return NextResponse.json({
       room: {
         code,
@@ -83,7 +81,6 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true, room });
     } catch (dbErr) {
-      // Fallback if Postgres credentials are not configured in local environment
       return NextResponse.json({
         success: true,
         room: {

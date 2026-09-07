@@ -55,7 +55,7 @@ model Room {
   id           String            @id @default(cuid())
   code         String            @unique
   name         String            @default("Gaming Watch Party")
-  platform     String            @default("twitch") // twitch | youtube
+  platform     String            @default("twitch")
   streamUrl    String?
   channel      String?
   isPrivate    Boolean           @default(false)
@@ -70,7 +70,7 @@ model RoomParticipant {
   id        String   @id @default(cuid())
   roomId    String
   userId    String?
-  role      String   @default("MEMBER") // HOST | MOD | MEMBER | DJ
+  role      String   @default("MEMBER")
   joinedAt  DateTime @default(now())
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)

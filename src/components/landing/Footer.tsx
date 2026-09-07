@@ -11,7 +11,6 @@ export default function Footer() {
     <footer id="contacto" className="border-t border-white/[0.06] bg-[#05070B] text-gray-400 text-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-14">
-          {/* Col 1: Brand */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-brand-purple to-neon-cyan p-[1px]">
@@ -57,7 +56,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Col 2: Navigation */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
               {t.footer.navTitle}
@@ -86,7 +84,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Col 3: Legal */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
               {t.footer.legalTitle}
@@ -121,7 +118,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom copyright line */}
         <div className="pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <div>{t.footer.rights}</div>
           <div className="flex items-center gap-1 text-gray-400">

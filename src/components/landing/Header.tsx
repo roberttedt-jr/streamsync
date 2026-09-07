@@ -21,9 +21,7 @@ export default function Header({ onCreateRoom }: HeaderProps) {
   return (
     <header className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 pointer-events-none">
       <div className="max-w-6xl mx-auto flex flex-col items-center">
-        {/* Floating Liquid Glass Island */}
         <div className="w-full glass-panel rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-2xl shadow-black/80 pointer-events-auto transition-all duration-300">
-          {/* Logo */}
           <a href="#" className="flex items-center gap-3 group">
             <div className="relative h-9 w-9 rounded-full bg-gradient-to-tr from-brand-purple via-[#7C3AED] to-neon-cyan p-[1px] shadow-lg shadow-brand-purple/20 transition-transform duration-300 group-hover:scale-105">
               <div className="h-full w-full rounded-full bg-[#070A10] flex items-center justify-center">
@@ -40,7 +38,6 @@ export default function Header({ onCreateRoom }: HeaderProps) {
             </div>
           </a>
 
-          {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center gap-1 text-xs font-medium text-gray-300">
             <a
               href="#como-funciona"
@@ -68,9 +65,7 @@ export default function Header({ onCreateRoom }: HeaderProps) {
             </a>
           </nav>
 
-          {/* Right: Language Pill & Liquid Button */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Glass Language Toggle */}
             <div className="flex items-center glass-pill rounded-full p-0.5 text-[11px] font-bold">
               <button
                 onClick={() => setLanguage("es")}
@@ -94,7 +89,6 @@ export default function Header({ onCreateRoom }: HeaderProps) {
               </button>
             </div>
 
-            {/* Liquid Button */}
             <button
               onClick={handleCreateRoom}
               className="liquid-btn-primary rounded-full px-5 py-2 text-xs font-bold text-white flex items-center gap-1.5 group cursor-pointer"
@@ -105,7 +99,6 @@ export default function Header({ onCreateRoom }: HeaderProps) {
             </button>
           </div>
 
-          {/* Mobile Right Controls */}
           <div className="flex md:hidden items-center gap-2">
             <button
               onClick={() => setLanguage(language === "es" ? "en" : "es")}
@@ -124,7 +117,6 @@ export default function Header({ onCreateRoom }: HeaderProps) {
           </div>
         </div>
 
-        {/* Mobile Dropdown Glass Card */}
         {mobileMenuOpen && (
           <div className="w-full mt-2 glass-panel rounded-3xl p-5 space-y-4 shadow-2xl pointer-events-auto md:hidden animate-in fade-in zoom-in-95 duration-200">
             <nav className="flex flex-col gap-2 text-sm font-medium text-gray-300">

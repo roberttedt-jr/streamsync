@@ -8,7 +8,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ videos: [] });
   }
 
-  // Check if input is a direct YouTube Video URL or ID
   const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
   const match = q.match(ytRegex);
   if (match && match[1]) {

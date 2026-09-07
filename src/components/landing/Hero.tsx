@@ -36,17 +36,13 @@ export default function Hero({ onCreateRoom }: HeroProps) {
 
   return (
     <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-36 overflow-hidden">
-      {/* Background Fluid Ambient Aurora Orbs */}
       <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-[750px] h-[450px] bg-gradient-to-tr from-brand-purple/20 via-neon-cyan/15 to-neon-pink/15 blur-[160px] rounded-full pointer-events-none animate-aurora-1 -z-10" />
       <div className="absolute top-[35%] right-[-120px] w-[550px] h-[550px] bg-neon-purple/10 blur-[170px] rounded-full pointer-events-none animate-aurora-2 -z-10" />
       <div className="absolute bottom-[10%] left-[-120px] w-[500px] h-[500px] bg-neon-cyan/10 blur-[170px] rounded-full pointer-events-none -z-10" />
-
-      {/* Subtle minimalist grid */}
       <div className="absolute inset-0 bg-grid-minimal opacity-40 pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          {/* Top Liquid Glass Pill Badge */}
           <div className="inline-flex items-center gap-2.5 rounded-full glass-pill px-4 py-1.5 text-xs font-semibold text-gray-200 mb-8 hover:border-white/20 transition-colors shadow-lg">
             <span className="flex h-2 w-2 rounded-full bg-neon-cyan animate-ping" />
             <span className="text-neon-cyan font-bold uppercase tracking-wider text-[11px]">
@@ -56,7 +52,6 @@ export default function Hero({ onCreateRoom }: HeroProps) {
             <span className="text-gray-300">{t.hero.badgeText}</span>
           </div>
 
-          {/* H1 Title: Refined, crisp and liquid */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08] mb-6">
             <span className="bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
               {t.hero.titleStart}{" "}
@@ -66,12 +61,10 @@ export default function Hero({ onCreateRoom }: HeroProps) {
             </span>
           </h1>
 
-          {/* Subtitle */}
           <p className="text-base sm:text-lg lg:text-xl text-gray-400 max-w-2xl font-normal leading-relaxed mb-10">
             {t.hero.subtitle}
           </p>
 
-          {/* Liquid Action CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center mb-14">
             <button
               onClick={handleCreateRoom}
@@ -92,7 +85,6 @@ export default function Hero({ onCreateRoom }: HeroProps) {
             </a>
           </div>
 
-          {/* Minimalist Trust Features */}
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-xs text-gray-400 font-medium mb-14">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-neon-cyan" />
@@ -109,18 +101,13 @@ export default function Hero({ onCreateRoom }: HeroProps) {
           </div>
         </div>
 
-        {/* Liquid Glass Mockup of a Watch Party */}
         <div className="relative max-w-5xl mx-auto">
-          {/* Subtle aurora backglow */}
           <div className="absolute -inset-1.5 rounded-[2.5rem] bg-gradient-to-r from-neon-cyan/20 via-brand-purple/30 to-neon-pink/20 blur-2xl opacity-60 pointer-events-none -z-10" />
 
           <div className="relative rounded-3xl glass-panel p-1 sm:p-2 shadow-2xl shadow-black overflow-hidden">
-            {/* Glossy Top Edge Highlight */}
             <div className="absolute top-0 left-12 right-12 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
-            {/* Inner Window Container */}
             <div className="rounded-[1.4rem] bg-[#070A10]/95 border border-white/[0.06] overflow-hidden">
-              {/* Mockup Titlebar */}
               <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/[0.06] bg-white/[0.02]">
                 <div className="flex items-center gap-2">
                   <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
@@ -131,7 +118,6 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                   </span>
                 </div>
 
-                {/* Status Badges */}
                 <div className="flex items-center gap-2.5">
                   <div className="glass-pill px-3 py-1 rounded-full text-emerald-400 text-xs font-semibold flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -144,12 +130,9 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                 </div>
               </div>
 
-              {/* Main Player Display Area */}
               <div className="relative aspect-[16/9] w-full bg-gradient-to-b from-[#0B0F1A] to-[#05070B] overflow-hidden flex flex-col justify-between p-4 sm:p-6">
-                {/* Background Game Stream Aesthetics */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent pointer-events-none" />
 
-                {/* Live Stream Header Info */}
                 <div className="relative z-10 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="px-2.5 py-1 rounded-lg bg-red-600/90 text-white font-black text-[11px] tracking-wider flex items-center gap-1.5 shadow-lg shadow-red-900/50">
@@ -168,7 +151,6 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                     </div>
                   </div>
 
-                  {/* Switcher Tab */}
                   <div className="glass-pill p-0.5 rounded-xl flex items-center text-xs">
                     <button
                       onClick={() => handleSwitchTab("twitch")}
@@ -193,7 +175,6 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                   </div>
                 </div>
 
-                {/* Frosted Glass Stats HUD Overlay */}
                 <div className="relative z-10 max-w-xs sm:max-w-sm rounded-2xl glass-card p-3.5 shadow-2xl hidden sm:block">
                   <div className="flex items-center justify-between border-b border-white/[0.08] pb-2 mb-2.5">
                     <div className="flex items-center gap-2 text-xs font-bold text-neon-cyan uppercase tracking-wider">
@@ -220,9 +201,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                   </div>
                 </div>
 
-                {/* Bottom Control & Floating Voice Glass Bar */}
                 <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/[0.06] bg-[#05070B]/80 backdrop-blur-md -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4">
-                  {/* Frosted Avatars & Live Speaking Indicators */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center -space-x-2">
                       <div className="relative">
@@ -256,7 +235,6 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                     </div>
                   </div>
 
-                  {/* Right Audio Sync indicator */}
                   <div className="flex items-center gap-3 text-xs text-gray-300">
                     <div className="hidden sm:flex items-center gap-2">
                       <Volume2 className="h-4 w-4 text-gray-400" />

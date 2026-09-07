@@ -24,7 +24,6 @@ body {
   color: #05070B;
 }
 
-/* Custom subtle scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -38,10 +37,6 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
-
-/* =========================================================================
-   LIQUID GLASS & FLUID MINIMALIST UTILITIES
-   ========================================================================= */
 
 .glass-panel {
   background: rgba(13, 17, 26, 0.55);
@@ -133,7 +128,6 @@ body {
   color: #FFFFFF;
 }
 
-/* Fluid mesh aurora animation */
 @keyframes float-slow {
   0%, 100% {
     transform: translate(0px, 0px) scale(1);
@@ -166,7 +160,6 @@ body {
   animation: float-reverse 20s ease-in-out infinite;
 }
 
-/* Minimalist mesh grid lines */
 .bg-grid-minimal {
   background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 32px 32px;

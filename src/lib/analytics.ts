@@ -27,12 +27,10 @@ export function trackEvent(event: AnalyticsEvent, payload: EventPayload = {}) {
       ...payload,
     };
 
-    // 1. Console debugging for developers
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[StreamSync Analytics] 📊 ${event}`, eventData);
+      console.log(`[StreamSync] ${event}`, eventData);
     }
 
-    // 2. Browser CustomEvent for Google Tag Manager, Umami or PostHog
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("streamsync_event", {
@@ -40,13 +38,10 @@ export function trackEvent(event: AnalyticsEvent, payload: EventPayload = {}) {
         })
       );
 
-      // Support dataLayer if GTM is injected
       const w = window as any;
       if (Array.isArray(w.dataLayer)) {
         w.dataLayer.push(eventData);
       }
     }
-  } catch {
-    // Fail silently to avoid breaking UX
-  }
+  } catch {}
 }
