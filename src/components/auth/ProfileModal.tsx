@@ -12,34 +12,27 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-const PRESET_AVATARS = [
-  { label: "Robot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=MechaZero&backgroundColor=0d0f17" },
-  { label: "Héroe", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=ApexHero&backgroundColor=0d0f17" },
-  { label: "Lobo", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=ShadowWolf&backgroundColor=0d0f17" },
-  { label: "Zorro", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=CyberFox&backgroundColor=0d0f17" },
-  { label: "Panda", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=GamerPanda&backgroundColor=0d0f17" },
-  { label: "Pixel", url: "https://api.dicebear.com/7.x/pixel-art/svg?seed=PixelWarrior&backgroundColor=0d0f17" },
-];
-
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultTab?: "profile" | "connections";
   onOpenRoomWithChannel?: (platform: "twitch" | "youtube", channel: string) => void;
 }
 
 export default function ProfileModal({
   isOpen,
   onClose,
+  defaultTab = "profile",
   onOpenRoomWithChannel,
 }: ProfileModalProps) {
   const { user, updateProfile, linkTwitch, unlinkTwitch, linkYouTube, unlinkYouTube, logout } =
     useAuth();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "connections">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "connections">(defaultTab);
 
   const [name, setName] = useState(user?.name || "");
   const [bio, setBio] = useState(user?.bio || "");
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || PRESET_AVATARS[0].url);
+  const [avatarPreview, setAvatarPreview] = useState<string>(user?.avatar || "");
   const [customAvatar, setCustomAvatar] = useState("");
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
@@ -58,8 +51,8 @@ export default function ProfileModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("La imagen no debe superar los 2MB.");
+    if (file.size > 3 * 1024 * 1024) {
+      setError("La foto no debe superar los 3MB.");
       return;
     }
 
@@ -67,7 +60,7 @@ export default function ProfileModal({
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setCustomAvatar(reader.result);
-        setSelectedAvatar(reader.result);
+        setAvatarPreview(reader.result);
         setUploadedFileName(file.name);
         setError(null);
       }
@@ -79,7 +72,7 @@ export default function ProfileModal({
     e.preventDefault();
     setSaving(true);
     setError(null);
-    const finalAvatar = customAvatar.trim() || selectedAvatar;
+    const finalAvatar = customAvatar.trim() || user.avatar;
 
     await updateProfile({
       name: name.trim(),
@@ -186,64 +179,42 @@ export default function ProfileModal({
         )}
 
         {activeTab === "profile" ? (
-          <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
+          <form onSubmit={handleSaveProfile} className="p-6 space-y-5">
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-2">
-                Cambiar Avatar Gamer (o subir archivo)
+              <label className="block text-xs font-semibold text-gray-300 mb-2">
+                Foto de Perfil
               </label>
-              
-              <div className="flex items-center gap-2.5 mb-3 overflow-x-auto pb-1">
-                {PRESET_AVATARS.map((av, idx) => (
+
+              <div className="flex items-center gap-4 p-3 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="relative h-16 w-16 rounded-2xl overflow-hidden border border-white/20 bg-[#121620] shrink-0">
+                  <img
+                    src={avatarPreview}
+                    alt={user.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="profile-avatar-file"
+                  />
                   <button
-                    key={idx}
                     type="button"
-                    title={av.label}
-                    onClick={() => {
-                      setSelectedAvatar(av.url);
-                      setCustomAvatar("");
-                      setUploadedFileName(null);
-                    }}
-                    className={`relative h-12 w-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-[#121620] cursor-pointer flex items-center justify-center p-1 ${
-                      selectedAvatar === av.url && !customAvatar
-                        ? "border-white scale-105 shadow-md bg-white/[0.08]"
-                        : "border-white/[0.08] opacity-70 hover:opacity-100"
-                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-xs text-white transition cursor-pointer"
                   >
-                    <img src={av.url} alt={av.label} className="h-full w-full object-contain" />
-                    {selectedAvatar === av.url && !customAvatar && (
-                      <div className="absolute top-0.5 right-0.5 h-3.5 w-3.5 bg-white text-black rounded-full flex items-center justify-center">
-                        <Check className="h-2.5 w-2.5 stroke-[3]" />
-                      </div>
-                    )}
+                    <Upload className="h-3.5 w-3.5 text-gray-400" />
+                    <span>{uploadedFileName ? "Cambiar foto" : "Cargar foto desde tu dispositivo"}</span>
                   </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="profile-avatar-file"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs text-gray-300 hover:text-white transition cursor-pointer"
-                >
-                  <Upload className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="truncate">
-                    {uploadedFileName ? `Imagen: ${uploadedFileName}` : "Cargar imagen desde tu dispositivo"}
-                  </span>
-                </button>
-
-                {customAvatar && (
-                  <div className="h-9 w-9 rounded-lg overflow-hidden border border-white/20 shrink-0 bg-[#121620]">
-                    <img src={customAvatar} alt="Preview" className="h-full w-full object-cover" />
-                  </div>
-                )}
+                  <p className="text-[11px] text-gray-500">
+                    {uploadedFileName ? `Archivo: ${uploadedFileName}` : "Formatos compatibles: JPG, PNG o WEBP (máx. 3MB)"}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -266,6 +237,24 @@ export default function ProfileModal({
                 onChange={(e) => setBio(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30 resize-none"
               />
+            </div>
+
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
+              <div className="text-xs">
+                <p className="font-semibold text-white">Canales Vinculados</p>
+                <p className="text-[11px] text-gray-400">
+                  {user.twitchUsername || user.youtubeHandle
+                    ? "Twitch o YouTube configurados"
+                    : "Conecta tus canales de Twitch y YouTube"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("connections")}
+                className="px-3 py-1 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs text-gray-200 hover:text-white transition cursor-pointer"
+              >
+                Configurar
+              </button>
             </div>
 
             <div className="flex items-center justify-between pt-2">
@@ -296,7 +285,9 @@ export default function ProfileModal({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 rounded-lg bg-[#9146FF]/20 flex items-center justify-center text-[#9146FF]">
-                    <Radio className="h-4 w-4" />
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">Canal de Twitch</h4>
@@ -344,7 +335,7 @@ export default function ProfileModal({
                     onOpenRoomWithChannel("twitch", user.twitchUsername!);
                     onClose();
                   }}
-                  className="text-[11px] text-purple-400 hover:underline flex items-center gap-1 pt-1"
+                  className="text-[11px] text-[#A970FF] hover:underline flex items-center gap-1 pt-1 cursor-pointer"
                 >
                   <ExternalLink className="h-3 w-3" />
                   <span>Ver mi canal de Twitch en Watch Party</span>
@@ -356,7 +347,9 @@ export default function ProfileModal({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 rounded-lg bg-red-600/20 flex items-center justify-center text-red-500">
-                    <Tv className="h-4 w-4" />
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">Canal de YouTube</h4>
@@ -391,7 +384,7 @@ export default function ProfileModal({
                 <button
                   type="button"
                   onClick={handleSaveYouTube}
-                  className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer shrink-0"
+                  className="px-4 py-2 rounded-xl bg-[#FF0000] text-white text-xs font-bold hover:bg-[#cc0000] transition-colors cursor-pointer shrink-0"
                 >
                   {user.youtubeHandle ? "Actualizar" : "Vincular"}
                 </button>
@@ -404,7 +397,7 @@ export default function ProfileModal({
                     onOpenRoomWithChannel("youtube", user.youtubeHandle!);
                     onClose();
                   }}
-                  className="text-[11px] text-red-400 hover:underline flex items-center gap-1 pt-1"
+                  className="text-[11px] text-red-400 hover:underline flex items-center gap-1 pt-1 cursor-pointer"
                 >
                   <ExternalLink className="h-3 w-3" />
                   <span>Ver mi canal de YouTube en Watch Party</span>

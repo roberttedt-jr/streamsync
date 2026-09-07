@@ -29,6 +29,7 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authDefaultTab, setAuthDefaultTab] = useState<"login" | "register">("register");
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileDefaultTab, setProfileDefaultTab] = useState<"profile" | "connections">("profile");
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const { language, setLanguage, t } = useLanguage();
@@ -78,9 +79,6 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
               </a>
               <a href="#caracteristicas" className="hover:text-white transition-colors">
                 {t.header.features}
-              </a>
-              <a href="#testimonios" className="hover:text-white transition-colors">
-                {t.header.community}
               </a>
             </nav>
 
@@ -135,13 +133,29 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
 
                       <button
                         onClick={() => {
+                          setProfileDefaultTab("profile");
                           setUserDropdownOpen(false);
                           setProfileModalOpen(true);
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
+                        className="w-full px-3 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
                       >
-                        <Settings className="h-3.5 w-3.5 text-gray-400" />
-                        <span>Mi Perfil & Conexiones</span>
+                        <UserIcon className="h-3.5 w-3.5 text-gray-400" />
+                        <span>Mi Perfil & Foto</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setProfileDefaultTab("connections");
+                          setUserDropdownOpen(false);
+                          setProfileModalOpen(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs text-purple-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center -space-x-1">
+                          <span className="h-2 w-2 rounded-full bg-[#9146FF]" />
+                          <span className="h-2 w-2 rounded-full bg-[#FF0000]" />
+                        </div>
+                        <span>Vincular Twitch / YouTube</span>
                       </button>
 
                       <button
@@ -149,7 +163,7 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
                           setUserDropdownOpen(false);
                           handleCreateRoom();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
+                        className="w-full px-3 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <Plus className="h-3.5 w-3.5 text-gray-400" />
                         <span>Crear Nueva Sala</span>
@@ -222,13 +236,6 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
               >
                 {t.header.features}
               </a>
-              <a
-                href="#testimonios"
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 hover:bg-white/[0.05] rounded-lg"
-              >
-                {t.header.community}
-              </a>
             </div>
 
             <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
@@ -255,12 +262,13 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
+                      setProfileDefaultTab("profile");
                       setMobileMenuOpen(false);
                       setProfileModalOpen(true);
                     }}
-                    className="text-xs font-medium text-white flex items-center gap-1.5"
+                    className="text-xs font-medium text-white flex items-center gap-1.5 cursor-pointer"
                   >
-                    <img src={user.avatar} className="h-5 w-5 rounded-full" />
+                    <img src={user.avatar} className="h-5 w-5 rounded-full object-cover" />
                     <span>@{user.username}</span>
                   </button>
                   <button
@@ -268,7 +276,7 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
                       logout();
                       setMobileMenuOpen(false);
                     }}
-                    className="p-1 text-red-400"
+                    className="p-1 text-red-400 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
@@ -277,13 +285,13 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenAuth("login")}
-                    className="text-xs text-gray-300 px-2 py-1"
+                    className="text-xs text-gray-300 px-2 py-1 cursor-pointer"
                   >
                     Entrar
                   </button>
                   <button
                     onClick={() => handleOpenAuth("register")}
-                    className="text-xs bg-white text-black px-3 py-1 rounded-lg font-bold"
+                    className="text-xs bg-white text-black px-3 py-1 rounded-lg font-bold cursor-pointer"
                   >
                     Registro
                   </button>
@@ -303,6 +311,7 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
       <ProfileModal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
+        defaultTab={profileDefaultTab}
         onOpenRoomWithChannel={onOpenRoomWithChannel}
       />
     </>

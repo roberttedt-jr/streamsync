@@ -8,8 +8,6 @@ import Header from "@/components/landing/Header";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Features from "@/components/landing/Features";
-import Testimonials from "@/components/landing/Testimonials";
-import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 import AuthModal from "@/components/auth/AuthModal";
 import { trackEvent } from "@/lib/analytics";
@@ -95,8 +93,6 @@ function LandingContent() {
         <Hero onCreateRoom={() => handleCreateRoomRequest("twitch", "ibai")} />
         <HowItWorks onCreateRoom={() => handleCreateRoomRequest("twitch", "ibai")} />
         <Features />
-        <Testimonials />
-        <CTA onCreateRoom={() => handleCreateRoomRequest("twitch", "ibai")} />
       </main>
       <Footer />
 

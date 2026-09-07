@@ -48,17 +48,9 @@ function persistUsersToFile(map: Map<string, StoredUser>) {
 const memoryUsers = loadStoredUsers();
 const activeSessions = new Map<string, string>();
 
-export const DEFAULT_AVATARS = [
-  "https://api.dicebear.com/7.x/bottts/svg?seed=MechaZero&backgroundColor=0d0f17",
-  "https://api.dicebear.com/7.x/adventurer/svg?seed=ApexHero&backgroundColor=0d0f17",
-  "https://api.dicebear.com/7.x/thumbs/svg?seed=ShadowWolf&backgroundColor=0d0f17",
-  "https://api.dicebear.com/7.x/thumbs/svg?seed=CyberFox&backgroundColor=0d0f17",
-  "https://api.dicebear.com/7.x/thumbs/svg?seed=GamerPanda&backgroundColor=0d0f17",
-  "https://api.dicebear.com/7.x/pixel-art/svg?seed=PixelWarrior&backgroundColor=0d0f17",
-];
-
-export function getDefaultAvatars(): string[] {
-  return DEFAULT_AVATARS;
+export function generateInitialAvatar(name: string): string {
+  const initials = (name || "SS").substring(0, 2).toUpperCase();
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="32" fill="%23141824"/><text x="50%" y="54%" font-size="44" font-weight="bold" fill="%23FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system, sans-serif">${initials}</text></svg>`;
 }
 
 export function hashPassword(password: string, salt: string): string {
@@ -98,7 +90,7 @@ export async function createUser(data: {
   const salt = generateSalt();
   const passwordHash = hashPassword(data.password, salt);
   const id = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const avatar = data.avatar || DEFAULT_AVATARS[0];
+  const avatar = data.avatar || generateInitialAvatar(data.name || normalizedUsername);
 
   const newUser: StoredUser = {
     id,
@@ -107,7 +99,7 @@ export async function createUser(data: {
     email: normalizedEmail,
     avatar,
     bio: data.bio || "",
-    twitchUsername: data.twitchUsername ? data.twitchUsername.trim().toLowerCase().replace(/^https?:\/\/(www\.)?twitch\.tv\//, "") : "",
+    twitchUsername: data.twitchUsername ? data.twitchUsername.trim().toLowerCase().replace(/^https?:\/\/(www\.)?twitch\.tv\//, "").replace(/^@/, "") : "",
     youtubeHandle: data.youtubeHandle ? data.youtubeHandle.trim().replace(/^https?:\/\/(www\.)?youtube\.com\//, "") : "",
     createdAt: new Date().toISOString(),
     passwordHash,
@@ -171,7 +163,7 @@ export async function authenticateUser(
           name: dbUser.name || "Gamer",
           username: dbUser.username || "gamer",
           email: dbUser.email || "",
-          avatar: dbUser.image || DEFAULT_AVATARS[0],
+          avatar: dbUser.image || generateInitialAvatar(dbUser.name || "Gamer"),
           createdAt: dbUser.createdAt.toISOString(),
         };
       }
