@@ -19,14 +19,7 @@ import {
   Gamepad2,
 } from "lucide-react";
 
-interface SuggestionItem {
-  name: string;
-  platform: "twitch" | "youtube";
-  category: string;
-  id?: string;
-}
-
-const POPULAR_CHANNELS: SuggestionItem[] = [
+const POPULAR_CHANNELS = [
   { name: "ibai", platform: "twitch", category: "Charlando / Eventos" },
   { name: "elxokas", platform: "twitch", category: "Gaming / Variedad" },
   { name: "auronplay", platform: "twitch", category: "Minecraft / GTA" },
@@ -40,9 +33,8 @@ const POPULAR_CHANNELS: SuggestionItem[] = [
 ];
 
 export default function PartyPage() {
-  const routeParams = useParams();
-  const rawRoomId = routeParams?.roomId;
-  const roomId = typeof rawRoomId === "string" ? rawRoomId : "default";
+  const routeParams: any = useParams();
+  const roomId = routeParams?.roomId ? String(routeParams.roomId) : "default";
 
   const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
   const [twitchChannel, setTwitchChannel] = useState("ibai");
@@ -52,7 +44,7 @@ export default function PartyPage() {
   const [copied, setCopied] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
 
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; time: string }>>([
+  const [chatMessages, setChatMessages] = useState<any[]>([
     { sender: "Sistema", text: `¡Bienvenidos a la sala #${roomId}! Elige un stream y comparte el enlace.`, time: "Ahora" },
   ]);
   const [messageInput, setMessageInput] = useState("");
@@ -76,23 +68,15 @@ export default function PartyPage() {
 
   const extractYouTubeId = (input: string): string => {
     const trimmed = input.trim();
-    if (trimmed.includes("v=")) {
-      return trimmed.split("v=")[1].split("&")[0];
-    }
-    if (trimmed.includes("youtu.be/")) {
-      return trimmed.split("youtu.be/")[1].split("?")[0];
-    }
-    if (trimmed.includes("youtube.com/live/")) {
-      return trimmed.split("youtube.com/live/")[1].split("?")[0];
-    }
-    if (trimmed.includes("youtube.com/embed/")) {
-      return trimmed.split("youtube.com/embed/")[1].split("?")[0];
-    }
+    if (trimmed.includes("v=")) return trimmed.split("v=")[1].split("&")[0];
+    if (trimmed.includes("youtu.be/")) return trimmed.split("youtu.be/")[1].split("?")[0];
+    if (trimmed.includes("youtube.com/live/")) return trimmed.split("youtube.com/live/")[1].split("?")[0];
+    if (trimmed.includes("youtube.com/embed/")) return trimmed.split("youtube.com/embed/")[1].split("?")[0];
     return trimmed;
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSubmit = (e?: any) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!query.trim()) return;
 
     if (platform === "twitch") {
@@ -111,7 +95,7 @@ export default function PartyPage() {
     setShowSuggestions(false);
   };
 
-  const handleSelectSuggestion = (suggestion: SuggestionItem) => {
+  const handleSelectSuggestion = (suggestion: any) => {
     if (suggestion.platform === "twitch") {
       setTwitchChannel(suggestion.name);
     } else if (suggestion.id) {
@@ -121,8 +105,8 @@ export default function PartyPage() {
     setShowSuggestions(false);
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendMessage = (e: any) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!messageInput.trim()) return;
     setChatMessages((prev) => [
       ...prev,
@@ -133,7 +117,6 @@ export default function PartyPage() {
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-full bg-background text-gray-100 overflow-hidden font-sans">
-      {/* SECCIÓN PRINCIPAL (Vídeo + Controles) */}
       <div className="flex-1 flex flex-col min-w-0 p-4 lg:p-6 overflow-y-auto">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-surfaceBorder/80 mb-4">
           <div className="flex items-center gap-3">
@@ -142,7 +125,7 @@ export default function PartyPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
                 <h1 className="text-lg lg:text-xl font-extrabold text-white">
                   Sala <span className="text-brand-purple">#{roomId}</span>
                 </h1>
@@ -202,7 +185,6 @@ export default function PartyPage() {
           </div>
         </div>
 
-        {/* Reproductor de Vídeo */}
         <div className="w-full flex-1 flex items-center justify-center">
           <div className="w-full max-w-5xl">
             {platform === "twitch" ? (
@@ -213,7 +195,6 @@ export default function PartyPage() {
           </div>
         </div>
 
-        {/* Barra de Búsqueda y Sugerencias */}
         <div className="relative mt-4 w-full max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="flex gap-2">
             <div className="relative flex-1">
@@ -268,7 +249,6 @@ export default function PartyPage() {
         </div>
       </div>
 
-      {/* BARRA LATERAL (Voz y Chat) */}
       <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-surfaceBorder bg-surface/70 backdrop-blur-md flex flex-col h-80 lg:h-full">
         <div className="p-4 border-b border-surfaceBorder flex items-center justify-between">
           <div className="flex items-center gap-2">
