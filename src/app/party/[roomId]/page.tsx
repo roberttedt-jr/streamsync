@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useParams } from "next/navigation";
 import TwitchPlayer from "@/components/video/TwitchPlayer";
 import YouTubePlayer from "@/components/video/YouTubePlayer";
 import {
@@ -18,8 +19,14 @@ import {
   Gamepad2,
 } from "lucide-react";
 
-// Lista curada de recomendaciones populares para el autocompletado
-const POPULAR_CHANNELS = [
+interface SuggestionItem {
+  name: string;
+  platform: "twitch" | "youtube";
+  category: string;
+  id?: string;
+}
+
+const POPULAR_CHANNELS: SuggestionItem[] = [
   { name: "ibai", platform: "twitch", category: "Charlando / Eventos" },
   { name: "elxokas", platform: "twitch", category: "Gaming / Variedad" },
   { name: "auronplay", platform: "twitch", category: "Minecraft / GTA" },
@@ -32,12 +39,10 @@ const POPULAR_CHANNELS = [
   { name: "GameSpot Live", id: "0qL3w2eG6Jk", platform: "youtube", category: "Gaming / Noticias" },
 ];
 
-export default function PartyPage({
-  params,
-}: {
-  params: { roomId: string };
-}) {
-  const roomId = params.roomId;
+export default function PartyPage() {
+  const routeParams = useParams();
+  const rawRoomId = routeParams?.roomId;
+  const roomId = typeof rawRoomId === "string" ? rawRoomId : "default";
 
   const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
   const [twitchChannel, setTwitchChannel] = useState("ibai");
@@ -47,13 +52,11 @@ export default function PartyPage({
   const [copied, setCopied] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
 
-  // Chat de prueba local
   const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; time: string }>>([
-    { sender: "Sistema", text: `¡Bienvenidos a la sala ${roomId}! Elige un stream y comparte el enlace.`, time: "Ahora" },
+    { sender: "Sistema", text: `¡Bienvenidos a la sala #${roomId}! Elige un stream y comparte el enlace.`, time: "Ahora" },
   ]);
   const [messageInput, setMessageInput] = useState("");
 
-  // Copiar enlace al portapapeles
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
       navigator.clipboard.writeText(window.location.href);
@@ -62,7 +65,6 @@ export default function PartyPage({
     }
   };
 
-  // Filtrado de sugerencias en tiempo real según lo que escribe el usuario
   const filteredSuggestions = useMemo(() => {
     if (!query.trim()) return [];
     return POPULAR_CHANNELS.filter(
@@ -72,30 +74,23 @@ export default function PartyPage({
     );
   }, [query, platform]);
 
-  // Parser inteligente para extraer IDs de cualquier formato de YouTube
   const extractYouTubeId = (input: string): string => {
     const trimmed = input.trim();
-    // Enlace tipo: https://www.youtube.com/watch?v=VIDEO_ID
     if (trimmed.includes("v=")) {
       return trimmed.split("v=")[1].split("&")[0];
     }
-    // Enlace corto tipo: https://youtu.be/VIDEO_ID
     if (trimmed.includes("youtu.be/")) {
       return trimmed.split("youtu.be/")[1].split("?")[0];
     }
-    // Enlace de directo tipo: https://www.youtube.com/live/VIDEO_ID
     if (trimmed.includes("youtube.com/live/")) {
       return trimmed.split("youtube.com/live/")[1].split("?")[0];
     }
-    // Enlace embed tipo: https://www.youtube.com/embed/VIDEO_ID
     if (trimmed.includes("youtube.com/embed/")) {
       return trimmed.split("youtube.com/embed/")[1].split("?")[0];
     }
-    // Si ya es un ID de 11 caracteres suelto
     return trimmed;
   };
 
-  // Enviar y cargar el stream
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
@@ -116,8 +111,7 @@ export default function PartyPage({
     setShowSuggestions(false);
   };
 
-  // Seleccionar sugerencia
-  const handleSelectSuggestion = (suggestion: typeof POPULAR_CHANNELS[0]) => {
+  const handleSelectSuggestion = (suggestion: SuggestionItem) => {
     if (suggestion.platform === "twitch") {
       setTwitchChannel(suggestion.name);
     } else if (suggestion.id) {
@@ -127,7 +121,6 @@ export default function PartyPage({
     setShowSuggestions(false);
   };
 
-  // Enviar mensaje al chat simulado
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim()) return;
@@ -142,7 +135,6 @@ export default function PartyPage({
     <div className="flex flex-col lg:flex-row h-screen w-full bg-background text-gray-100 overflow-hidden font-sans">
       {/* SECCIÓN PRINCIPAL (Vídeo + Controles) */}
       <div className="flex-1 flex flex-col min-w-0 p-4 lg:p-6 overflow-y-auto">
-        {/* Barra superior de la sala */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-surfaceBorder/80 mb-4">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-surface border border-surfaceBorder flex items-center justify-center text-brand-purple">
@@ -160,7 +152,6 @@ export default function PartyPage({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Botón copiar enlace */}
             <button
               onClick={handleCopyLink}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface border border-surfaceBorder hover:border-gray-600 transition text-gray-300"
@@ -178,7 +169,6 @@ export default function PartyPage({
               )}
             </button>
 
-            {/* Pestañas de Plataforma */}
             <div className="flex items-center bg-surface border border-surfaceBorder p-1 rounded-lg">
               <button
                 onClick={() => {
@@ -252,12 +242,11 @@ export default function PartyPage({
             </button>
           </form>
 
-          {/* Menú de Recomendaciones en Vivo */}
           {showSuggestions && filteredSuggestions.length > 0 && (
             <div className="absolute left-0 right-0 top-full mt-2 bg-surface/95 backdrop-blur-md border border-surfaceBorder rounded-xl shadow-2xl z-50 overflow-hidden">
               <div className="p-2 border-b border-surfaceBorder/60 flex items-center gap-1.5 text-[11px] font-semibold text-gray-400">
                 <Sparkles className="h-3 w-3 text-brand-purple" />
-                Canales recomendados para {platform === "twitch" ? "Twitch" : "YouTube"}
+                Canales recomendados
               </div>
               <div className="max-h-48 overflow-y-auto">
                 {filteredSuggestions.map((item, idx) => (
@@ -281,7 +270,6 @@ export default function PartyPage({
 
       {/* BARRA LATERAL (Voz y Chat) */}
       <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-surfaceBorder bg-surface/70 backdrop-blur-md flex flex-col h-80 lg:h-full">
-        {/* Cabecera de participantes y voz */}
         <div className="p-4 border-b border-surfaceBorder flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-brand-purple" />
@@ -308,7 +296,6 @@ export default function PartyPage({
           </div>
         </div>
 
-        {/* Lista de Usuarios conectados */}
         <div className="px-4 py-2 bg-surfaceBorder/20 border-b border-surfaceBorder/40 flex items-center gap-2 text-xs">
           <div className="h-6 w-6 rounded-full bg-brand-purple flex items-center justify-center font-bold text-[10px] text-white">
             TÚ
@@ -319,7 +306,6 @@ export default function PartyPage({
           </span>
         </div>
 
-        {/* Mensajes del Chat */}
         <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
           {chatMessages.map((msg, index) => (
             <div key={index} className="flex flex-col gap-0.5">
@@ -334,7 +320,6 @@ export default function PartyPage({
           ))}
         </div>
 
-        {/* Input del Chat */}
         <form onSubmit={handleSendMessage} className="p-3 border-t border-surfaceBorder bg-surface">
           <div className="flex items-center gap-2 bg-background border border-surfaceBorder rounded-xl px-3 py-1.5 focus-within:border-brand-purple transition">
             <input
