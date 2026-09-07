@@ -4,14 +4,9 @@ import React, { useState } from "react";
 import {
   Play,
   ArrowRight,
-  Sparkles,
   Users,
-  Mic,
-  Volume2,
-  Radio,
-  Trophy,
-  BarChart2,
   ChevronRight,
+  Radio,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
@@ -22,7 +17,6 @@ interface HeroProps {
 
 export default function Hero({ onCreateRoom }: HeroProps) {
   const [activeTab, setActiveTab] = useState<"twitch" | "youtube">("twitch");
-  const [showOverlay, setShowOverlay] = useState(false);
   const { t } = useLanguage();
 
   const handleCreateRoom = () => {
@@ -93,7 +87,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                 <div className="h-2.5 w-2.5 rounded-full bg-white/[0.15]" />
                 <div className="h-2.5 w-2.5 rounded-full bg-white/[0.15]" />
                 <span className="ml-2 text-[11px] font-mono text-gray-400 hidden sm:inline">
-                  streamsync.gg/party/squad-finals
+                  streamsync.gg/party/squad-gaming
                 </span>
               </div>
 
@@ -123,74 +117,34 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                     <p className="text-[11px] text-gray-400 flex items-center gap-1.5">
                       <span>{t.hero.mockupTeams}</span>
                       <span>•</span>
-                      <span>{activeTab === "twitch" ? "VCT_ES (Twitch)" : "VCT Oficial (YouTube)"}</span>
+                      <span>{activeTab === "twitch" ? "ibai • Twitch" : "Directo Especial • YouTube"}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="glass-pill p-0.5 rounded-lg flex items-center text-xs">
                   <button
-                    onClick={() => setShowOverlay(!showOverlay)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
-                      showOverlay
-                        ? "bg-white text-black border-white"
-                        : "bg-white/[0.04] text-gray-300 border-white/[0.08] hover:text-white"
+                    onClick={() => handleSwitchTab("twitch")}
+                    className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                      activeTab === "twitch"
+                        ? "bg-[#9146FF] text-white"
+                        : "text-gray-400 hover:text-white"
                     }`}
                   >
-                    <BarChart2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">HUD Stats</span>
+                    Twitch
                   </button>
-
-                  <div className="glass-pill p-0.5 rounded-lg flex items-center text-xs">
-                    <button
-                      onClick={() => handleSwitchTab("twitch")}
-                      className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all ${
-                        activeTab === "twitch"
-                          ? "bg-[#9146FF] text-white"
-                          : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      Twitch
-                    </button>
-                    <button
-                      onClick={() => handleSwitchTab("youtube")}
-                      className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all ${
-                        activeTab === "youtube"
-                          ? "bg-red-600 text-white"
-                          : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      YouTube
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleSwitchTab("youtube")}
+                    className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                      activeTab === "youtube"
+                        ? "bg-red-600 text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    YouTube
+                  </button>
                 </div>
               </div>
-
-              {showOverlay && (
-                <div className="relative z-10 max-w-xs rounded-xl bg-[#0D0F17]/95 border border-white/[0.1] p-3 shadow-xl animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white">
-                      <Trophy className="h-3 w-3 text-yellow-400" />
-                      <span>{t.hero.mockupOverlayTitle}</span>
-                    </div>
-                    <span className="text-[10px] text-gray-400 font-mono">BIND</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                      <div className="text-[9px] text-gray-400">{t.hero.mockupRounds}</div>
-                      <div className="font-bold text-white text-xs mt-0.5">11 - 10</div>
-                    </div>
-                    <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                      <div className="text-[9px] text-gray-400">{t.hero.mockupTopFragger}</div>
-                      <div className="font-bold text-white text-xs truncate mt-0.5">Chronicle</div>
-                    </div>
-                    <div className="p-1.5 rounded-lg bg-white/[0.02]">
-                      <div className="text-[9px] text-gray-400">{t.hero.mockupEconomy}</div>
-                      <div className="font-bold text-emerald-400 text-xs mt-0.5">Full Buy</div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="relative z-10 flex items-center justify-between pt-3 border-t border-white/[0.06] bg-[#090B10]/90 -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 px-4 sm:px-6 py-3">
                 <div className="flex items-center gap-3">

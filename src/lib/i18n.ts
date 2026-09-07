@@ -25,8 +25,8 @@ export const translations = {
       trustVoice: "Voz WebRTC integrada",
       mockupSynced: "Sincronizado • 4ms",
       mockupGamers: "4 gamers",
-      mockupTourney: "VALORANT Champions Tour — Grand Finals",
-      mockupTeams: "Fnatic vs Sentinels",
+      mockupTourney: "Gaming Watch Party en Directo",
+      mockupTeams: "Directo sincronizado con tu squad",
       mockupOverlayTitle: "Overlay de Partida en Vivo",
       mockupRounds: "Rondas",
       mockupTopFragger: "Top Fragger",
@@ -108,8 +108,8 @@ export const translations = {
           age: "19 años",
           role: "Capitán equipo amateur",
           content:
-            "Lo usamos para ver torneos de Valorant y va perfecto, cero lag entre pantallas. Ya no nos comemos los spoilers que nos pasaban siempre en Discord.",
-          tag: "Valorant Champions",
+            "Lo usamos para ver streams y torneos en directo con amigos y va perfecto, cero lag entre pantallas. Ya no nos comemos los spoilers que nos pasaban siempre en Discord.",
+          tag: "Gaming Squad",
         },
         {
           name: "Sara",
@@ -179,8 +179,8 @@ export const translations = {
       trustVoice: "Integrated WebRTC voice",
       mockupSynced: "Synchronized • 4ms",
       mockupGamers: "4 gamers",
-      mockupTourney: "VALORANT Champions Tour — Grand Finals",
-      mockupTeams: "Fnatic vs Sentinels",
+      mockupTourney: "Live Gaming Watch Party",
+      mockupTeams: "Synchronized live squad session",
       mockupOverlayTitle: "Live Match Overlay",
       mockupRounds: "Rounds",
       mockupTopFragger: "Top Fragger",
@@ -262,8 +262,8 @@ export const translations = {
           age: "19 y/o",
           role: "Amateur Team Captain",
           content:
-            "We use it to watch Valorant tournaments and it's flawless, zero screen lag. No more getting spoiled by Discord voice calls.",
-          tag: "Valorant Champions",
+            "We use it to watch live streams and esports tournaments with friends and it's flawless, zero screen lag. No more getting spoiled by Discord voice calls.",
+          tag: "Gaming Squad",
         },
         {
           name: "Sara",
