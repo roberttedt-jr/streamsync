@@ -34,6 +34,7 @@ interface AuthContextType {
     youtubeHandle?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   linkTwitch: (channel: string) => Promise<{ success: boolean; error?: string }>;
   unlinkTwitch: () => Promise<{ success: boolean; error?: string }>;
@@ -49,6 +50,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.user) {
+        setUser(data.user);
+        localStorage.setItem("streamsync_auth_user", JSON.stringify(data.user));
+      } else {
+        setUser(null);
+        localStorage.removeItem("streamsync_auth_user");
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem("streamsync_auth_user");
@@ -57,17 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) {
-          setUser(data.user);
-          localStorage.setItem("streamsync_auth_user", JSON.stringify(data.user));
-        }
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
+    refreshUser().finally(() => setIsLoading(false));
   }, []);
+
 
   const login = async (identifier: string, password: string) => {
     try {
@@ -213,6 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginAsGuest,
         register,
         logout,
+        refreshUser,
         updateProfile,
         linkTwitch,
         unlinkTwitch,

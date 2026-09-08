@@ -23,12 +23,16 @@ interface CreateRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultCategory?: string;
+  defaultPlatform?: "twitch" | "youtube";
+  defaultChannel?: string;
 }
 
 export default function CreateRoomModal({
   isOpen,
   onClose,
   defaultCategory = "Gaming",
+  defaultPlatform = "twitch",
+  defaultChannel = "",
 }: CreateRoomModalProps) {
   const router = useRouter();
   const { user, incrementRoomsCreated } = useAuth();
@@ -36,10 +40,19 @@ export default function CreateRoomModal({
 
   // Mandatory fields
   const [name, setName] = useState("");
-  const [platform, setPlatform] = useState<"twitch" | "youtube">("twitch");
-  const [streamUrl, setStreamUrl] = useState("");
+  const [platform, setPlatform] = useState<"twitch" | "youtube">(defaultPlatform);
+  const [streamUrl, setStreamUrl] = useState(defaultChannel);
   const [category, setCategory] = useState(defaultCategory);
   const [isPrivate, setIsPrivate] = useState(false);
+
+  // Sync defaults when modal opens with prefilled stream
+  React.useEffect(() => {
+    if (isOpen) {
+      if (defaultPlatform) setPlatform(defaultPlatform);
+      if (defaultChannel) setStreamUrl(defaultChannel);
+    }
+  }, [isOpen, defaultPlatform, defaultChannel]);
+
 
   // Optional fields
   const [description, setDescription] = useState("");

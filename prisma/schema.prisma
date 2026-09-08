@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -90,15 +91,17 @@ model RoomParticipant {
 }
 
 model FollowedChannel {
-  id          String   @id @default(cuid())
-  userId      String
-  platform    String
-  channelId   String
-  displayName String
-  avatarUrl   String?
-  category    String?
-  isLive      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  platform     String
+  channelId    String
+  displayName  String
+  avatarUrl    String?
+  category     String?
+  isLive       Boolean  @default(false)
+  url          String?
+  lastSyncedAt DateTime @default(now()) @updatedAt
+  createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -16,6 +16,17 @@ export async function POST() {
     expires: new Date(0),
     path: "/",
   });
+  response.cookies.set("next-auth.session-token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    path: "/",
+  });
+  response.cookies.set("__Secure-next-auth.session-token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    path: "/",
+    secure: true,
+  });
 
   return response;
 }

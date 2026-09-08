@@ -22,6 +22,10 @@ import {
   Globe,
   Sparkles,
   RefreshCw,
+  Link2,
+  ExternalLink,
+  Flame,
+  CheckCircle2,
 } from "lucide-react";
 
 interface RoomItem {
@@ -38,23 +42,71 @@ interface RoomItem {
   createdAt?: string;
 }
 
+interface FollowedChannelItem {
+  id: string;
+  platform: "TWITCH" | "YOUTUBE";
+  channelId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  category: string | null;
+  isLive: boolean;
+  url: string | null;
+  lastSyncedAt: string;
+}
+
+interface IntegrationStatus {
+  twitch: {
+    connected: boolean;
+    hasFollowsPermission: boolean;
+    displayName: string | null;
+    avatarUrl: string | null;
+    channelsCount: number;
+    liveCount: number;
+    lastSyncedAt: string | null;
+  };
+  youtube: {
+    connected: boolean;
+    hasYoutubePermission: boolean;
+    displayName: string | null;
+    avatarUrl: string | null;
+    channelsCount: number;
+    lastSyncedAt: string | null;
+  };
+  canUnlink: boolean;
+  totalAccounts: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
 
+  // Rooms state
   const [userRooms, setUserRooms] = useState<RoomItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+
+  // Integrations & channels state
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
+  const [channels, setChannels] = useState<FollowedChannelItem[]>([]);
+  const [loadingIntegrations, setLoadingIntegrations] = useState(true);
+  const [syncingLive, setSyncingLive] = useState(false);
+
+  // Active sub-tab for "Desde tus cuentas"
+  const [accountsTab, setAccountsTab] = useState<"live" | "youtube">("live");
+
+  // Create room modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [modalPlatform, setModalPlatform] = useState<"twitch" | "youtube">("twitch");
+  const [modalChannel, setModalChannel] = useState("");
 
   useEffect(() => {
     fetchUserRooms();
+    fetchIntegrationsAndChannels();
   }, [user]);
 
   const fetchUserRooms = async () => {
-    setLoading(true);
+    setLoadingRooms(true);
     try {
-      // If user is authenticated, load their hosted rooms
       if (user?.id) {
         const res = await fetch(`/api/rooms?hostId=${encodeURIComponent(user.id)}`);
         const data = await res.json();
@@ -69,16 +121,84 @@ export default function DashboardPage() {
     } catch {
       setUserRooms([]);
     } finally {
-      setLoading(false);
+      setLoadingRooms(false);
     }
   };
 
+  const fetchIntegrationsAndChannels = async () => {
+    setLoadingIntegrations(true);
+    try {
+      const [statusRes, channelsRes] = await Promise.all([
+        fetch("/api/integrations/status"),
+        fetch("/api/integrations/channels"),
+      ]);
+
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        setIntegrationStatus(statusData);
+      }
+
+      if (channelsRes.ok) {
+        const channelsData = await channelsRes.json();
+        setChannels(channelsData.channels || []);
+      }
+    } catch (err) {
+      console.error("Error fetching integrations:", err);
+    } finally {
+      setLoadingIntegrations(false);
+    }
+  };
+
+  const handleRefreshLiveStatus = async () => {
+    if (!integrationStatus?.twitch.connected) return;
+    setSyncingLive(true);
+    try {
+      const res = await fetch("/api/integrations/twitch/sync", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        addToast(
+          `Directos actualizados: ${data.liveCount} streamers en vivo`,
+          "success"
+        );
+        await fetchIntegrationsAndChannels();
+      } else {
+        addToast(data.message || "Error al actualizar estado de directos", "error");
+      }
+    } catch {
+      addToast("Error al conectar con Twitch", "error");
+    } finally {
+      setSyncingLive(false);
+    }
+  };
+
+  const handleOpenCreateWithStream = (platform: "twitch" | "youtube", channel: string) => {
+    setModalPlatform(platform);
+    setModalChannel(channel);
+    setIsCreateModalOpen(true);
+  };
+
+  const liveTwitchChannels = channels.filter(
+    (c) => c.platform === "TWITCH" && c.isLive
+  );
+  const allTwitchChannels = channels.filter((c) => c.platform === "TWITCH");
+  const youtubeChannels = channels.filter((c) => c.platform === "YOUTUBE");
+
+  const hasAnyAccountConnected = Boolean(
+    integrationStatus?.twitch.connected || integrationStatus?.youtube.connected
+  );
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col justify-between">
-      <Navbar onCreateRoom={() => setIsCreateModalOpen(true)} />
+      <Navbar
+        onCreateRoom={() => {
+          setModalPlatform("twitch");
+          setModalChannel("");
+          setIsCreateModalOpen(true);
+        }}
+      />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* User Welcome & Stats Banner */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+        {/* User Welcome Banner */}
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-purple-950/40 via-purple-900/20 to-cyan-950/30 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -105,21 +225,24 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <p className="text-xs sm:text-sm text-gray-400">
-                  {user?.email || (user?.username ? `@${user.username}` : "Usuario de StreamSync")} • Sincronización WebSockets a 0ms
+                  {user?.email || (user?.username ? `@${user.username}` : "Usuario registrado")} • Watch parties sincronizadas a 0ms
                 </p>
 
-                {/* Connected account pills */}
-                <div className="flex items-center gap-2 mt-2">
-                  {user?.twitchUsername ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30">
+                {/* Connected account tags */}
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {integrationStatus?.twitch.connected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30">
                       <Radio className="w-3 h-3" />
-                      <span>Twitch: {user.twitchUsername}</span>
+                      <span>Twitch: {integrationStatus.twitch.displayName}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     </span>
                   ) : null}
-                  {user?.youtubeHandle ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30">
+
+                  {integrationStatus?.youtube.connected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30">
                       <Tv className="w-3 h-3" />
-                      <span>YouTube: {user.youtubeHandle}</span>
+                      <span>YouTube: {integrationStatus.youtube.displayName}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     </span>
                   ) : null}
                 </div>
@@ -129,13 +252,18 @@ export default function DashboardPage() {
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <Link
-                href="/room/demo"
-                className="px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 transition"
+                href="/profile"
+                className="px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 transition flex items-center gap-1.5"
               >
-                Probar Sala Demo
+                <Link2 className="w-3.5 h-3.5 text-purple-400" />
+                <span>Gestionar Cuentas</span>
               </Link>
               <button
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => {
+                  setModalPlatform("twitch");
+                  setModalChannel("");
+                  setIsCreateModalOpen(true);
+                }}
                 className="liquid-btn-primary flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-xl shadow-purple-600/30 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -145,12 +273,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* User Hosted Rooms Section */}
+        {/* SECTION 1: Tu Actividad (Salas creadas por el usuario) */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Tus Salas de Watch Party</span>
+                <span>Tu Actividad</span>
                 {userRooms.length > 0 && (
                   <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
                     {userRooms.length}
@@ -158,7 +286,7 @@ export default function DashboardPage() {
                 )}
               </h2>
               <p className="text-xs text-gray-400">
-                Salas que has creado y gestionas en tu cuenta.
+                Watch parties activas o creadas por ti en StreamSync.
               </p>
             </div>
 
@@ -166,14 +294,14 @@ export default function DashboardPage() {
               <button
                 onClick={fetchUserRooms}
                 className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition cursor-pointer"
-                title="Actualizar"
+                title="Actualizar salas"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingRooms ? "animate-spin" : ""}`} />
               </button>
             )}
           </div>
 
-          {loading ? (
+          {loadingRooms ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
                 <div
@@ -183,8 +311,8 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : userRooms.length === 0 ? (
-            /* Required empty state when user has no rooms */
-            <div className="p-12 sm:p-16 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-xl mx-auto my-8 space-y-4">
+            /* Clean empty state with zero fake data */
+            <div className="p-12 sm:p-14 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-xl mx-auto my-4 space-y-4">
               <div className="w-16 h-16 rounded-3xl bg-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto shadow-xl">
                 <Tv className="w-8 h-8" />
               </div>
@@ -199,7 +327,11 @@ export default function DashboardPage() {
 
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
-                  onClick={() => setIsCreateModalOpen(true)}
+                  onClick={() => {
+                    setModalPlatform("twitch");
+                    setModalChannel("");
+                    setIsCreateModalOpen(true);
+                  }}
                   className="liquid-btn-primary px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-purple-600/25 hover:scale-105 transition"
                 >
                   <Plus className="w-4 h-4" />
@@ -231,7 +363,11 @@ export default function DashboardPage() {
                             : "bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30"
                         }`}
                       >
-                        {room.platform === "twitch" ? <Radio className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
+                        {room.platform === "twitch" ? (
+                          <Radio className="w-3 h-3" />
+                        ) : (
+                          <Tv className="w-3 h-3" />
+                        )}
                         <span>{room.platform}</span>
                       </span>
 
@@ -273,7 +409,9 @@ export default function DashboardPage() {
                     <button
                       onClick={() =>
                         router.push(
-                          `/room/${room.code}?platform=${room.platform}&stream=${encodeURIComponent(room.channel)}`
+                          `/room/${room.code}?platform=${room.platform}&stream=${encodeURIComponent(
+                            room.channel
+                          )}`
                         )
                       }
                       className="liquid-btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:scale-105 transition cursor-pointer"
@@ -287,10 +425,328 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+
+        {/* SECTION 2: Desde tus cuentas (Live Streams y Suscripciones reales) */}
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <Flame className="w-5 h-5 text-purple-400" />
+                <span>Desde tus cuentas</span>
+                {liveTwitchChannels.length > 0 && (
+                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                    {liveTwitchChannels.length} en vivo
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-gray-400">
+                Directos y suscripciones de tus canales seguidos para iniciar watch parties al instante.
+              </p>
+            </div>
+
+            {hasAnyAccountConnected && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/5 border border-white/10">
+                  <button
+                    onClick={() => setAccountsTab("live")}
+                    className={`px-3 py-1 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                      accountsTab === "live"
+                        ? "bg-[#9146FF] text-white shadow-md shadow-[#9146FF]/30"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <Radio className="w-3 h-3" />
+                    <span>Directos Twitch ({liveTwitchChannels.length})</span>
+                  </button>
+
+                  <button
+                    onClick={() => setAccountsTab("youtube")}
+                    className={`px-3 py-1 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                      accountsTab === "youtube"
+                        ? "bg-[#FF0000] text-white shadow-md shadow-[#FF0000]/30"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <Tv className="w-3 h-3" />
+                    <span>YouTube ({youtubeChannels.length})</span>
+                  </button>
+                </div>
+
+                {integrationStatus?.twitch.connected && (
+                  <button
+                    onClick={handleRefreshLiveStatus}
+                    disabled={syncingLive}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition cursor-pointer"
+                    title="Actualizar estado en vivo"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${syncingLive ? "animate-spin" : ""}`} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* If neither Twitch nor YouTube is connected */}
+          {!hasAnyAccountConnected && !loadingIntegrations && (
+            <div className="p-10 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-xl mx-auto my-4 space-y-4">
+              <div className="w-14 h-14 rounded-3xl bg-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto shadow-xl">
+                <Link2 className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Conecta tus cuentas para ver qué directos están activos.
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
+                  Vincula tu cuenta de Twitch o Google/YouTube para importar tus streamers favoritos y
+                  lanzar Watch Parties sincronizadas con un solo clic.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/profile"
+                  className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5"
+                >
+                  <Radio className="w-3.5 h-3.5" />
+                  <span>Conectar Twitch</span>
+                </Link>
+                <Link
+                  href="/profile"
+                  className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-1.5 transition shadow-lg shadow-red-600/20"
+                >
+                  <Tv className="w-3.5 h-3.5" />
+                  <span>Conectar YouTube</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* If accounts are connected: Tab LIVE (Twitch) */}
+          {hasAnyAccountConnected && accountsTab === "live" && (
+            <div>
+              {!integrationStatus?.twitch.connected ? (
+                <div className="p-8 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
+                  <Radio className="w-8 h-8 text-[#9146FF] mx-auto" />
+                  <h4 className="text-sm font-bold text-white">Twitch no está conectado</h4>
+                  <p className="text-xs text-gray-400">
+                    Conecta tu cuenta de Twitch para ver qué canales que sigues están transmitiendo en vivo.
+                  </p>
+                  <div className="pt-1">
+                    <Link
+                      href="/profile"
+                      className="px-4 py-2 rounded-xl bg-[#9146FF] hover:bg-[#772ce8] text-white text-xs font-bold inline-flex items-center gap-2 transition"
+                    >
+                      <Radio className="w-3.5 h-3.5" />
+                      <span>Conectar Twitch</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : liveTwitchChannels.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {liveTwitchChannels.map((stream) => (
+                    <div
+                      key={stream.id}
+                      className="glass-panel p-5 rounded-3xl border border-white/10 hover:border-[#9146FF]/50 transition-all flex flex-col justify-between space-y-4 group"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span>EN VIVO</span>
+                          </span>
+
+                          <span className="text-[11px] text-purple-300 font-semibold">Twitch</span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl overflow-hidden bg-[#9146FF]/20 border border-[#9146FF]/30 flex items-center justify-center text-[#be99ff] font-bold text-sm shrink-0">
+                            {stream.avatarUrl ? (
+                              <img
+                                src={stream.avatarUrl}
+                                alt={stream.displayName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span>{stream.displayName.slice(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition truncate">
+                              {stream.displayName}
+                            </h3>
+                            <p className="text-xs text-gray-400 truncate">
+                              {stream.category || "En directo"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                        {stream.url && (
+                          <a
+                            href={stream.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition"
+                            title="Ver en Twitch"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => handleOpenCreateWithStream("twitch", stream.displayName)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-[#9146FF] hover:bg-[#772ce8] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-lg shadow-[#9146FF]/25"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Crear Watch Party con este directo</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* Empty state: No live channels right now */
+                <div className="p-10 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
+                  <Radio className="w-10 h-10 text-gray-600 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">
+                    Ninguno de tus canales seguidos está en directo en este momento.
+                  </h4>
+                  <p className="text-xs text-gray-400">
+                    {allTwitchChannels.length > 0
+                      ? `Tienes ${allTwitchChannels.length} canales en tu lista. Comprueba de nuevo más tarde o crea una sala con cualquier streamer.`
+                      : "Aún no has sincronizado tus canales seguidos de Twitch."}
+                  </p>
+                  <div className="pt-2 flex items-center justify-center gap-3">
+                    <button
+                      onClick={handleRefreshLiveStatus}
+                      disabled={syncingLive}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-gray-300 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${syncingLive ? "animate-spin" : ""}`} />
+                      <span>Comprobar de nuevo</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setModalPlatform("twitch");
+                        setModalChannel("");
+                        setIsCreateModalOpen(true);
+                      }}
+                      className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Crear sala personalizada</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* If accounts are connected: Tab YOUTUBE */}
+          {hasAnyAccountConnected && accountsTab === "youtube" && (
+            <div>
+              {!integrationStatus?.youtube.connected ? (
+                <div className="p-8 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
+                  <Tv className="w-8 h-8 text-[#FF0000] mx-auto" />
+                  <h4 className="text-sm font-bold text-white">YouTube no está conectado</h4>
+                  <p className="text-xs text-gray-400">
+                    Conecta tu cuenta de Google/YouTube para importar tus suscripciones y contenidos favoritos.
+                  </p>
+                  <div className="pt-1">
+                    <Link
+                      href="/profile"
+                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition"
+                    >
+                      <Tv className="w-3.5 h-3.5" />
+                      <span>Conectar YouTube</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : youtubeChannels.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {youtubeChannels.map((yt) => (
+                    <div
+                      key={yt.id}
+                      className="glass-panel p-5 rounded-3xl border border-white/10 hover:border-[#FF0000]/50 transition-all flex flex-col justify-between space-y-4 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-[#FF0000]/20 border border-[#FF0000]/30 flex items-center justify-center text-red-300 font-bold text-sm shrink-0">
+                          {yt.avatarUrl ? (
+                            <img
+                              src={yt.avatarUrl}
+                              alt={yt.displayName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Tv className="w-5 h-5 text-red-400" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-bold text-white group-hover:text-red-300 transition truncate">
+                            {yt.displayName}
+                          </h3>
+                          <p className="text-xs text-gray-400">Canal suscrito</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                        {yt.url && (
+                          <a
+                            href={yt.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition"
+                            title="Ver en YouTube"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => handleOpenCreateWithStream("youtube", yt.displayName)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-lg shadow-red-600/20"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Crear Watch Party</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* Empty state: No YouTube subscriptions synced */
+                <div className="p-10 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
+                  <Tv className="w-10 h-10 text-gray-600 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">
+                    Aún no has sincronizado tus suscripciones de YouTube.
+                  </h4>
+                  <p className="text-xs text-gray-400">
+                    Sincroniza tus canales para verlos aquí y lanzar Watch Parties rápidamente.
+                  </p>
+                  <div className="pt-2">
+                    <Link
+                      href="/profile"
+                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Ir a Sincronizar en Perfil</span>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       </main>
 
+      {/* Create Room Modal */}
       <CreateRoomModal
         isOpen={isCreateModalOpen}
+        defaultPlatform={modalPlatform}
+        defaultChannel={modalChannel}
         onClose={() => {
           setIsCreateModalOpen(false);
           fetchUserRooms();

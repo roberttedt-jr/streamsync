@@ -1,9 +1,34 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { verifySession, updateUserProfile } from "@/lib/userStore";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.id && process.env.DATABASE_URL) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+    if (dbUser) {
+      return NextResponse.json({
+        user: {
+          id: dbUser.id,
+          name: dbUser.name,
+          username: dbUser.username,
+          email: dbUser.email,
+          avatar: dbUser.image,
+          bio: dbUser.bio,
+          twitchUsername: dbUser.twitchUsername,
+          youtubeHandle: dbUser.youtubeHandle,
+        },
+      });
+    }
+  }
+
   const cookieStore = cookies();
   const token = cookieStore.get("streamsync_session")?.value;
 
@@ -21,22 +46,49 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get("streamsync_session")?.value;
+    const session = await getServerSession(authOptions);
     const body = await request.json();
+    const { name, username, avatar, bio, twitchUsername, youtubeHandle } = body;
 
-    let userId = token ? verifySession(token)?.id : null;
-    if (!userId && body.userId) {
-      userId = body.userId;
+    // 1. If user is logged in via NextAuth and PostgreSQL is available, persist to Neon DB
+    if (session?.user?.id && process.env.DATABASE_URL) {
+      const dbUser = await prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          ...(name !== undefined && { name }),
+          ...(username !== undefined && { username }),
+          ...(avatar !== undefined && { image: avatar }),
+          ...(bio !== undefined && { bio }),
+          ...(twitchUsername !== undefined && { twitchUsername }),
+          ...(youtubeHandle !== undefined && { youtubeHandle }),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: dbUser.id,
+          name: dbUser.name,
+          username: dbUser.username,
+          email: dbUser.email,
+          avatar: dbUser.image,
+          bio: dbUser.bio,
+          twitchUsername: dbUser.twitchUsername,
+          youtubeHandle: dbUser.youtubeHandle,
+        },
+      });
     }
 
-    if (!userId) {
+    // 2. Fallback to guest / in-memory store
+    const cookieStore = cookies();
+    const token = cookieStore.get("streamsync_session")?.value;
+    const guestId = token ? verifySession(token)?.id : body.userId;
+
+    if (!guestId) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const { name, username, avatar, bio, twitchUsername, youtubeHandle } = body;
-
-    const updated = await updateUserProfile(userId, {
+    const updated = await updateUserProfile(guestId, {
       name,
       username,
       avatar,
@@ -53,3 +105,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
