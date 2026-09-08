@@ -9,6 +9,7 @@ import TwitchPlayer from "@/components/video/TwitchPlayer";
 import MediaPermissionModal from "@/components/room/MediaPermissionModal";
 import VideoGrid from "@/components/room/VideoGrid";
 import HostOptionsModal from "@/components/room/HostOptionsModal";
+import { WebRTCManager } from "@/lib/webrtc";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import {
@@ -121,6 +122,48 @@ export default function WatchPartyRoomPage() {
   const [handRaised, setHandRaised] = useState(false);
   const [turnQueue, setTurnQueue] = useState<{ id: string; name: string }[]>([]);
   const [isAudioDockMinimized, setIsAudioDockMinimized] = useState(false);
+
+  // WebRTC Manager & Remote Streams
+  const webrtcManagerRef = useRef<WebRTCManager | null>(null);
+  const pendingSignalsRef = useRef<any[]>([]);
+  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
+
+  // Initialize WebRTCManager
+  useEffect(() => {
+    if (isDemo || !connectionId) return;
+
+    const manager = new WebRTCManager({
+      connectionId,
+      onRemoteStream: (remoteId, stream) => {
+        setRemoteStreams((prev) => {
+          const next = new Map(prev);
+          next.set(remoteId, stream);
+          return next;
+        });
+      },
+      onRemoteStreamRemoved: (remoteId) => {
+        setRemoteStreams((prev) => {
+          const next = new Map(prev);
+          next.delete(remoteId);
+          return next;
+        });
+      },
+      sendSignal: (signal) => {
+        pendingSignalsRef.current.push({
+          targetConnectionId: signal.targetConnectionId,
+          type: signal.type,
+          payload: signal.payload,
+        });
+      },
+    });
+
+    webrtcManagerRef.current = manager;
+
+    return () => {
+      manager.destroy();
+      webrtcManagerRef.current = null;
+    };
+  }, [connectionId, isDemo]);
 
   // Opt-in Media Permission Modal
   const [requestedMediaType, setRequestedMediaType] = useState<"voice" | "video" | null>(null);
@@ -342,6 +385,7 @@ export default function WatchPartyRoomPage() {
 
   const handlePermissionGranted = (stream: MediaStream, type: "voice" | "video") => {
     setLocalStream(stream);
+    webrtcManagerRef.current?.setLocalStream(stream);
     setMicActive(stream.getAudioTracks().length > 0);
     if (type === "video") {
       setCameraActive(stream.getVideoTracks().length > 0);
@@ -359,6 +403,7 @@ export default function WatchPartyRoomPage() {
       localStream.getTracks().forEach((track) => track.stop());
       setLocalStream(null);
     }
+    webrtcManagerRef.current?.setLocalStream(null);
     setMicActive(false);
     setCameraActive(false);
     setIsSpeaking(false);
@@ -371,6 +416,9 @@ export default function WatchPartyRoomPage() {
   const syncRoom = useCallback(async () => {
     if (!roomId) return;
     try {
+      const outgoingSignals = [...pendingSignalsRef.current];
+      pendingSignalsRef.current = [];
+
       const payload = {
         action: "sync",
         connectionId,
@@ -383,6 +431,7 @@ export default function WatchPartyRoomPage() {
         cameraEnabled: cameraActive,
         isSpeaking,
         handRaised,
+        signals: outgoingSignals,
       };
 
       const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/sync`, {
@@ -391,19 +440,43 @@ export default function WatchPartyRoomPage() {
         body: JSON.stringify(payload),
       });
 
+      if (res.status === 410) {
+        setIsRoomClosedByHost(true);
+        if (localStream) {
+          localStream.getTracks().forEach((t) => t.stop());
+        }
+        return;
+      }
+
       if (res.ok) {
         const data = await res.json();
+        if (data.isClosed) {
+          setIsRoomClosedByHost(true);
+          if (localStream) {
+            localStream.getTracks().forEach((t) => t.stop());
+          }
+          return;
+        }
+
         if (data.participants && Array.isArray(data.participants)) {
           setSyncedParticipants(data.participants);
+          webrtcManagerRef.current?.syncPeers(data.participants.map((p: any) => p.connectionId));
         }
+
         if (data.messages && Array.isArray(data.messages)) {
           setMessages(data.messages);
+        }
+
+        if (data.signals && Array.isArray(data.signals) && webrtcManagerRef.current) {
+          for (const sig of data.signals) {
+            webrtcManagerRef.current.handleSignal(sig);
+          }
         }
       }
     } catch (err) {
       console.warn("Heartbeat sync warning:", err);
     }
-  }, [roomId, connectionId, user, isHost, micActive, cameraActive, isSpeaking, handRaised]);
+  }, [roomId, connectionId, user, isHost, micActive, cameraActive, isSpeaking, handRaised, localStream]);
 
   // Loop cada 2.5s para presencia real entre sesiones
   useEffect(() => {
@@ -432,7 +505,7 @@ export default function WatchPartyRoomPage() {
     };
   }, [roomId, connectionId]);
 
-  // Lista de participantes combinada: sincronizada del servidor con stream local para el usuario actual
+  // Lista de participantes combinada: sincronizada del servidor con stream local y remoto
   const participants = useMemo(() => {
     if (syncedParticipants.length > 0) {
       const mapped = syncedParticipants.map((p) => {
@@ -458,6 +531,7 @@ export default function WatchPartyRoomPage() {
           isSpeaking: Boolean(p.isSpeaking),
           handRaised: Boolean(p.handRaised),
           isHost: p.isHost || p.role === "HOST",
+          stream: remoteStreams.get(p.connectionId) || null,
         };
       });
 
@@ -494,7 +568,18 @@ export default function WatchPartyRoomPage() {
         handRaised: handRaised,
       },
     ];
-  }, [syncedParticipants, connectionId, user, isHost, micActive, cameraActive, isSpeaking, localStream, handRaised]);
+  }, [
+    syncedParticipants,
+    connectionId,
+    user,
+    isHost,
+    micActive,
+    cameraActive,
+    isSpeaking,
+    localStream,
+    handRaised,
+    remoteStreams,
+  ]);
 
   // Scroll chat
   useEffect(() => {

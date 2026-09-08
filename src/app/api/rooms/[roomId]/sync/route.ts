@@ -43,7 +43,7 @@ function getMemoryRoom(roomId: string) {
 // Helper to resolve room ID from code or DB
 async function resolveRoom(roomId: string) {
   if (roomId.toLowerCase() === "demo") {
-    return { id: "demo", code: "demo", isDemo: true };
+    return { id: "demo", code: "demo", isDemo: true, isClosed: false };
   }
 
   if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
@@ -72,16 +72,16 @@ async function resolveRoom(roomId: string) {
     }
   }
 
-  return { id: roomId, code: roomId, isDemo: false };
+  return { id: roomId, code: roomId, isDemo: false, isClosed: false };
 }
 
-// Prune stale participants (TTL 8 seconds)
+// Prune stale participants (TTL 6 seconds) and stale signals (TTL 30 seconds)
 async function pruneStaleParticipants(dbRoomId: string) {
   // 1. Prune memory
   const mem = getMemoryRoom(dbRoomId);
   const now = Date.now();
   for (const [connId, p] of mem.participants.entries()) {
-    if (now - p.lastSeenAt > 8000) {
+    if (now - p.lastSeenAt > 6000) {
       mem.participants.delete(connId);
     }
   }
@@ -89,15 +89,25 @@ async function pruneStaleParticipants(dbRoomId: string) {
   // 2. Prune DB
   if (dbRoomId !== "demo" && process.env.DATABASE_URL) {
     try {
-      const cutoff = new Date(Date.now() - 8000);
-      await prisma.roomParticipant.deleteMany({
-        where: {
-          roomId: dbRoomId,
-          lastSeenAt: { lt: cutoff },
-        },
-      });
+      const participantCutoff = new Date(Date.now() - 6000);
+      const signalCutoff = new Date(Date.now() - 30000);
+
+      await Promise.all([
+        prisma.roomParticipant.deleteMany({
+          where: {
+            roomId: dbRoomId,
+            lastSeenAt: { lt: participantCutoff },
+          },
+        }),
+        prisma.roomSignal.deleteMany({
+          where: {
+            roomId: dbRoomId,
+            createdAt: { lt: signalCutoff },
+          },
+        }),
+      ]);
     } catch (e) {
-      console.error("Error pruning stale participants in DB:", e);
+      console.error("Error pruning in DB:", e);
     }
   }
 }
@@ -108,6 +118,13 @@ export async function GET(
 ) {
   const roomId = params.roomId;
   const room = await resolveRoom(roomId);
+
+  if (room.isClosed) {
+    return NextResponse.json(
+      { success: false, isClosed: true, error: "Esta sala ha sido cerrada por el anfitrión" },
+      { status: 410 }
+    );
+  }
 
   await pruneStaleParticipants(room.id);
 
@@ -169,9 +186,13 @@ export async function GET(
     roomId,
     participants,
     messages,
+    signals: [],
     serverTime: Date.now(),
   });
 }
+
+// In-memory rate limiting map for chat: connectionId -> timestamps
+const messageRateLimits = new Map<string, number[]>();
 
 export async function POST(
   request: Request,
@@ -180,19 +201,37 @@ export async function POST(
   const roomId = params.roomId;
   const room = await resolveRoom(roomId);
 
+  if (room.isClosed) {
+    return NextResponse.json(
+      { success: false, isClosed: true, error: "Esta sala ha sido cerrada por el anfitrión" },
+      { status: 410 }
+    );
+  }
+
   try {
     const body = await request.json();
     const action = body.action || "sync";
+    const connId = body.connectionId;
 
     // 1. ACTION: LEAVE
     if (action === "leave") {
-      const connId = body.connectionId;
       if (connId) {
         if (room.id !== "demo" && process.env.DATABASE_URL) {
           try {
-            await prisma.roomParticipant.deleteMany({
-              where: { connectionId: connId },
-            });
+            await Promise.all([
+              prisma.roomParticipant.deleteMany({
+                where: { connectionId: connId },
+              }),
+              prisma.roomSignal.deleteMany({
+                where: {
+                  roomId: room.id,
+                  OR: [
+                    { senderConnectionId: connId },
+                    { targetConnectionId: connId },
+                  ],
+                },
+              }),
+            ]);
           } catch (e) {
             console.error("Error deleting participant on leave:", e);
           }
@@ -205,9 +244,30 @@ export async function POST(
 
     // 2. ACTION: SEND MESSAGE
     if (action === "send_message") {
-      const text = (body.text || "").trim();
+      let text = String(body.text || "").trim();
       if (!text) {
         return NextResponse.json({ error: "Empty message" }, { status: 400 });
+      }
+
+      // Enforce max 500 characters
+      if (text.length > 500) {
+        text = text.slice(0, 500);
+      }
+
+      // Basic rate limiting: max 5 messages in 5 seconds per connectionId
+      if (connId) {
+        const now = Date.now();
+        const timestamps = (messageRateLimits.get(connId) || []).filter(
+          (t) => now - t < 5000
+        );
+        if (timestamps.length >= 6) {
+          return NextResponse.json(
+            { error: "Estás enviando mensajes demasiado rápido. Por favor, espera un momento." },
+            { status: 429 }
+          );
+        }
+        timestamps.push(now);
+        messageRateLimits.set(connId, timestamps);
       }
 
       const sender = body.sender || body.name || "Invitado";
@@ -248,8 +308,40 @@ export async function POST(
       if (mem.messages.length > 50) mem.messages.shift();
     }
 
-    // 3. ACTION: HEARTBEAT / SYNC
-    const connId = body.connectionId;
+    // 3. PROCESS OUTGOING WEBRTC SIGNALS
+    if (Array.isArray(body.signals) && body.signals.length > 0 && connId) {
+      const validSignals = body.signals
+        .filter((s: any) => s && s.targetConnectionId && s.type && s.payload)
+        .map((s: any) => ({
+          roomId: room.id,
+          senderConnectionId: connId,
+          targetConnectionId: String(s.targetConnectionId),
+          type: String(s.type),
+          payload: typeof s.payload === "string" ? s.payload : JSON.stringify(s.payload),
+        }));
+
+      if (validSignals.length > 0 && room.id !== "demo" && process.env.DATABASE_URL) {
+        try {
+          await prisma.roomSignal.createMany({ data: validSignals });
+        } catch (err) {
+          console.error("Error saving room signals in DB:", err);
+        }
+      }
+
+      // In-memory fallback for signaling
+      const mem = getMemoryRoom(room.id);
+      if (!mem.signals) mem.signals = [];
+      for (const vs of validSignals) {
+        mem.signals.push({
+          id: `sig-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          ...vs,
+          createdAt: new Date(),
+        });
+      }
+      if (mem.signals.length > 100) mem.signals = mem.signals.slice(-50);
+    }
+
+    // 4. ACTION: HEARTBEAT / SYNC PARTICIPANT
     if (connId) {
       const name = body.name || "Invitado";
       const avatar = body.avatar || null;
@@ -311,16 +403,17 @@ export async function POST(
       });
     }
 
-    // Always prune dead participants
+    // Always prune dead participants and old signals
     await pruneStaleParticipants(room.id);
 
-    // Fetch refreshed active participants and recent messages
+    // Fetch refreshed active participants, recent messages, and pending signals
     let activeParticipants: any[] = [];
     let recentMessages: any[] = [];
+    let incomingSignals: any[] = [];
 
     if (room.id !== "demo" && process.env.DATABASE_URL) {
       try {
-        const [dbParticipants, dbMessages] = await Promise.all([
+        const [dbParticipants, dbMessages, dbSignals] = await Promise.all([
           prisma.roomParticipant.findMany({
             where: { roomId: room.id },
             orderBy: { joinedAt: "asc" },
@@ -330,6 +423,13 @@ export async function POST(
             take: 50,
             orderBy: { createdAt: "asc" },
           }),
+          connId
+            ? prisma.roomSignal.findMany({
+                where: { roomId: room.id, targetConnectionId: connId },
+                orderBy: { createdAt: "asc" },
+                take: 25,
+              })
+            : Promise.resolve([]),
         ]);
 
         activeParticipants = dbParticipants.map((p) => ({
@@ -359,6 +459,28 @@ export async function POST(
           }),
           timestamp: m.createdAt.toISOString(),
         }));
+
+        if (dbSignals.length > 0) {
+          incomingSignals = dbSignals.map((s) => ({
+            id: s.id,
+            senderConnectionId: s.senderConnectionId,
+            targetConnectionId: s.targetConnectionId,
+            type: s.type,
+            payload: (() => {
+              try {
+                return JSON.parse(s.payload);
+              } catch {
+                return s.payload;
+              }
+            })(),
+            createdAt: s.createdAt,
+          }));
+
+          // Delete consumed signals atomically
+          await prisma.roomSignal.deleteMany({
+            where: { id: { in: dbSignals.map((s) => s.id) } },
+          }).catch(() => {});
+        }
       } catch (e) {
         console.error("Error fetching room sync state:", e);
       }
@@ -370,11 +492,36 @@ export async function POST(
       recentMessages = mem.messages;
     }
 
+    if (incomingSignals.length === 0 && connId) {
+      const mem = getMemoryRoom(room.id);
+      if (mem.signals && mem.signals.length > 0) {
+        const matching = mem.signals.filter((s: any) => s.targetConnectionId === connId);
+        if (matching.length > 0) {
+          incomingSignals = matching.map((s: any) => ({
+            id: s.id,
+            senderConnectionId: s.senderConnectionId,
+            targetConnectionId: s.targetConnectionId,
+            type: s.type,
+            payload: (() => {
+              try {
+                return JSON.parse(s.payload);
+              } catch {
+                return s.payload;
+              }
+            })(),
+            createdAt: s.createdAt,
+          }));
+          mem.signals = mem.signals.filter((s: any) => s.targetConnectionId !== connId);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       roomId: room.code,
       participants: activeParticipants,
       messages: recentMessages,
+      signals: incomingSignals,
       serverTime: Date.now(),
     });
   } catch (err: any) {
@@ -385,3 +532,4 @@ export async function POST(
     );
   }
 }
+

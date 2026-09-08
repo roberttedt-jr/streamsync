@@ -171,3 +171,16 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model RoomSignal {
+  id                 String   @id @default(cuid())
+  roomId             String
+  senderConnectionId String
+  targetConnectionId String
+  type               String
+  payload            String   @db.Text
+  createdAt          DateTime @default(now())
+
+  @@index([roomId, targetConnectionId, createdAt])
+}
+
