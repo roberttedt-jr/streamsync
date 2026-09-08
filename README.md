@@ -1,100 +1,63 @@
-# 🎮 StreamSync 2026 - Watch Parties en Tiempo Real
+# 🎮 StreamSync — Watch Parties de Twitch
 
-StreamSync es una plataforma web moderna para disfrutar de directos y vídeos de Twitch y YouTube sincronizados al milisegundo entre amigos, con chat de voz WebRTC, sistema de cola de turnos de palabra ("Levantar la mano"), HUD flotante de estadísticas de videojuegos y autenticación social OAuth.
+> **Crea una sala, comparte un directo de Twitch y disfruta del stream con tu comunidad.**
+
+StreamSync es una plataforma web especializada exclusivamente en Watch Parties de directos de Twitch, permitiendo crear salas compartidas con presencia de usuarios en tiempo real, chat interactivo, controles de anfitrión y opciones voluntarias de voz y vídeo WebRTC.
 
 Desarrollado por **Roberto Tedt (roberttedt-jr)**.
 
 ---
 
-## 🛠️ Tecnologías
+## ✨ Características Principales
 
-- **Framework:** Next.js 14 (App Router)
-- **Autenticación:** Auth.js / NextAuth (Twitch OAuth, Google OAuth con permisos mínimos de sesión, Modo Invitado y credenciales locales)
-- **Base de Datos & ORM:** Prisma con PostgreSQL
-- **Estilos:** Tailwind CSS con temas Claro y Oscuro, fuentes *Plus Jakarta Sans*, *Inter* y *JetBrains Mono*
-- **Sincronización:** WebRTC Voice HUD con visualizador de ondas y cola de turnos
+- **Salas compartidas con presencia en tiempo real:** Visualiza quién está conectado en la sala con lista interactiva de participantes y estados de conexión.
+- **Chat en directo entre participantes:** Mensajería instantánea dentro de la sala con avatares personalizados y soporte para participantes e invitados.
+- **Voz y cámara opcionales, solo tras autorización explícita:** Comunicación WebRTC directa entre navegadores, respetando la privacidad sin grabación ni almacenamiento en servidores.
+- **Controles y configuración de sala para anfitriones:** Gestión de privacidad, contraseña, límites de participantes y opciones de eliminación segura de la sala por parte del anfitrión.
+- **Reproductor Twitch adaptable para escritorio y móvil:** Integración oficial del reproductor de Twitch optimizada para evitar espacios negros y recortados en cualquier tamaño de pantalla.
 
 ---
 
-## ⚙️ Configuración de Variables en Vercel
+## 🛠️ Stack Tecnológico
 
-Tu proyecto de StreamSync ya está conectado a Vercel. Sigue estos pasos para introducir tus credenciales desde el panel de Vercel sin exponer ningún secreto en el repositorio de código:
+- **Framework:** Next.js 14 (App Router)
+- **Autenticación:** Auth.js / NextAuth (Twitch OAuth con sincronización de seguidos, Modo Invitado y credenciales locales)
+- **Base de Datos & ORM:** Prisma con PostgreSQL (Neon)
+- **Estilos:** Tailwind CSS con interfaz Dark Mode premium
+- **Comunicaciones:** WebRTC peer-to-peer para voz y cámara opcional
 
-### 1. Entrar en la configuración de Vercel
-1. Inicia sesión en [Vercel](https://vercel.com/) y abre tu proyecto **StreamSync**.
-2. Ve a la pestaña **Settings** (Configuración) en la barra superior.
-3. En el menú lateral izquierdo, haz clic en **Environment Variables** (Variables de entorno).
+---
 
-### 2. Añadir cada variable por separado
-Añade cada una de las siguientes variables utilizando la columna **Name** para la clave y **Value** para tu valor privado:
+## ⚙️ Configuración de Variables de Entorno
 
-| Variable (Name) | Descripción |
-|---|---|
-| `TWITCH_CLIENT_ID` | Client ID obtenido en Twitch Developer Console |
-| `TWITCH_CLIENT_SECRET` | Client Secret generado en Twitch Developer Console |
-| `GOOGLE_CLIENT_ID` | Client ID de tipo Aplicación Web obtenido en Google Cloud Console |
-| `GOOGLE_CLIENT_SECRET` | Client Secret obtenido en Google Cloud Console |
-| `AUTH_SECRET` | Clave secreta para firmar sesiones y tokens JWT (e.g. generada con `openssl rand -base64 32`) |
+Configura las siguientes variables en Vercel (`Settings` > `Environment Variables`) o en tu archivo local `.env.local`:
 
-> ⚠️ **Importante:** Nunca utilices el prefijo `NEXT_PUBLIC_` para ningún secreto ni ID de OAuth confidencial. Todas estas variables son leídas exclusivamente desde el servidor y las rutas de Auth.js.
+```env
+# Base de datos PostgreSQL (Neon)
+DATABASE_URL="postgresql://usuario:password@host/streamsync?sslmode=require"
 
-### 3. Seleccionar los entornos adecuados
-Al añadir cada variable, marca las casillas **Production**, **Preview** y **Development** para que estén disponibles tanto en tu despliegue principal como en las pruebas.
+# NextAuth / Auth.js
+NEXTAUTH_URL="https://streamsync-livid.vercel.app"
+AUTH_SECRET="tu_clave_secreta_jwt"
 
-### 4. Hacer Redeploy tras guardar las variables
-Una vez guardadas las 5 variables:
-1. Ve a la pestaña **Deployments** en Vercel.
-2. Localiza el último despliegue, pulsa en el botón de los tres puntos (`...`) y selecciona **Redeploy**.
-3. Vercel reconstruirá la aplicación inyectando las nuevas variables de entorno de forma segura.
+# Twitch OAuth
+TWITCH_CLIENT_ID="tu_twitch_client_id"
+TWITCH_CLIENT_SECRET="tu_twitch_client_secret"
+```
 
-### 5. Probar el proyecto localmente (`.env.local`)
-Para probar el inicio de sesión con Twitch y Google en tu ordenador local:
-1. Crea un archivo llamado `.env.local` en la raíz del proyecto (este archivo está protegido en `.gitignore` y **nunca** se subirá a GitHub).
-2. Añade las mismas variables con sus respectivos valores:
-   ```env
-   TWITCH_CLIENT_ID=tu_valor_aqui
-   TWITCH_CLIENT_SECRET=tu_valor_aqui
-   GOOGLE_CLIENT_ID=tu_valor_aqui
-   GOOGLE_CLIENT_SECRET=tu_valor_aqui
-   AUTH_SECRET=tu_clave_secreta_aqui
-   ```
-3. Inicia el servidor de desarrollo con `npm run dev`.
-
-### 6. Comprobar las Redirect URI de Twitch y Google
-Asegúrate de que las URLs de redirección registradas en las consolas de desarrolladores coinciden exactamente con los endpoints utilizados por Auth.js:
-
-#### En Twitch Developer Console:
+### Redirect URIs para Twitch Developer Console
 - **Producción:** `https://streamsync-livid.vercel.app/api/auth/callback/twitch`
 - **Desarrollo local:** `http://localhost:3000/api/auth/callback/twitch`
 
-#### En Google Cloud Console:
-- **Producción:** `https://streamsync-livid.vercel.app/api/auth/callback/google`
-- **Desarrollo local:** `http://localhost:3000/api/auth/callback/google`
+---
+
+## 💡 Modo Invitado
+
+StreamSync incluye un modo de acceso inmediato como invitado (`Continuar como Invitado` en `/auth`), permitiendo explorar y crear salas sin necesidad de registrarse previamente.
 
 ---
 
-## 💡 Cómo desactivar temporalmente un Provider
-
-El sistema está programado para ser **tolerante a fallos**:
-- Si no configuras `TWITCH_CLIENT_ID` o `TWITCH_CLIENT_SECRET`, el provider de Twitch se desactiva dinámicamente sin romper la aplicación. El botón en `/auth` mostrará una etiqueta indicando que la configuración está pendiente y un mensaje informativo.
-- Si no configuras `GOOGLE_CLIENT_ID` o `GOOGLE_CLIENT_SECRET`, ocurrirá lo mismo con Google / YouTube.
-- Los usuarios siempre podrán acceder con **1 solo clic mediante el modo "Continuar como Invitado"** o mediante el formulario de registro local con foto de perfil.
-
----
-
-## ❓ ¿Qué hacer si en Google Cloud Console no te sale "Select a Project"?
-
-Si al entrar en [Google Cloud Console](https://console.cloud.google.com/) no ves el botón o selector de proyectos:
-1. Dirígete a la parte superior izquierda de la pantalla, justo a la derecha del logotipo azul de **Google Cloud**.
-2. Verás un menú desplegable (que suele mostrar "Seleccionar un proyecto" o el nombre de una organización predeterminada).
-3. Haz clic sobre él. Se abrirá una ventana emergente.
-4. En la esquina superior derecha de esa ventana emergente, haz clic en el botón **"Nuevo proyecto"** (New Project).
-5. Asigna el nombre `StreamSync` y pulsa **Crear**.
-6. En unos segundos aparecerá una notificación de que el proyecto ha sido creado. Haz clic en "Seleccionar proyecto" en esa notificación para comenzar a configurar las credenciales OAuth y habilitar la **YouTube Data API v3**.
-
----
-
-## 📜 Licencia y Derechos
+## 📜 Licencia y Avisos Legales
 
 © 2026 StreamSync. Desarrollado por **Roberto**. Todos los derechos reservados.
-Las marcas comerciales, nombres y logotipos de Twitch, YouTube, Discord y los videojuegos pertenecen a sus respectivos propietarios.
+StreamSync no está afiliado, patrocinado ni respaldado por Twitch Interactive, Inc. Todas las marcas comerciales mostradas pertenecen a sus respectivos propietarios.

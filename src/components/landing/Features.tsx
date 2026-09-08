@@ -1,30 +1,23 @@
 "use client";
 
 import React from "react";
-import { Zap, Mic, BarChart3, ShieldCheck } from "lucide-react";
+import { Users, MessageSquare, Mic, Settings, MonitorSmartphone } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function Features() {
   const { t } = useLanguage();
 
-  const features = [
-    {
-      ...t.features.feat1,
-      icon: Zap,
-    },
-    {
-      ...t.features.feat2,
-      icon: Mic,
-    },
-    {
-      ...t.features.feat3,
-      icon: BarChart3,
-    },
-    {
-      ...t.features.feat4,
-      icon: ShieldCheck,
-    },
-  ];
+  const featureIcons = [Users, MessageSquare, Mic, Settings, MonitorSmartphone];
+  const features = (t.features.items || [
+    t.features.feat1,
+    t.features.feat2,
+    t.features.feat3,
+    t.features.feat4,
+    t.features.feat5,
+  ]).map((feat, idx) => ({
+    ...feat,
+    icon: featureIcons[idx % featureIcons.length],
+  }));
 
   return (
     <section id="caracteristicas" className="py-20 lg:py-28 border-t border-white/[0.06]">

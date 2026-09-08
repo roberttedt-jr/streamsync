@@ -12,7 +12,6 @@ export interface UserProfile {
   avatar: string;
   bio?: string;
   twitchUsername?: string;
-  youtubeHandle?: string;
   createdAt: string;
 }
 
@@ -73,7 +72,6 @@ export async function createUser(data: {
   avatar?: string;
   bio?: string;
   twitchUsername?: string;
-  youtubeHandle?: string;
 }): Promise<UserProfile> {
   const normalizedEmail = data.email.trim().toLowerCase();
   const normalizedUsername = data.username.trim().toLowerCase().replace(/^@/, "");
@@ -100,7 +98,6 @@ export async function createUser(data: {
     avatar,
     bio: data.bio || "",
     twitchUsername: data.twitchUsername ? data.twitchUsername.trim().toLowerCase().replace(/^https?:\/\/(www\.)?twitch\.tv\//, "").replace(/^@/, "") : "",
-    youtubeHandle: data.youtubeHandle ? data.youtubeHandle.trim().replace(/^https?:\/\/(www\.)?youtube\.com\//, "") : "",
     createdAt: new Date().toISOString(),
     passwordHash,
     salt,
@@ -208,7 +205,7 @@ export function removeSession(token: string): void {
 
 export async function updateUserProfile(
   userId: string,
-  updates: Partial<Pick<UserProfile, "name" | "username" | "avatar" | "bio" | "twitchUsername" | "youtubeHandle">>
+  updates: Partial<Pick<UserProfile, "name" | "username" | "avatar" | "bio" | "twitchUsername">>
 ): Promise<UserProfile> {
   let user = memoryUsers.get(userId);
   if (!user) {
@@ -238,11 +235,6 @@ export async function updateUserProfile(
       .toLowerCase()
       .replace(/^https?:\/\/(www\.)?twitch\.tv\//, "")
       .replace(/^@/, "");
-  }
-  if (updates.youtubeHandle !== undefined) {
-    user.youtubeHandle = updates.youtubeHandle
-      .trim()
-      .replace(/^https?:\/\/(www\.)?youtube\.com\//, "");
   }
 
   memoryUsers.set(userId, user);

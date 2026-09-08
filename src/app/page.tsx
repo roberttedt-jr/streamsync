@@ -65,24 +65,24 @@ export default function HomePage() {
                 </span>
                 <span>
                   {isEn
-                    ? "StreamSync • Watch Parties for Any Live Stream"
-                    : "StreamSync • Watch Parties para Cualquier Directo"}
+                    ? "StreamSync • Twitch Watch Parties"
+                    : "StreamSync • Watch Parties de Twitch"}
                 </span>
               </div>
 
               {/* Main Title */}
               <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-6">
-                {isEn ? "Live streams are better " : "Los directos se disfrutan "}
+                StreamSync —{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
-                  {isEn ? "enjoyed together." : "mejor juntos."}
+                  {isEn ? "Twitch Watch Parties" : "Watch Parties de Twitch"}
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-base sm:text-lg text-gray-400 max-w-2xl font-normal leading-relaxed mb-8">
                 {isEn
-                  ? "Create a room, share a Twitch stream, and experience every moment in real time with the people who matter."
-                  : "Crea una sala, comparte un stream de Twitch y vive cada momento en tiempo real con las personas que importan."}
+                  ? "Create a room, share a Twitch stream, and enjoy watching together with your community."
+                  : "Crea una sala, comparte un directo de Twitch y disfruta del stream con tu comunidad."}
               </p>
 
               {/* CTAs */}
@@ -113,12 +113,12 @@ export default function HomePage() {
                 <span className="hidden sm:inline text-white/20">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                  {isEn ? "0ms millisecond sync" : "Sincronización milimétrica a 0ms"}
+                  {isEn ? "Real-time presence & chat" : "Presencia y chat en tiempo real"}
                 </span>
                 <span className="hidden sm:inline text-white/20">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                  {isEn ? "Real-time WebRTC voice" : "Voz WebRTC en tiempo real"}
+                  {isEn ? "Optional voice & camera" : "Voz y cámara opcionales"}
                 </span>
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-3">
                     <div className="px-2.5 py-0.5 rounded-full text-emerald-400 text-xs flex items-center gap-1.5 font-mono bg-emerald-500/10 border border-emerald-500/20">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>{isEn ? "0ms Latency" : "0ms Latencia"}</span>
+                      <span>{isEn ? "Live Twitch" : "En Vivo • Twitch"}</span>
                     </div>
                     <Link
                       href="/room/demo"
@@ -155,7 +155,7 @@ export default function HomePage() {
                 {/* Professional Empty State Interface */}
                 <div className="relative aspect-[16/9] w-full bg-[#07090E] overflow-hidden flex flex-col items-center justify-center p-6 text-center">
                   <div className="w-16 h-16 rounded-3xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-4 shadow-xl shadow-purple-600/10">
-                    <Tv className="w-8 h-8" />
+                    <Radio className="w-8 h-8" />
                   </div>
 
                   <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-2">
@@ -163,8 +163,8 @@ export default function HomePage() {
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
                     {isEn
-                      ? "Enter any Twitch channel to sync it instantly with friends or explore the interactive demo."
-                      : "Introduce cualquier canal de Twitch para sincronizarlo al instante con tus amigos o explora la sala interactiva."}
+                      ? "Enter any Twitch channel to share it with your community or explore the interactive demo."
+                      : "Introduce cualquier canal de Twitch para compartirlo con tu comunidad o explora la sala interactiva."}
                   </p>
 
                   <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -266,12 +266,12 @@ export default function HomePage() {
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Millisecond-synced video, real-time chat, and WebRTC audio with a turn queue to comment on every moment without speaking over each other."
-                      : "Vídeo sincronizado al milisegundo, chat en tiempo real y audio WebRTC con cola de turnos para comentar cada jugada o momento sin pisaros la voz."}
+                      ? "Shared rooms with real-time presence, live chat, and optional voice or camera with explicit authorization."
+                      : "Salas compartidas con presencia en tiempo real, chat en directo y voz o cámara opcionales previa autorización."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-emerald-400 font-medium">
-                  {isEn ? "0ms synchronization latency with WebSockets." : "Latencia de sincronización de 0ms con WebSockets."}
+                  {isEn ? "Real-time presence & live chat sync." : "Presencia multiusuario y chat en tiempo real."}
                 </div>
               </div>
             </div>
@@ -353,15 +353,15 @@ export default function HomePage() {
               <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-purple-500/40 transition">
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
-                    <Zap className="w-6 h-6" />
+                    <Users className="w-6 h-6" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">
-                    {isEn ? "Total 0ms Sync" : "Sincronización Total a 0ms"}
+                    {isEn ? "Shared Rooms & Presence" : "Salas Compartidas y Presencia"}
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Network latency compensation algorithm. If the host pauses, rewinds or changes channel, all squad members update at the exact same instant."
-                      : "Algoritmo de compensación de latencia de red. Si el host pausa, rebobina o cambia de canal, todos los miembros ven la actualización al mismo instante."}
+                      ? "Real-time participant presence and host controls. Change Twitch channels, manage room settings, and chat with your community seamlessly."
+                      : "Presencia en tiempo real y controles de anfitrión. Cambia canales de Twitch, configura la sala y disfruta con tu comunidad sin cortes."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
@@ -375,12 +375,12 @@ export default function HomePage() {
                     <Volume2 className="w-6 h-6" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">
-                    {isEn ? "WebRTC Voice with Turn Queue" : "Voz WebRTC con Cola de Turnos"}
+                    {isEn ? "Optional Voice & Camera" : "Voz y Cámara Opcionales"}
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Spatial audio with auto ducking. Participants can request a turn to speak and avoid cross-talk during key moments."
-                      : "Audio espacial con atenuación automática. Los participantes pueden pedir turno para hablar y evitar que todos hablen a la vez."}
+                      ? "Microphone and camera access only activate with your explicit permission. Built-in turn queue to request speaking turns easily."
+                      : "El acceso a micrófono y cámara solo se activa tras tu autorización explícita. Incluye cola para pedir la palabra de forma ordenada."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">

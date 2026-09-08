@@ -44,14 +44,6 @@ interface IntegrationStatus {
     liveCount: number;
     lastSyncedAt: string | null;
   };
-  youtube: {
-    connected: boolean;
-    hasYoutubePermission: boolean;
-    displayName: string | null;
-    avatarUrl: string | null;
-    channelsCount: number;
-    lastSyncedAt: string | null;
-  };
   canUnlink: boolean;
   totalAccounts: number;
 }
@@ -66,21 +58,13 @@ const DEFAULT_STATUS: IntegrationStatus = {
     liveCount: 0,
     lastSyncedAt: null,
   },
-  youtube: {
-    connected: false,
-    hasYoutubePermission: false,
-    displayName: null,
-    avatarUrl: null,
-    channelsCount: 0,
-    lastSyncedAt: null,
-  },
   canUnlink: false,
   totalAccounts: 0,
 };
 
 interface FollowedChannelItem {
   id: string;
-  platform: "TWITCH" | "YOUTUBE";
+  platform: "TWITCH";
   channelId: string;
   displayName: string;
   avatarUrl: string | null;
@@ -198,7 +182,6 @@ function ProfileContent() {
         if (data && typeof data === "object") {
           setIntegrationStatus({
             twitch: data.twitch || DEFAULT_STATUS.twitch,
-            youtube: data.youtube || DEFAULT_STATUS.youtube,
             canUnlink: Boolean(data.canUnlink),
             totalAccounts: Number(data.totalAccounts || 0),
           });
@@ -424,7 +407,7 @@ function ProfileContent() {
               </div>
 
               <p className="text-xs sm:text-sm text-gray-300 mt-2 max-w-xl">
-                {user?.bio || "Perfil de usuario en StreamSync. Watch parties sincronizadas a 0ms."}
+                {user?.bio || "Perfil de usuario en StreamSync. Watch parties de Twitch con presencia y chat en tiempo real."}
               </p>
 
               {/* Connected Accounts Pills */}
@@ -883,7 +866,7 @@ function ProfileContent() {
               <div className="glass-panel p-5 rounded-3xl border border-white/10 text-center">
                 <Clock className="w-8 h-8 text-purple-400 mx-auto mb-2" />
                 <span className="text-3xl font-black text-white">{user?.statsHoursWatched || 0}h</span>
-                <p className="text-xs text-gray-400 uppercase font-semibold mt-1">Horas Sincronizadas</p>
+                <p className="text-xs text-gray-400 uppercase font-semibold mt-1">Horas en Salas</p>
               </div>
 
               <div className="glass-panel p-5 rounded-3xl border border-white/10 text-center">

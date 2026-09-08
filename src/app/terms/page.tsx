@@ -3,7 +3,7 @@
 import React from "react";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
-import { ShieldCheck, FileText, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Radio, Mic } from "lucide-react";
 
 export default function TermsPage() {
   return (
@@ -14,13 +14,13 @@ export default function TermsPage() {
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 border border-purple-500/20 text-purple-400">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Condiciones Legales 2026</span>
+            <span>Condiciones Legales</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
             Términos de Servicio de StreamSync
           </h1>
           <p className="text-sm text-gray-400">
-            Última actualización: 8 de Septiembre de 2026
+            Especializado en Watch Parties de Twitch. Última actualización: 2026.
           </p>
         </div>
 
@@ -37,34 +37,40 @@ export default function TermsPage() {
 
           <section className="space-y-2">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-purple-400" />
-              2. Servicios de Watch Party y Sincronización
+              <Radio className="w-4 h-4 text-purple-400" />
+              2. Servicios de Watch Party de Twitch
             </h2>
             <p>
-              StreamSync proporciona herramientas tecnológicas para sincronizar la reproducción de emisiones y vídeos públicos de plataformas de terceros (Twitch Interactive, Inc. y YouTube / Google LLC) en tiempo real, junto con capacidades de comunicación por voz y texto mediante WebRTC.
+              StreamSync proporciona herramientas tecnológicas para crear salas compartidas de visualización de directos públicos de Twitch, con presencia de usuarios en tiempo real y chat integrado entre participantes.
             </p>
             <p>
-              StreamSync no aloja transmisiones con derechos de autor ni retransmite secuencias de vídeo protegidas en sus servidores; el contenido es transmitido directamente desde los reproductores oficiales integrados de Twitch y YouTube.
+              StreamSync no aloja transmisiones con derechos de autor ni retransmite secuencias de vídeo protegidas en sus servidores; las emisiones se reproducen directamente a través del reproductor oficial incrustado de Twitch.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Mic className="w-4 h-4 text-purple-400" />
+              3. Voz y Cámara Opcionales vía WebRTC
+            </h2>
+            <p>
+              Las capacidades de voz y cámara son funciones complementarias y completamente opcionales en cada sala. Solo se activan si el participante otorga autorización explícita a su navegador.
+            </p>
+            <p>
+              Las comunicaciones audiovisuales se transmiten directamente entre los navegadores de los participantes (peer-to-peer WebRTC). StreamSync no almacena, no graba ni procesa el contenido de audio o vídeo en sus servidores.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-purple-400" />
-              3. Cuentas y Conducta de Usuario
+              4. Cuentas, Autenticación y Desvinculación de Twitch
             </h2>
             <p>
-              Los usuarios son responsables de mantener la confidencialidad de sus credenciales y de toda actividad realizada en sus salas. Queda terminantemente prohibido utilizar el chat o los canales de voz para conductas de odio, acoso, infracciones de derechos de autor o actividades ilícitas.
+              Al iniciar sesión con Twitch, autorizas a StreamSync a acceder únicamente a los datos públicos autorizados por ti en la pantalla de consentimiento de Twitch. Puedes revocar estos permisos en cualquier momento desde los ajustes de tu cuenta de Twitch o desde tu perfil en StreamSync.
             </p>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-purple-400" />
-              4. Integraciones con Terceros (Twitch & Google/YouTube)
-            </h2>
             <p>
-              Al utilizar la autenticación OAuth con Twitch o Google, autorizas a StreamSync a acceder únicamente a los datos autorizados por ti en la pantalla de consentimiento. Al utilizar las funciones de YouTube en StreamSync, los usuarios aceptan quedar sujetos a las <a href="https://www.youtube.com/t/terms" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Condiciones de Servicio de YouTube (YouTube Terms of Service)</a>. Puedes revocar estos permisos en cualquier momento desde la configuración de tu cuenta en Twitch o Google.
+              StreamSync es un proyecto independiente y no está afiliado, patrocinado ni respaldado por Twitch Interactive, Inc.
             </p>
           </section>
 
@@ -74,7 +80,7 @@ export default function TermsPage() {
               5. Propiedad Intelectual
             </h2>
             <p>
-              StreamSync, su diseño, arquitectura y código fuente son propiedad de Roberto Tedt (roberttedt-jr). Todos los derechos reservados. Las marcas comerciales, logotipos de Twitch, YouTube, Discord y videojuegos mostrados pertenecen a sus respectivos propietarios.
+              StreamSync, su diseño, arquitectura y código fuente son propiedad de sus respectivos autores. Todos los derechos reservados. Las marcas comerciales y nombres comerciales mostrados pertenecen a sus legítimos titulares.
             </p>
           </section>
         </div>

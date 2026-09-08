@@ -148,7 +148,7 @@ export default function ProfileModal({
             }`}
           >
             <span>Cuentas Vinculadas</span>
-            {(user.twitchUsername || user.youtubeHandle) && (
+            {user.twitchUsername && (
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
             )}
           </button>

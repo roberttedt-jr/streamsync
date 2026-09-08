@@ -16,10 +16,7 @@ export async function GET(req: Request) {
     const platform = searchParams.get("platform")?.toUpperCase();
     const liveOnly = searchParams.get("liveOnly") === "true";
 
-    const where: any = { userId: session.user.id };
-    if (platform === "TWITCH" || platform === "YOUTUBE") {
-      where.platform = platform;
-    }
+    const where: any = { userId: session.user.id, platform: "TWITCH" };
     if (liveOnly) {
       where.isLive = true;
     }

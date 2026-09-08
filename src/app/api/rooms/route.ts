@@ -182,22 +182,11 @@ export async function POST(request: Request) {
     }
 
     // Clean stream identifier
-    let cleanChannel = channel.trim() || streamUrl.trim();
-    if (platform === "twitch") {
-      cleanChannel = cleanChannel
-        .replace("https://www.twitch.tv/", "")
-        .replace("https://twitch.tv/", "")
-        .replace("@", "")
-        .trim();
-    } else if (platform === "youtube") {
-      if (cleanChannel.includes("v=")) {
-        cleanChannel = cleanChannel.split("v=")[1].split("&")[0];
-      } else if (cleanChannel.includes("youtu.be/")) {
-        cleanChannel = cleanChannel.split("youtu.be/")[1].split("?")[0];
-      } else if (cleanChannel.includes("youtube.com/live/")) {
-        cleanChannel = cleanChannel.split("youtube.com/live/")[1].split("?")[0];
-      }
-    }
+    let cleanChannel = (channel.trim() || streamUrl.trim())
+      .replace("https://www.twitch.tv/", "")
+      .replace("https://twitch.tv/", "")
+      .replace("@", "")
+      .trim();
 
     // Determine communication capabilities
     const validModes = ["CHAT_ONLY", "VOICE", "VIDEO", "FLEXIBLE"];

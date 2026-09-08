@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Zap,
   Volume2,
+  Users,
 } from "lucide-react";
 
 function AuthFormContent() {
@@ -224,17 +225,17 @@ function AuthFormContent() {
             </h1>
 
             <p className="text-sm text-gray-400 leading-relaxed">
-              Conecta tu cuenta de Twitch o entra como invitado en segundos para sincronizar directos en tiempo real con chat de voz HD y estadísticas de juego.
+              Conecta tu cuenta de Twitch o entra como invitado en segundos para disfrutar de Watch Parties en directo con chat integrado y presencia en tiempo real.
             </p>
 
             <div className="space-y-3.5 pt-2">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0 mt-0.5">
-                  <Zap className="w-4 h-4" />
+                  <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold">Sincronización a 0ms</h4>
-                  <p className="text-xs text-gray-400">Reproducción exacta entre todos los integrantes de la sala.</p>
+                  <h4 className="text-sm font-bold">Presencia en Tiempo Real</h4>
+                  <p className="text-xs text-gray-400">Salas compartidas con contador y lista de miembros en vivo.</p>
                 </div>
               </div>
 
@@ -243,8 +244,8 @@ function AuthFormContent() {
                   <Volume2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold">Voz WebRTC con Cola de Turno</h4>
-                  <p className="text-xs text-gray-400">Habla fluidamente o pide turno con el botón de levantar mano.</p>
+                  <h4 className="text-sm font-bold">Voz y Cámara Opcionales</h4>
+                  <p className="text-xs text-gray-400">Activadas únicamente tras tu autorización explícita con cola de turnos.</p>
                 </div>
               </div>
 
@@ -253,8 +254,8 @@ function AuthFormContent() {
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold">Sin Anuncios Desincronizados</h4>
-                  <p className="text-xs text-gray-400">Tus datos están protegidos y puedes salir en cualquier momento.</p>
+                  <h4 className="text-sm font-bold">Privacidad y Control</h4>
+                  <p className="text-xs text-gray-400">Tus dispositivos permanecen apagados salvo que decidas participar.</p>
                 </div>
               </div>
             </div>

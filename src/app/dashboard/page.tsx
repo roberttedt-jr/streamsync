@@ -34,7 +34,7 @@ interface RoomItem {
   id?: string;
   code: string;
   name: string;
-  platform: "twitch" | "youtube";
+  platform: "twitch";
   channel: string;
   category?: string;
   description?: string;
@@ -46,7 +46,7 @@ interface RoomItem {
 
 interface FollowedChannelItem {
   id: string;
-  platform: "TWITCH" | "YOUTUBE";
+  platform: "TWITCH";
   channelId: string;
   displayName: string;
   avatarUrl: string | null;
@@ -66,14 +66,6 @@ interface IntegrationStatus {
     liveCount: number;
     lastSyncedAt: string | null;
   };
-  youtube: {
-    connected: boolean;
-    hasYoutubePermission: boolean;
-    displayName: string | null;
-    avatarUrl: string | null;
-    channelsCount: number;
-    lastSyncedAt: string | null;
-  };
   canUnlink: boolean;
   totalAccounts: number;
 }
@@ -86,14 +78,6 @@ const DEFAULT_STATUS: IntegrationStatus = {
     avatarUrl: null,
     channelsCount: 0,
     liveCount: 0,
-    lastSyncedAt: null,
-  },
-  youtube: {
-    connected: false,
-    hasYoutubePermission: false,
-    displayName: null,
-    avatarUrl: null,
-    channelsCount: 0,
     lastSyncedAt: null,
   },
   canUnlink: false,
@@ -118,7 +102,7 @@ function DashboardContent() {
 
   // Create room modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [modalPlatform, setModalPlatform] = useState<"twitch" | "youtube">("twitch");
+  const [modalPlatform, setModalPlatform] = useState<"twitch">("twitch");
   const [modalChannel, setModalChannel] = useState("");
 
   // Safe accessors
@@ -190,7 +174,6 @@ function DashboardContent() {
         if (statusData && typeof statusData === "object") {
           setIntegrationStatus({
             twitch: statusData.twitch || DEFAULT_STATUS.twitch,
-            youtube: statusData.youtube || DEFAULT_STATUS.youtube,
             canUnlink: Boolean(statusData.canUnlink),
             totalAccounts: Number(statusData.totalAccounts || 0),
           });
@@ -236,8 +219,8 @@ function DashboardContent() {
     }
   };
 
-  const handleOpenCreateWithStream = (platform: "twitch" | "youtube", channel: string) => {
-    setModalPlatform(platform);
+  const handleOpenCreateWithStream = (platform: "twitch", channel: string) => {
+    setModalPlatform("twitch");
     setModalChannel(channel);
     setIsCreateModalOpen(true);
   };
@@ -287,7 +270,7 @@ function DashboardContent() {
                   )}
                 </div>
                 <p className="text-xs sm:text-sm text-gray-400">
-                  {user?.email || (user?.username ? `@${user.username}` : "Usuario registrado")} • Watch parties sincronizadas a 0ms
+                  {user?.email || (user?.username ? `@${user.username}` : "Usuario registrado")} • Watch parties de Twitch en tiempo real
                 </p>
 
                 {/* Connected account tags */}
@@ -532,8 +515,8 @@ function DashboardContent() {
                   Conecta tu cuenta de Twitch para ver directos activos.
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
-                  Vincula tu cuenta de Twitch para sincronizar tus streamers favoritos y
-                  lanzar Watch Parties sincronizadas con un solo clic.
+                  Vincula tu cuenta de Twitch para ver tus canales seguidos y
+                  lanzar Watch Parties compartidas con un solo clic.
                 </p>
               </div>
 

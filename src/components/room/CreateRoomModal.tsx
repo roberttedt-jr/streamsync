@@ -27,7 +27,7 @@ interface CreateRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultCategory?: string;
-  defaultPlatform?: "twitch" | "youtube";
+  defaultPlatform?: "twitch";
   defaultChannel?: string;
 }
 
@@ -44,7 +44,7 @@ export default function CreateRoomModal({
 
   // Mandatory fields
   const [name, setName] = useState("");
-  const [platform, setPlatform] = useState<"twitch" | "youtube">(defaultPlatform);
+  const [platform, setPlatform] = useState<"twitch">("twitch");
   const [streamUrl, setStreamUrl] = useState(defaultChannel);
   const [category, setCategory] = useState(defaultCategory);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -71,7 +71,7 @@ export default function CreateRoomModal({
 
   if (!isOpen) return null;
 
-  const validateStream = (url: string, plat: "twitch" | "youtube" = "twitch"): { valid: boolean; cleanId: string; error?: string } => {
+  const validateStream = (url: string, plat: "twitch" = "twitch"): { valid: boolean; cleanId: string; error?: string } => {
     const trimmed = url.trim();
     if (!trimmed) {
       return { valid: false, cleanId: "", error: "El enlace o canal del directo de Twitch es obligatorio." };

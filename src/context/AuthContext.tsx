@@ -10,7 +10,6 @@ export interface User {
   avatar: string;
   bio?: string;
   twitchUsername?: string;
-  youtubeHandle?: string;
   isGuest?: boolean;
   statsHoursWatched?: number;
   statsRoomsCreated?: number;
@@ -31,15 +30,12 @@ interface AuthContextType {
     avatar?: string;
     bio?: string;
     twitchUsername?: string;
-    youtubeHandle?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   linkTwitch: (channel: string) => Promise<{ success: boolean; error?: string }>;
   unlinkTwitch: () => Promise<{ success: boolean; error?: string }>;
-  linkYouTube: (handle: string) => Promise<{ success: boolean; error?: string }>;
-  unlinkYouTube: () => Promise<{ success: boolean; error?: string }>;
   incrementRoomsCreated: () => void;
   incrementRoomsJoined: () => void;
 }
@@ -124,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     avatar?: string;
     bio?: string;
     twitchUsername?: string;
-    youtubeHandle?: string;
   }) => {
     try {
       const res = await fetch("/api/auth/register", {
@@ -202,15 +197,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return updateProfile({ twitchUsername: "" });
   };
 
-  const linkYouTube = async (handle: string) => {
-    const clean = handle.trim().replace(/^https?:\/\/(www\.)?youtube\.com\//, "");
-    return updateProfile({ youtubeHandle: clean });
-  };
-
-  const unlinkYouTube = async () => {
-    return updateProfile({ youtubeHandle: "" });
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -224,8 +210,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         linkTwitch,
         unlinkTwitch,
-        linkYouTube,
-        unlinkYouTube,
         incrementRoomsCreated,
         incrementRoomsJoined,
       }}

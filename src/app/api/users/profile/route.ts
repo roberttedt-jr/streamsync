@@ -23,7 +23,6 @@ export async function GET() {
           avatar: dbUser.image,
           bio: dbUser.bio,
           twitchUsername: dbUser.twitchUsername,
-          youtubeHandle: dbUser.youtubeHandle,
         },
       });
     }
@@ -48,7 +47,7 @@ export async function PATCH(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const body = await request.json();
-    const { name, username, avatar, bio, twitchUsername, youtubeHandle } = body;
+    const { name, username, avatar, bio, twitchUsername } = body;
 
     // 1. If user is logged in via NextAuth and PostgreSQL is available, persist to Neon DB
     if (session?.user?.id && process.env.DATABASE_URL) {
@@ -60,7 +59,6 @@ export async function PATCH(request: Request) {
           ...(avatar !== undefined && { image: avatar }),
           ...(bio !== undefined && { bio }),
           ...(twitchUsername !== undefined && { twitchUsername }),
-          ...(youtubeHandle !== undefined && { youtubeHandle }),
         },
       });
 
@@ -74,7 +72,6 @@ export async function PATCH(request: Request) {
           avatar: dbUser.image,
           bio: dbUser.bio,
           twitchUsername: dbUser.twitchUsername,
-          youtubeHandle: dbUser.youtubeHandle,
         },
       });
     }
@@ -94,7 +91,6 @@ export async function PATCH(request: Request) {
       avatar,
       bio,
       twitchUsername,
-      youtubeHandle,
     });
 
     return NextResponse.json({ success: true, user: updated });

@@ -44,7 +44,6 @@ model User {
   image             String?
   bio               String?
   twitchUsername    String?
-  youtubeHandle     String?
   statsHoursWatched Float             @default(0)
   statsRoomsCreated Int               @default(0)
   statsRoomsJoined  Int               @default(0)

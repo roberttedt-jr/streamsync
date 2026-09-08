@@ -15,14 +15,6 @@ const DEFAULT_UNAUTHENTICATED_STATUS = {
     liveCount: 0,
     lastSyncedAt: null,
   },
-  youtube: {
-    connected: false,
-    hasYoutubePermission: false,
-    displayName: null,
-    avatarUrl: null,
-    channelsCount: 0,
-    lastSyncedAt: null,
-  },
   canUnlink: false,
   totalAccounts: 0,
 };
@@ -49,7 +41,7 @@ export async function GET() {
         },
       }),
       prisma.followedChannel.findMany({
-        where: { userId },
+        where: { userId, platform: "TWITCH" },
         select: {
           id: true,
           platform: true,
@@ -67,19 +59,12 @@ export async function GET() {
           name: true,
           image: true,
           twitchUsername: true,
-          youtubeHandle: true,
         },
       }),
     ]);
 
     const twitchAccount = accounts.find((a) => a.provider === "twitch");
-    const googleAccount = accounts.find((a) => a.provider === "google");
-
-    const twitchChannels = channels.filter((c) => c.platform === "TWITCH");
-    const youtubeChannels = channels.filter((c) => c.platform === "YOUTUBE");
-
-    const twitchLiveCount = twitchChannels.filter((c) => c.isLive).length;
-
+    const twitchLiveCount = channels.filter((c) => c.isLive).length;
     const canUnlink = accounts.length > 1;
 
     return NextResponse.json({
@@ -88,20 +73,9 @@ export async function GET() {
         hasFollowsPermission: Boolean(twitchAccount?.scope?.includes("user:read:follows")),
         displayName: dbUser?.twitchUsername || dbUser?.name || null,
         avatarUrl: dbUser?.image || null,
-        channelsCount: twitchChannels.length,
+        channelsCount: channels.length,
         liveCount: twitchLiveCount,
-        lastSyncedAt: twitchChannels.length > 0 ? twitchChannels[0].lastSyncedAt : null,
-      },
-      youtube: {
-        connected: Boolean(googleAccount),
-        hasYoutubePermission: Boolean(
-          googleAccount?.scope?.includes("youtube.readonly") ||
-            googleAccount?.scope?.includes("https://www.googleapis.com/auth/youtube.readonly")
-        ),
-        displayName: dbUser?.youtubeHandle || dbUser?.name || null,
-        avatarUrl: dbUser?.image || null,
-        channelsCount: youtubeChannels.length,
-        lastSyncedAt: youtubeChannels.length > 0 ? youtubeChannels[0].lastSyncedAt : null,
+        lastSyncedAt: channels.length > 0 ? channels[0].lastSyncedAt : null,
       },
       canUnlink,
       totalAccounts: accounts.length,

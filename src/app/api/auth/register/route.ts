@@ -4,7 +4,7 @@ import { createUser, createSession } from "@/lib/userStore";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, username, email, password, avatar, bio, twitchUsername, youtubeHandle } = body;
+    const { name, username, email, password, avatar, bio, twitchUsername } = body;
 
     if (!username || username.trim().length < 3) {
       return NextResponse.json(
@@ -35,7 +35,6 @@ export async function POST(request: Request) {
       avatar,
       bio,
       twitchUsername,
-      youtubeHandle,
     });
 
     const token = createSession(user.id);

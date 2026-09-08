@@ -16,9 +16,9 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const provider = body.provider;
 
-    if (provider !== "twitch" && provider !== "google") {
+    if (provider !== "twitch") {
       return NextResponse.json(
-        { error: "InvalidProvider", message: "Proveedor no válido. Debe ser twitch o google." },
+        { error: "InvalidProvider", message: "Proveedor no válido. Debe ser twitch." },
         { status: 400 }
       );
     }
@@ -48,29 +48,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // Delete the account and associated followed channels
-    const platform = provider === "twitch" ? "TWITCH" : "YOUTUBE";
-
     await prisma.$transaction([
       prisma.account.deleteMany({
-        where: { userId, provider },
+        where: { userId, provider: "twitch" },
       }),
       prisma.followedChannel.deleteMany({
-        where: { userId, platform },
+        where: { userId, platform: "TWITCH" },
       }),
       prisma.user.update({
         where: { id: userId },
-        data:
-          provider === "twitch"
-            ? { twitchUsername: null }
-            : { youtubeHandle: null },
+        data: { twitchUsername: null },
       }),
     ]);
 
     return NextResponse.json({
       success: true,
-      message: `Cuenta de ${provider === "twitch" ? "Twitch" : "YouTube"} desconectada con éxito.`,
-      unlinked: provider,
+      message: "Cuenta de Twitch desconectada con éxito.",
+      unlinked: "twitch",
     });
   } catch (err: any) {
     console.error("Error in /api/integrations/unlink:", err);

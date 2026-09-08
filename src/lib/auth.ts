@@ -197,14 +197,6 @@ export function getAuthOptions(
                       data: { twitchUsername: twitchName },
                     });
                   }
-                } else if (account.provider === "google") {
-                  const ytName = (profile as any)?.name || user?.name;
-                  if (ytName) {
-                    await prisma.user.update({
-                      where: { id: currentUserId },
-                      data: { youtubeHandle: ytName },
-                    });
-                  }
                 }
 
                 return "/profile?linked=" + encodeURIComponent(account.provider);
@@ -261,9 +253,6 @@ export function getAuthOptions(
               (profile as any)?.login ||
               user.name;
             if (twitchName) updates.twitchUsername = twitchName;
-          } else if (account.provider === "google") {
-            const ytName = (profile as any)?.name || user.name;
-            if (ytName) updates.youtubeHandle = ytName;
           }
           if (Object.keys(updates).length > 0) {
             try {
@@ -290,7 +279,6 @@ export const authOptions: NextAuthOptions = getAuthOptions();
 export function getProvidersStatus() {
   return {
     twitch: isTwitchConfigured,
-    google: false,
     discord: isDiscordConfigured,
   };
 }

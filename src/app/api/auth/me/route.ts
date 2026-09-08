@@ -28,7 +28,6 @@ export async function GET() {
       if (dbUser) {
         const connectedProviders = {
           twitch: dbUser.accounts.some((a) => a.provider === "twitch"),
-          google: dbUser.accounts.some((a) => a.provider === "google"),
         };
 
         return NextResponse.json({
@@ -40,7 +39,6 @@ export async function GET() {
             avatar: dbUser.image || "",
             bio: dbUser.bio || "",
             twitchUsername: dbUser.twitchUsername || "",
-            youtubeHandle: dbUser.youtubeHandle || "",
             statsHoursWatched: dbUser.statsHoursWatched || 0,
             statsRoomsCreated: dbUser.statsRoomsCreated || 0,
             statsRoomsJoined: dbUser.statsRoomsJoined || 0,
@@ -61,7 +59,7 @@ export async function GET() {
         return NextResponse.json({
           user: {
             ...user,
-            connectedProviders: { twitch: false, google: false },
+            connectedProviders: { twitch: false },
           },
         });
       }
