@@ -15,16 +15,13 @@ import {
   Radio,
   Tv,
   Plus,
-  Search,
-  Flame,
-  Clock,
-  ExternalLink,
-  Shield,
-  Volume2,
-  Gamepad2,
-  Sparkles,
+  Compass,
   Play,
   Share2,
+  Lock,
+  Globe,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
 
 interface RoomItem {
@@ -34,76 +31,51 @@ interface RoomItem {
   platform: "twitch" | "youtube";
   channel: string;
   category?: string;
+  description?: string;
   participantCount?: number;
   maxParticipants?: number;
   isPrivate?: boolean;
-  host?: {
-    name?: string;
-    username?: string;
-  };
+  createdAt?: string;
 }
-
-const QUICK_TRENDING = [
-  { name: "valorant", platform: "twitch", label: "VCT Tournaments", viewers: "45.2K" },
-  { name: "eslcs", platform: "twitch", label: "CS2 Pro League", viewers: "38.1K" },
-  { name: "rocketleague", platform: "twitch", label: "RLCS Championship", viewers: "22.5K" },
-  { name: "jfKfPfyJRdk", platform: "youtube", label: "Lofi Girl Chill Beats", viewers: "18.4K" },
-  { name: "illojuan", platform: "twitch", label: "IlloJuan Directo", viewers: "31.0K" },
-  { name: "4xDzrJKXOOY", platform: "youtube", label: "Synthwave Radio 24/7", viewers: "8.9K" },
-];
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const [rooms, setRooms] = useState<RoomItem[]>([]);
+  const [userRooms, setUserRooms] = useState<RoomItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [platformFilter, setPlatformFilter] = useState<"all" | "twitch" | "youtube">("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchRooms();
-  }, [platformFilter]);
+    fetchUserRooms();
+  }, [user]);
 
-  const fetchRooms = async () => {
+  const fetchUserRooms = async () => {
     setLoading(true);
     try {
-      const url =
-        platformFilter === "all"
-          ? "/api/rooms"
-          : `/api/rooms?platform=${platformFilter}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.rooms) {
-        setRooms(data.rooms);
+      // If user is authenticated, load their hosted rooms
+      if (user?.id) {
+        const res = await fetch(`/api/rooms?hostId=${encodeURIComponent(user.id)}`);
+        const data = await res.json();
+        if (data.rooms && Array.isArray(data.rooms)) {
+          setUserRooms(data.rooms);
+        } else {
+          setUserRooms([]);
+        }
+      } else {
+        setUserRooms([]);
       }
     } catch {
-      addToast("Error al cargar las salas", "error");
+      setUserRooms([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRooms = rooms.filter((r) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      r.name?.toLowerCase().includes(q) ||
-      r.channel?.toLowerCase().includes(q) ||
-      r.category?.toLowerCase().includes(q)
-    );
-  });
-
-  const launchQuickParty = (channel: string, platform: "twitch" | "youtube") => {
-    const code = `${platform}-${Math.random().toString(36).substring(2, 7)}`;
-    router.push(`/room/${code}?platform=${platform}&stream=${encodeURIComponent(channel)}`);
-  };
-
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col justify-between">
-      <Navbar />
+      <Navbar onCreateRoom={() => setIsCreateModalOpen(true)} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* User Welcome & Stats Banner */}
@@ -124,7 +96,7 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                    {user ? `¡Hola de nuevo, ${user.name}!` : "Panel de StreamSync"}
+                    {user ? `¡Hola, ${user.name}!` : "Panel de StreamSync"}
                   </h1>
                   {user?.isGuest && (
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
@@ -133,7 +105,7 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <p className="text-xs sm:text-sm text-gray-400">
-                  {user?.username ? `@${user.username}` : "Modo espectador"} • Salas sincronizadas a 0ms
+                  {user?.email || (user?.username ? `@${user.username}` : "Usuario de StreamSync")} • Sincronización WebSockets a 0ms
                 </p>
 
                 {/* Connected account pills */}
@@ -154,34 +126,17 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Quick stats & action buttons */}
-            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-              <div className="flex items-center gap-4 bg-black/40 border border-white/10 rounded-2xl px-4 py-2 text-center">
-                <div>
-                  <span className="block text-base font-black text-purple-400">
-                    {user?.statsHoursWatched || 2.4}h
-                  </span>
-                  <span className="text-[10px] text-gray-400 uppercase font-semibold">Vistas</span>
-                </div>
-                <div className="w-[1px] h-6 bg-white/10" />
-                <div>
-                  <span className="block text-base font-black text-cyan-400">
-                    {user?.statsRoomsCreated || 0}
-                  </span>
-                  <span className="text-[10px] text-gray-400 uppercase font-semibold">Creadas</span>
-                </div>
-                <div className="w-[1px] h-6 bg-white/10" />
-                <div>
-                  <span className="block text-base font-black text-emerald-400">
-                    {user?.statsRoomsJoined || 1}
-                  </span>
-                  <span className="text-[10px] text-gray-400 uppercase font-semibold">Unidas</span>
-                </div>
-              </div>
-
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <Link
+                href="/room/demo"
+                className="px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 transition"
+              >
+                Probar Sala Demo
+              </Link>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="liquid-btn-primary flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold shadow-xl shadow-purple-600/30 cursor-pointer"
+                className="liquid-btn-primary flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-xl shadow-purple-600/30 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Crear Nueva Sala</span>
@@ -190,153 +145,84 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Trending Stream Launchpad */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-400" />
-              <h2 className="text-sm font-bold text-gray-200 uppercase tracking-wider">
-                Directos recomendados para iniciar sala
-              </h2>
-            </div>
-            <span className="text-xs text-gray-500">Un clic para abrir watch party</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {QUICK_TRENDING.map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => launchQuickParty(item.name, item.platform as any)}
-                className="group p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-purple-500/40 transition-all text-left flex flex-col justify-between cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      item.platform === "twitch"
-                        ? "bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30"
-                        : "bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30"
-                    }`}
-                  >
-                    {item.platform}
-                  </span>
-                  <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {item.viewers}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-white group-hover:text-purple-300 transition truncate">
-                    {item.label}
-                  </h3>
-                  <p className="text-[10px] text-gray-400 truncate">@{item.name}</p>
-                </div>
-                <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-purple-400 font-semibold opacity-0 group-hover:opacity-100 transition">
-                  <span>Abrir sala</span>
-                  <Play className="w-3 h-3 fill-current" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Watch Parties Directory Section */}
+        {/* User Hosted Rooms Section */}
         <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Watch Parties Activas</span>
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  {filteredRooms.length}
-                </span>
+                <span>Tus Salas de Watch Party</span>
+                {userRooms.length > 0 && (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    {userRooms.length}
+                  </span>
+                )}
               </h2>
               <p className="text-xs text-gray-400">
-                Únete a una sala comunitaria con voz en tiempo real o busca por juego.
+                Salas que has creado y gestionas en tu cuenta.
               </p>
             </div>
 
-            {/* Filters & Search */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Platform Pills */}
-              <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/10">
-                <button
-                  onClick={() => setPlatformFilter("all")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
-                    platformFilter === "all"
-                      ? "bg-purple-600 text-white shadow"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Todas
-                </button>
-                <button
-                  onClick={() => setPlatformFilter("twitch")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1 cursor-pointer ${
-                    platformFilter === "twitch"
-                      ? "bg-[#9146FF] text-white shadow"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  <Radio className="w-3 h-3" />
-                  <span>Twitch</span>
-                </button>
-                <button
-                  onClick={() => setPlatformFilter("youtube")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1 cursor-pointer ${
-                    platformFilter === "youtube"
-                      ? "bg-[#FF0000] text-white shadow"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  <Tv className="w-3 h-3" />
-                  <span>YouTube</span>
-                </button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="Buscar sala o canal..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 w-44 sm:w-56 transition"
-                />
-              </div>
-            </div>
+            {userRooms.length > 0 && (
+              <button
+                onClick={fetchUserRooms}
+                className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition cursor-pointer"
+                title="Actualizar"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              </button>
+            )}
           </div>
 
-          {/* Rooms Grid */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-44 rounded-2xl bg-white/[0.02] border border-white/5 animate-pulse" />
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-44 rounded-3xl bg-white/[0.02] border border-white/5 animate-pulse"
+                />
               ))}
             </div>
-          ) : filteredRooms.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl border border-white/10 bg-white/[0.02]">
-              <Gamepad2 className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-white mb-1">No se encontraron salas activas</h3>
-              <p className="text-xs text-gray-400 mb-4 max-w-sm mx-auto">
-                No hay salas que coincidan con tu búsqueda. Sé el primero en crear una sala con tus amigos.
-              </p>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Crear mi Watch Party</span>
-              </button>
+          ) : userRooms.length === 0 ? (
+            /* Required empty state when user has no rooms */
+            <div className="p-12 sm:p-16 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-xl mx-auto my-8 space-y-4">
+              <div className="w-16 h-16 rounded-3xl bg-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto shadow-xl">
+                <Tv className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                  Aún no tienes ninguna sala.
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
+                  Crea tu primera watch party y comparte un directo con tus amigos o comunidad.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="liquid-btn-primary px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-purple-600/25 hover:scale-105 transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Crear mi primera sala</span>
+                </button>
+
+                <Link
+                  href="/explore"
+                  className="liquid-btn-secondary px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition"
+                >
+                  <Compass className="w-4 h-4 text-purple-400" />
+                  <span>Explorar salas públicas</span>
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredRooms.map((room) => (
+              {userRooms.map((room) => (
                 <div
                   key={room.code}
                   className="glass-panel group p-5 rounded-3xl border border-white/10 hover:border-purple-500/40 transition-all flex flex-col justify-between hover:shadow-xl hover:shadow-purple-900/10"
                 >
                   <div>
-                    {/* Header: Platform badge & Live status */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
@@ -350,44 +236,46 @@ export default function DashboardPage() {
                       </span>
 
                       <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5 text-xs text-gray-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full font-mono">
-                          <Users className="w-3 h-3 text-cyan-400" />
-                          <span>{room.participantCount || 1} / {room.maxParticipants || 25}</span>
-                        </span>
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                        </span>
+                        {room.isPrivate ? (
+                          <span className="flex items-center gap-1 text-[11px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                            <Lock className="w-3 h-3" />
+                            <span>Privada</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                            <Globe className="w-3 h-3" />
+                            <span>Pública</span>
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Room Title & Channel */}
                     <h3 className="text-base font-bold text-white group-hover:text-purple-300 transition line-clamp-1 mb-1">
                       {room.name}
                     </h3>
-                    <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-3">
-                      <span className="text-purple-400 font-semibold">Canal:</span>
-                      <span className="text-gray-300 font-medium truncate">
-                        {room.channel || "Pantalla de espera"}
-                      </span>
+                    <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-2">
+                      <span className="text-purple-400 font-semibold">Stream:</span>
+                      <span className="text-gray-300 font-mono truncate">{room.channel}</span>
                     </p>
 
-                    {/* Category tag */}
                     {room.category && (
-                      <span className="inline-block text-[11px] font-medium text-gray-400 bg-white/[0.03] border border-white/5 px-2.5 py-0.5 rounded-md mb-4">
+                      <span className="inline-block text-[11px] font-medium text-gray-400 bg-white/[0.03] border border-white/5 px-2 py-0.5 rounded-md mb-3">
                         {room.category}
                       </span>
                     )}
                   </div>
 
-                  {/* Footer of card */}
                   <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-gray-400 truncate">
-                      Host: <strong className="text-gray-200">{room.host?.name || "Comunidad"}</strong>
+                    <span className="text-[11px] text-gray-400 font-mono">
+                      Código: #{room.code}
                     </span>
 
                     <button
-                      onClick={() => router.push(`/room/${room.code}?platform=${room.platform}&stream=${encodeURIComponent(room.channel)}`)}
+                      onClick={() =>
+                        router.push(
+                          `/room/${room.code}?platform=${room.platform}&stream=${encodeURIComponent(room.channel)}`
+                        )
+                      }
                       className="liquid-btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:scale-105 transition cursor-pointer"
                     >
                       <span>Entrar</span>
@@ -401,10 +289,12 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      {/* Create Room Modal */}
       <CreateRoomModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          fetchUserRooms();
+        }}
       />
 
       <Footer />

@@ -39,17 +39,7 @@ export async function GET(request: Request) {
     );
 
     if (!res.ok) {
-      return NextResponse.json({
-        videos: [
-          {
-            id: "jfKfPfyJRdk",
-            name: "Lofi Girl 24/7",
-            channelTitle: "Lofi Girl",
-            thumbnail: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg",
-            platform: "youtube",
-          },
-        ],
-      });
+      return NextResponse.json({ videos: [] });
     }
 
     const html = await res.text();
@@ -85,16 +75,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ videos });
   } catch {
-    return NextResponse.json({
-      videos: [
-        {
-          id: "jfKfPfyJRdk",
-          name: "Lofi Girl — Beats to Relax/Study to",
-          channelTitle: "Lofi Girl",
-          thumbnail: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg",
-          platform: "youtube",
-        },
-      ],
-    });
+    return NextResponse.json({ videos: [] });
   }
 }

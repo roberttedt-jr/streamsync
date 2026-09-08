@@ -61,10 +61,12 @@ model User {
 model Room {
   id              String            @id @default(cuid())
   code            String            @unique
-  name            String            @default("Gaming Watch Party")
+  name            String            @default("Watch Party")
   platform        String            @default("twitch")
   streamUrl       String?
   channel         String?
+  category        String            @default("Entretenimiento")
+  description     String?
   isPrivate       Boolean           @default(false)
   password        String?
   maxParticipants Int               @default(10)

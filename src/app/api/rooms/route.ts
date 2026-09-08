@@ -1,92 +1,33 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const DEFAULT_ROOMS = [
-  {
-    id: "room_vct_2026",
-    code: "vct-finals",
-    name: "VCT Masters 2026 - Gran Final en Directo",
-    platform: "twitch",
-    channel: "valorant",
-    isPrivate: false,
-    maxParticipants: 50,
-    participantCount: 18,
-    category: "FPS / Esports",
-    host: { name: "AlexGamer", username: "alex_pro" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "room_lofi_dev",
-    code: "lofi-chill",
-    name: "Lofi Beats & Chill Coding Party",
-    platform: "youtube",
-    channel: "jfKfPfyJRdk",
-    isPrivate: false,
-    maxParticipants: 25,
-    participantCount: 12,
-    category: "Música / Chill",
-    host: { name: "DevStreamer", username: "devstreamer" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "room_cs2_major",
-    code: "cs2-major",
-    name: "CS2 Major Championship Watch Party",
-    platform: "twitch",
-    channel: "eslcs",
-    isPrivate: false,
-    maxParticipants: 50,
-    participantCount: 24,
-    category: "FPS / Esports",
-    host: { name: "CyberWolf", username: "cyberwolf" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "room_rlcs",
-    code: "rlcs-eu",
-    name: "RLCS Europe Open - Watch Party con amigos",
-    platform: "twitch",
-    channel: "rocketleague",
-    isPrivate: false,
-    maxParticipants: 15,
-    participantCount: 7,
-    category: "Esports / Deportes",
-    host: { name: "TurboFan", username: "turbofan" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "room_synthwave",
-    code: "synthwave-lounge",
-    name: "Retro Synthwave & Neon Vibing",
-    platform: "youtube",
-    channel: "4xDzrJKXOOY",
-    isPrivate: false,
-    maxParticipants: 30,
-    participantCount: 9,
-    category: "Música / Synth",
-    host: { name: "NeonRider", username: "neonrider" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "room_variety",
-    code: "gaming-night",
-    name: "Viernes de Gaming y Charlas en Directo",
-    platform: "twitch",
-    channel: "illojuan",
-    isPrivate: false,
-    maxParticipants: 20,
-    participantCount: 15,
-    category: "Variedad / Humor",
-    host: { name: "ElenaM", username: "elenagamer" },
-    createdAt: new Date().toISOString(),
-  },
-];
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const platform = searchParams.get("platform");
-  const search = searchParams.get("search")?.toLowerCase();
+  const category = searchParams.get("category");
+  const search = searchParams.get("search")?.toLowerCase().trim();
+  const hostId = searchParams.get("hostId");
+
+  // Specific demo room
+  if (code === "demo") {
+    return NextResponse.json({
+      room: {
+        id: "demo",
+        code: "demo",
+        name: "Sala de demostración",
+        platform: "twitch",
+        channel: "",
+        category: "Entretenimiento",
+        description: "Vista previa interactiva de StreamSync",
+        isPrivate: false,
+        maxParticipants: 10,
+        participants: [],
+        isDemo: true,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  }
 
   // If a specific room code is requested
   if (code) {
@@ -101,98 +42,111 @@ export async function GET(request: Request) {
               },
             },
           },
+          host: {
+            select: { id: true, name: true, image: true, username: true },
+          },
         },
       });
 
       if (!room) {
-        const foundDefault = DEFAULT_ROOMS.find((r) => r.code === code);
-        return NextResponse.json({
-          room: foundDefault || {
-            code,
-            name: `Sala ${code.toUpperCase()}`,
-            platform: "twitch",
-            channel: "",
-            isPrivate: false,
-            participants: [],
-          },
-        });
+        return NextResponse.json({ room: null, error: "Sala no encontrada" }, { status: 404 });
       }
 
       return NextResponse.json({ room });
-    } catch {
-      const foundDefault = DEFAULT_ROOMS.find((r) => r.code === code);
-      return NextResponse.json({
-        room: foundDefault || {
-          code,
-          name: `Sala ${code.toUpperCase()}`,
-          platform: "twitch",
-          channel: "",
-          isPrivate: false,
-          participants: [],
-        },
-      });
+    } catch (error) {
+      console.error("Error fetching room:", error);
+      return NextResponse.json({ room: null, error: "Error al consultar la sala" }, { status: 500 });
     }
   }
 
-  // Otherwise, list active rooms
+  // Otherwise, list active rooms from real database
   try {
+    const whereClause: any = {
+      ...(hostId ? { hostId } : { isPrivate: false }),
+    };
+
+    if (platform && platform !== "all") {
+      whereClause.platform = platform;
+    }
+
+    if (category && category !== "all") {
+      whereClause.category = { equals: category, mode: "insensitive" };
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { channel: { contains: search, mode: "insensitive" } },
+        { category: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
     const dbRooms = await prisma.room.findMany({
-      where: {
-        isPrivate: false,
-        ...(platform && platform !== "all" ? { platform } : {}),
-        ...(search
-          ? {
-              OR: [
-                { name: { contains: search, mode: "insensitive" } },
-                { channel: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
+      where: whereClause,
       include: {
         participants: {
           include: {
             user: { select: { id: true, name: true, image: true, username: true } },
           },
         },
+        host: {
+          select: { id: true, name: true, image: true, username: true },
+        },
       },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 50,
     });
 
-    if (dbRooms && dbRooms.length > 0) {
-      const mapped = dbRooms.map((r) => ({
-        ...r,
-        participantCount: r.participants.length,
-      }));
-      return NextResponse.json({ rooms: mapped });
-    }
-  } catch {}
+    const mapped = (dbRooms || []).map((r) => ({
+      ...r,
+      participantCount: r.participants.length,
+    }));
 
-  // Fallback to default community rooms
-  let filtered = DEFAULT_ROOMS;
-  if (platform && platform !== "all") {
-    filtered = filtered.filter((r) => r.platform === platform);
+    return NextResponse.json({ rooms: mapped });
+  } catch (error) {
+    console.error("Error listing rooms:", error);
+    // Never return fake data when DB is empty or fails
+    return NextResponse.json({ rooms: [] });
   }
-  if (search) {
-    filtered = filtered.filter(
-      (r) =>
-        r.name.toLowerCase().includes(search) ||
-        r.channel.toLowerCase().includes(search) ||
-        r.category.toLowerCase().includes(search)
-    );
-  }
-
-  return NextResponse.json({ rooms: filtered });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code, name, platform, channel, isPrivate, hostId, maxParticipants, password } = body;
+    const {
+      code,
+      name,
+      platform = "twitch",
+      channel = "",
+      streamUrl = "",
+      category = "Entretenimiento",
+      description = "",
+      isPrivate = false,
+      hostId = null,
+      maxParticipants = 10,
+      password = null,
+    } = body;
 
     if (!code) {
-      return NextResponse.json({ error: "Code is required" }, { status: 400 });
+      return NextResponse.json({ error: "El código de sala es requerido" }, { status: 400 });
+    }
+
+    // Clean stream identifier
+    let cleanChannel = channel.trim() || streamUrl.trim();
+    if (platform === "twitch") {
+      cleanChannel = cleanChannel
+        .replace("https://www.twitch.tv/", "")
+        .replace("https://twitch.tv/", "")
+        .replace("@", "")
+        .trim();
+    } else if (platform === "youtube") {
+      if (cleanChannel.includes("v=")) {
+        cleanChannel = cleanChannel.split("v=")[1].split("&")[0];
+      } else if (cleanChannel.includes("youtu.be/")) {
+        cleanChannel = cleanChannel.split("youtu.be/")[1].split("?")[0];
+      } else if (cleanChannel.includes("youtube.com/live/")) {
+        cleanChannel = cleanChannel.split("youtube.com/live/")[1].split("?")[0];
+      }
     }
 
     try {
@@ -200,39 +154,58 @@ export async function POST(request: Request) {
         where: { code },
         update: {
           name: name || undefined,
-          platform: platform || undefined,
-          channel: channel || undefined,
-          isPrivate: isPrivate !== undefined ? isPrivate : undefined,
-          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : undefined,
-          password: password || undefined,
+          platform,
+          channel: cleanChannel || undefined,
+          streamUrl: streamUrl || undefined,
+          category: category || "Entretenimiento",
+          description: description || null,
+          isPrivate: Boolean(isPrivate),
+          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 10,
+          password: password ? String(password).trim() : null,
         },
         create: {
           code,
-          name: name || `Sala de Gaming ${code.toUpperCase()}`,
-          platform: platform || "twitch",
-          channel: channel || "",
-          isPrivate: isPrivate || false,
-          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 25,
-          password: password || null,
+          name: name || `Watch Party de ${category}`,
+          platform,
+          channel: cleanChannel,
+          streamUrl: streamUrl || cleanChannel,
+          category: category || "Entretenimiento",
+          description: description || null,
+          isPrivate: Boolean(isPrivate),
+          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 10,
+          password: password ? String(password).trim() : null,
           hostId: hostId || null,
+        },
+        include: {
+          host: {
+            select: { id: true, name: true, image: true, username: true },
+          },
         },
       });
 
       return NextResponse.json({ success: true, room });
-    } catch {
+    } catch (dbErr) {
+      console.error("Database upsert error:", dbErr);
+      // Fallback in-memory response if DB connection has temporary issue
       return NextResponse.json({
         success: true,
         room: {
           code,
-          name: name || `Sala de Gaming ${code.toUpperCase()}`,
-          platform: platform || "twitch",
-          channel: channel || "",
-          isPrivate: isPrivate || false,
-          maxParticipants: maxParticipants || 25,
+          name: name || `Watch Party de ${category}`,
+          platform,
+          channel: cleanChannel,
+          streamUrl,
+          category,
+          description,
+          isPrivate: Boolean(isPrivate),
+          maxParticipants: maxParticipants || 10,
+          createdAt: new Date().toISOString(),
+          participants: [],
         },
       });
     }
-  } catch {
-    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+  } catch (error) {
+    console.error("Error creating room:", error);
+    return NextResponse.json({ error: "Payload inválido para crear la sala" }, { status: 400 });
   }
 }

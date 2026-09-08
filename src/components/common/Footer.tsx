@@ -151,7 +151,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <div>© 2026 StreamSync. Desarrollado por Roberto Tedt (roberttedt-jr). Todos los derechos reservados.</div>
+          <div>© 2026 StreamSync. Desarrollado por Roberto. Todos los derechos reservados.</div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             <span>Servidores operativos • Baja latencia</span>

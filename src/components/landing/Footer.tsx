@@ -108,7 +108,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <div>© 2026 Robert Tedt (roberttedt-jr). Todos los derechos reservados.</div>
+          <div>© 2026 StreamSync. Desarrollado por Roberto. Todos los derechos reservados.</div>
           <div>{t.footer.forGamers}</div>
         </div>
       </div>
