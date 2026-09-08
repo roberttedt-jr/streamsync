@@ -36,46 +36,85 @@ model Session {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  name          String?
-  username      String?      @unique
-  email         String?      @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  friends       Friendship[] @relation("UserFriends")
-  friendOf      Friendship[] @relation("UserFriendOf")
-  hostedRooms   Room[]       @relation("UserHostedRooms")
-  roomsJoined   RoomParticipant[]
-  createdAt     DateTime     @default(now())
+  id                String            @id @default(cuid())
+  name              String?
+  username          String?           @unique
+  email             String?           @unique
+  emailVerified     DateTime?
+  image             String?
+  bio               String?
+  twitchUsername    String?
+  youtubeHandle     String?
+  statsHoursWatched Float             @default(0)
+  statsRoomsCreated Int               @default(0)
+  statsRoomsJoined  Int               @default(0)
+  accounts          Account[]
+  sessions          Session[]
+  friends           Friendship[]      @relation("UserFriends")
+  friendOf          Friendship[]      @relation("UserFriendOf")
+  hostedRooms       Room[]            @relation("UserHostedRooms")
+  roomsJoined       RoomParticipant[]
+  followedChannels  FollowedChannel[]
+  watchHistory      WatchHistory[]
+  createdAt         DateTime          @default(now())
 }
 
 model Room {
-  id           String            @id @default(cuid())
-  code         String            @unique
-  name         String            @default("Gaming Watch Party")
-  platform     String            @default("twitch")
-  streamUrl    String?
-  channel      String?
-  isPrivate    Boolean           @default(false)
-  hostId       String?
-  host         User?             @relation("UserHostedRooms", fields: [hostId], references: [id], onDelete: SetNull)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  participants RoomParticipant[]
+  id              String            @id @default(cuid())
+  code            String            @unique
+  name            String            @default("Gaming Watch Party")
+  platform        String            @default("twitch")
+  streamUrl       String?
+  channel         String?
+  isPrivate       Boolean           @default(false)
+  password        String?
+  maxParticipants Int               @default(10)
+  hostId          String?
+  host            User?             @relation("UserHostedRooms", fields: [hostId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  participants    RoomParticipant[]
 }
 
 model RoomParticipant {
-  id        String   @id @default(cuid())
-  roomId    String
-  userId    String?
-  role      String   @default("MEMBER")
-  joinedAt  DateTime @default(now())
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  roomId   String
+  userId   String?
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, userId])
+}
+
+model FollowedChannel {
+  id          String   @id @default(cuid())
+  userId      String
+  platform    String
+  channelId   String
+  displayName String
+  avatarUrl   String?
+  category    String?
+  isLive      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform, channelId])
+}
+
+model WatchHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  roomCode        String
+  roomName        String
+  platform        String
+  channel         String
+  durationMinutes Int      @default(0)
+  joinedAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Friendship {
