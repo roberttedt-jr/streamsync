@@ -1,16 +1,11 @@
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import GoogleProvider from "next-auth/providers/google";
 import TwitchProvider from "next-auth/providers/twitch";
 import DiscordProvider from "next-auth/providers/discord";
 
 const isTwitchConfigured = Boolean(
   process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET
-);
-
-const isGoogleConfigured = Boolean(
-  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
 );
 
 const isDiscordConfigured = Boolean(
@@ -34,30 +29,6 @@ export function buildProviders(customScope?: string | null, targetProvider?: str
         authorization: {
           params: {
             scope: twitchScope,
-          },
-        },
-      })
-    );
-  }
-
-  if (isGoogleConfigured) {
-    // Default to minimal sign-in permissions unless expanded scope requested
-    const googleScope =
-      targetProvider === "google" && customScope
-        ? customScope
-        : "openid email profile";
-
-    providers.push(
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID as string,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-        allowDangerousEmailAccountLinking: true,
-        authorization: {
-          params: {
-            scope: googleScope,
-            prompt: "consent",
-            access_type: "offline",
-            response_type: "code",
           },
         },
       })
@@ -319,7 +290,7 @@ export const authOptions: NextAuthOptions = getAuthOptions();
 export function getProvidersStatus() {
   return {
     twitch: isTwitchConfigured,
-    google: isGoogleConfigured,
+    google: false,
     discord: isDiscordConfigured,
   };
 }

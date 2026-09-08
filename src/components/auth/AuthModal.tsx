@@ -35,7 +35,6 @@ export default function AuthModal({
   const [regPassword, setRegPassword] = useState("");
   const [uploadedAvatar, setUploadedAvatar] = useState<string | null>(null);
   const [regTwitch, setRegTwitch] = useState("");
-  const [regYouTube, setRegYouTube] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -103,7 +102,6 @@ export default function AuthModal({
       password: regPassword,
       avatar: uploadedAvatar || undefined,
       twitchUsername: regTwitch.trim() || undefined,
-      youtubeHandle: regYouTube.trim() || undefined,
     });
     setLoading(false);
 
@@ -305,7 +303,7 @@ export default function AuthModal({
 
             <div className="pt-2 border-t border-white/[0.06] space-y-2.5">
               <span className="block text-xs font-semibold text-gray-300">
-                Vincular Canales (Opcional)
+                Vincular Canal de Twitch (Opcional)
               </span>
 
               <div className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.06] rounded-xl px-3 py-1.5 focus-within:border-[#9146FF]/50 transition">
@@ -317,19 +315,6 @@ export default function AuthModal({
                   placeholder="Canal de Twitch (ej. tu_canal)"
                   value={regTwitch}
                   onChange={(e) => setRegTwitch(e.target.value)}
-                  className="w-full bg-transparent text-xs text-white placeholder-gray-500 outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.06] rounded-xl px-3 py-1.5 focus-within:border-red-500/50 transition">
-                <svg className="h-4 w-4 text-[#FF0000] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Canal de YouTube (ej. @tu_canal)"
-                  value={regYouTube}
-                  onChange={(e) => setRegYouTube(e.target.value)}
                   className="w-full bg-transparent text-xs text-white placeholder-gray-500 outline-none"
                 />
               </div>

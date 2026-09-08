@@ -26,7 +26,7 @@ interface RoomItem {
   id?: string;
   code: string;
   name: string;
-  platform: "twitch" | "youtube";
+  platform: "twitch";
   channel: string;
   streamUrl?: string;
   category?: string;
@@ -44,7 +44,6 @@ interface RoomItem {
 export default function ExplorePage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedPlatform, setSelectedPlatform] = useState<"all" | "twitch" | "youtube">("all");
   const [search, setSearch] = useState("");
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,13 +51,13 @@ export default function ExplorePage() {
 
   useEffect(() => {
     fetchRooms();
-  }, [selectedCategory, selectedPlatform]);
+  }, [selectedCategory]);
 
   const fetchRooms = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (selectedPlatform !== "all") params.append("platform", selectedPlatform);
+      params.append("platform", "twitch");
       if (selectedCategory !== "all") params.append("category", selectedCategory);
       if (search.trim()) params.append("search", search.trim());
 
@@ -132,38 +131,10 @@ export default function ExplorePage() {
           </form>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-end overflow-x-auto pb-1 sm:pb-0">
-            <button
-              onClick={() => setSelectedPlatform("all")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
-                selectedPlatform === "all"
-                  ? "bg-purple-600 text-white"
-                  : "bg-white/5 text-gray-400 hover:text-white"
-              }`}
-            >
-              Todas las plataformas
-            </button>
-            <button
-              onClick={() => setSelectedPlatform("twitch")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
-                selectedPlatform === "twitch"
-                  ? "bg-[#9146FF] text-white"
-                  : "bg-white/5 text-gray-400 hover:text-white"
-              }`}
-            >
-              <Radio className="w-3.5 h-3.5" />
-              <span>Twitch</span>
-            </button>
-            <button
-              onClick={() => setSelectedPlatform("youtube")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
-                selectedPlatform === "youtube"
-                  ? "bg-[#FF0000] text-white"
-                  : "bg-white/5 text-gray-400 hover:text-white"
-              }`}
-            >
-              <Tv className="w-3.5 h-3.5" />
-              <span>YouTube</span>
-            </button>
+            <div className="px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 bg-[#9146FF]/15 border border-[#9146FF]/30 text-[#be99ff]">
+              <Radio className="w-3.5 h-3.5 text-[#9146FF]" />
+              <span>Plataforma: Twitch</span>
+            </div>
 
             <button
               onClick={fetchRooms}
@@ -252,15 +223,9 @@ export default function ExplorePage() {
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                        room.platform === "twitch"
-                          ? "bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30"
-                          : "bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30"
-                      }`}
-                    >
-                      {room.platform === "twitch" ? <Radio className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
-                      <span>{room.platform}</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30">
+                      <Radio className="w-3 h-3" />
+                      <span>Twitch</span>
                     </span>
 
                     <div className="flex items-center gap-2">

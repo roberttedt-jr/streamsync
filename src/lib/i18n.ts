@@ -126,7 +126,7 @@ export const translations = {
           age: "23 años",
           role: "Mod de Servidor Gaming (4.2k miembros)",
           content:
-            "Ideal para ver directos con la comunidad del servidor. La sala de voz integrada y alternar entre Twitch y YouTube en un segundo nos salvó las veladas nocturnas.",
+            "Ideal para ver directos con la comunidad del servidor. La sala de voz integrada y alternar directos de Twitch en un segundo nos salvó las veladas nocturnas.",
           tag: "Comunidad Discord",
         },
         {
@@ -152,7 +152,7 @@ export const translations = {
     },
     footer: {
       description:
-        "La plataforma definitiva para disfrutar de directos de Twitch y vídeos de YouTube sincronizados con amigos, chat de voz ultrarrápido y overlay de estadísticas.",
+        "La plataforma definitiva para disfrutar de directos de Twitch sincronizados con amigos, chat de voz ultrarrápido y overlay de estadísticas.",
       navTitle: "Navegación",
       legalTitle: "Legal y Proyecto",
       terms: "Términos del Servicio",
@@ -289,7 +289,7 @@ export const translations = {
           age: "23 y/o",
           role: "Gaming Discord Mod (4.2k members)",
           content:
-            "Perfect for watching streams with our server community. The built-in voice and instant Twitch/YouTube toggle saved our game nights.",
+            "Perfect for watching streams with our server community. The built-in voice and instant Twitch stream sync saved our game nights.",
           tag: "Discord Community",
         },
         {
@@ -315,7 +315,7 @@ export const translations = {
     },
     footer: {
       description:
-        "The ultimate platform to enjoy synchronized Twitch & YouTube streams with friends, ultra-fast voice chat, and live game stats.",
+        "The ultimate platform to enjoy synchronized Twitch streams with friends, ultra-fast voice chat, and live game stats.",
       navTitle: "Navigation",
       legalTitle: "Legal & Project",
       terms: "Terms of Service",

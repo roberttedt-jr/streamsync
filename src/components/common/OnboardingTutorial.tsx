@@ -23,7 +23,7 @@ export default function OnboardingTutorial({ onComplete }: OnboardingTutorialPro
       icon: Radio,
       title: "Sincronización Total al Milisegundo",
       description:
-        "Disfruta de directos de Twitch y vídeos de YouTube con tus amigos. Cuando cualquiera pausa o adelanta, todos se sincronizan automáticamente sin spoilers.",
+        "Disfruta de directos de Twitch con tus amigos. Todos los participantes ven el mismo fotograma sincronizado automáticamente sin spoilers.",
       badge: "Paso 1 de 3",
       accent: "from-violet-500 to-indigo-500",
     },
@@ -39,7 +39,7 @@ export default function OnboardingTutorial({ onComplete }: OnboardingTutorialPro
       icon: Users,
       title: "Tu Perfil Gamer & Canales Vinculados",
       description:
-        "Inicia sesión con Twitch o YouTube para sincronizar tus canales seguidos y ver tus streams favoritos en grupo con un solo clic.",
+        "Inicia sesión con Twitch para sincronizar tus canales seguidos y ver tus streams favoritos en grupo con un solo clic.",
       badge: "Paso 3 de 3",
       accent: "from-emerald-500 to-teal-500",
     },

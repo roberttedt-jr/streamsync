@@ -71,37 +71,23 @@ export default function CreateRoomModal({
 
   if (!isOpen) return null;
 
-  const validateStream = (url: string, plat: "twitch" | "youtube"): { valid: boolean; cleanId: string; error?: string } => {
+  const validateStream = (url: string, plat: "twitch" | "youtube" = "twitch"): { valid: boolean; cleanId: string; error?: string } => {
     const trimmed = url.trim();
     if (!trimmed) {
-      return { valid: false, cleanId: "", error: "El enlace o canal del directo es obligatorio." };
+      return { valid: false, cleanId: "", error: "El enlace o canal del directo de Twitch es obligatorio." };
     }
 
-    if (plat === "twitch") {
-      // Twitch validation: twitch.tv/username or just username
-      const twitchRegex = /^(?:https?:\/\/(?:www\.)?twitch\.tv\/)?@?([a-zA-Z0-9_]{2,25})\/?$/i;
-      const match = trimmed.match(twitchRegex);
-      if (!match) {
-        return {
-          valid: false,
-          cleanId: "",
-          error: "Introduce un enlace válido de Twitch (ej: https://twitch.tv/canal o el nombre del streamer).",
-        };
-      }
-      return { valid: true, cleanId: match[1] };
-    } else {
-      // YouTube validation: watch?v=ID, youtu.be/ID, live/ID, or 11-char ID
-      const ytRegex = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=|live\/|embed\/)|https?:\/\/youtu\.be\/)?([a-zA-Z0-9_-]{11})/i;
-      const match = trimmed.match(ytRegex);
-      if (!match) {
-        return {
-          valid: false,
-          cleanId: "",
-          error: "Introduce un enlace de YouTube válido (ej: https://www.youtube.com/watch?v=... o https://youtu.be/...).",
-        };
-      }
-      return { valid: true, cleanId: match[1] };
+    // Twitch validation: twitch.tv/username or just username
+    const twitchRegex = /^(?:https?:\/\/(?:www\.)?twitch\.tv\/)?@?([a-zA-Z0-9_]{2,25})\/?$/i;
+    const match = trimmed.match(twitchRegex);
+    if (!match) {
+      return {
+        valid: false,
+        cleanId: "",
+        error: "Introduce un canal válido de Twitch (ej: https://twitch.tv/canal o el nombre del streamer).",
+      };
     }
+    return { valid: true, cleanId: match[1] };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -239,59 +225,32 @@ export default function CreateRoomModal({
             />
           </div>
 
-          {/* 2. Plataforma (Obligatorio) */}
+          {/* 2. Plataforma (Twitch Oficial) */}
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5">
-              Plataforma del Directo <span className="text-purple-400">*</span>
+              Plataforma <span className="text-purple-400">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => setPlatform("twitch")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
-                  platform === "twitch"
-                    ? "bg-[#9146FF]/20 border-[#9146FF] text-white shadow-lg shadow-[#9146FF]/10"
-                    : "bg-white/[0.02] border-white/[0.08] text-gray-400 hover:text-white"
-                }`}
-              >
-                <Radio className="h-4 w-4 text-[#9146FF]" />
-                <span>Twitch</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPlatform("youtube")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
-                  platform === "youtube"
-                    ? "bg-red-600/20 border-red-600 text-white shadow-lg shadow-red-600/10"
-                    : "bg-white/[0.02] border-white/[0.08] text-gray-400 hover:text-white"
-                }`}
-              >
-                <Tv className="h-4 w-4 text-[#FF0000]" />
-                <span>YouTube</span>
-              </button>
+            <div className="flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl border bg-[#9146FF]/15 border-[#9146FF]/30 text-white shadow-lg shadow-[#9146FF]/10 text-xs font-bold">
+              <Radio className="h-4 w-4 text-[#be99ff]" />
+              <span className="text-white">Twitch (Directos en tiempo real)</span>
             </div>
           </div>
 
           {/* 3. Enlace del stream (Obligatorio con validación) */}
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5">
-              Enlace o Canal del Stream <span className="text-purple-400">*</span>
+              Canal o Enlace de Twitch <span className="text-purple-400">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder={
-                platform === "twitch"
-                  ? "ej. https://twitch.tv/nombre_canal o nombre_canal"
-                  : "ej. https://www.youtube.com/watch?v=... o enlace de emisión en vivo"
-              }
+              placeholder="ej. https://twitch.tv/ibai o ibai"
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition font-mono"
             />
             <p className="text-[10px] text-gray-500 mt-1">
-              Validamos que sea un enlace o identificador de {platform === "twitch" ? "Twitch" : "YouTube"} real.
+              Introduce el nombre del canal o la URL de Twitch del directo.
             </p>
           </div>
 

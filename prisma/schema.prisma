@@ -54,6 +54,7 @@ model User {
   friendOf          Friendship[]      @relation("UserFriendOf")
   hostedRooms       Room[]            @relation("UserHostedRooms")
   roomsJoined       RoomParticipant[]
+  roomMessages      RoomMessage[]
   followedChannels  FollowedChannel[]
   watchHistory      WatchHistory[]
   createdAt         DateTime          @default(now())
@@ -80,18 +81,44 @@ model Room {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   participants      RoomParticipant[]
+  messages          RoomMessage[]
 }
 
 model RoomParticipant {
-  id       String   @id @default(cuid())
-  roomId   String
-  userId   String?
-  role     String   @default("MEMBER")
-  joinedAt DateTime @default(now())
-  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  roomId        String
+  userId        String?
+  connectionId  String   @unique
+  name          String   @default("Invitado")
+  avatar        String?
+  role          String   @default("MEMBER")
+  isMuted       Boolean  @default(true)
+  cameraEnabled Boolean  @default(false)
+  isSpeaking    Boolean  @default(false)
+  handRaised    Boolean  @default(false)
+  lastSeenAt    DateTime @default(now())
+  joinedAt      DateTime @default(now())
 
-  @@unique([roomId, userId])
+  room Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, lastSeenAt])
+}
+
+model RoomMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String?
+  sender    String
+  avatar    String?
+  text      String
+  isHost    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  room Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, createdAt])
 }
 
 model FollowedChannel {

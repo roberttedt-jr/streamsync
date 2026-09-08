@@ -73,12 +73,6 @@ export default function Testimonials() {
               <span className="text-xs font-bold tracking-wider">Twitch</span>
             </div>
 
-            <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-              <div className="h-3.5 w-4.5 bg-red-600 rounded flex items-center justify-center text-white text-[8px] font-bold">
-                ▶
-              </div>
-              <span className="text-xs font-bold tracking-wider">YouTube</span>
-            </div>
 
             <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
               <MessageCircle className="h-4 w-4 text-[#5865F2]" />

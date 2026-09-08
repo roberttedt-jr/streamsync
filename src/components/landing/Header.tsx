@@ -21,7 +21,7 @@ import ProfileModal from "@/components/auth/ProfileModal";
 
 interface HeaderProps {
   onCreateRoom: () => void;
-  onOpenRoomWithChannel?: (platform: "twitch" | "youtube", channel: string) => void;
+  onOpenRoomWithChannel?: (platform: "twitch", channel: string) => void;
 }
 
 export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderProps) {
@@ -151,11 +151,10 @@ export default function Header({ onCreateRoom, onOpenRoomWithChannel }: HeaderPr
                         }}
                         className="w-full px-3 py-2 text-left text-xs text-purple-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
                       >
-                        <div className="flex items-center -space-x-1">
+                        <div className="flex items-center">
                           <span className="h-2 w-2 rounded-full bg-[#9146FF]" />
-                          <span className="h-2 w-2 rounded-full bg-[#FF0000]" />
                         </div>
-                        <span>Vincular Twitch / YouTube</span>
+                        <span>Vincular Twitch</span>
                       </button>
 
                       <button

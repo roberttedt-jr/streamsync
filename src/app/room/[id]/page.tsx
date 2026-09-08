@@ -6,7 +6,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TwitchPlayer from "@/components/video/TwitchPlayer";
-import YouTubePlayer from "@/components/video/YouTubePlayer";
 import MediaPermissionModal from "@/components/room/MediaPermissionModal";
 import VideoGrid from "@/components/room/VideoGrid";
 import HostOptionsModal from "@/components/room/HostOptionsModal";
@@ -47,7 +46,7 @@ interface RoomData {
   id?: string;
   code: string;
   name: string;
-  platform: "twitch" | "youtube";
+  platform: "twitch";
   channel: string;
   category?: string;
   description?: string;
@@ -72,7 +71,7 @@ export default function WatchPartyRoomPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const initialPlatform = (searchParams?.get("platform") as "twitch" | "youtube") || "twitch";
+  const initialPlatform = "twitch";
   const initialStream = searchParams?.get("stream") || null;
 
   const [roomData, setRoomData] = useState<RoomData | null>(
@@ -92,10 +91,26 @@ export default function WatchPartyRoomPage() {
       : null
   );
 
-  const [platform, setPlatform] = useState<"twitch" | "youtube">(initialPlatform);
+  const [platform, setPlatform] = useState<"twitch">("twitch");
   const [activeStream, setActiveStream] = useState<string | null>(initialStream);
   const [streamInput, setStreamInput] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Tab-unique connectionId for multi-user presence
+  const [connectionId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      let id = sessionStorage.getItem("streamsync_conn_id");
+      if (!id) {
+        id = "conn_" + Math.random().toString(36).substring(2, 9) + "_" + Date.now().toString(36);
+        sessionStorage.setItem("streamsync_conn_id", id);
+      }
+      return id;
+    }
+    return "conn_init";
+  });
+
+  // Synced remote participants
+  const [syncedParticipants, setSyncedParticipants] = useState<any[]>([]);
 
   // Communication & Media WebRTC state
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -119,7 +134,7 @@ export default function WatchPartyRoomPage() {
 
   // Chat
   const [messages, setMessages] = useState<
-    { id: number; sender: string; text: string; time: string; isHost?: boolean }[]
+    { id: string | number; sender: string; text: string; time: string; isHost?: boolean | null; avatar?: string | null }[]
   >([]);
   const [inputMessage, setInputMessage] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -352,14 +367,125 @@ export default function WatchPartyRoomPage() {
     }
   };
 
-  // Real participants only (no fake bots)
+  // Sincronización periódica y latido de presencia multiusuario con el servidor
+  const syncRoom = useCallback(async () => {
+    if (!roomId) return;
+    try {
+      const payload = {
+        action: "sync",
+        connectionId,
+        userId: user?.id || null,
+        name: user?.name || (isHost ? "Anfitrión" : `Invitado ${connectionId.slice(-4)}`),
+        avatar: user?.avatar || null,
+        isHost,
+        role: isHost ? "HOST" : "MEMBER",
+        isMuted: !micActive,
+        cameraEnabled: cameraActive,
+        isSpeaking,
+        handRaised,
+      };
+
+      const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.participants && Array.isArray(data.participants)) {
+          setSyncedParticipants(data.participants);
+        }
+        if (data.messages && Array.isArray(data.messages)) {
+          setMessages(data.messages);
+        }
+      }
+    } catch (err) {
+      console.warn("Heartbeat sync warning:", err);
+    }
+  }, [roomId, connectionId, user, isHost, micActive, cameraActive, isSpeaking, handRaised]);
+
+  // Loop cada 2.5s para presencia real entre sesiones
+  useEffect(() => {
+    syncRoom();
+    const interval = setInterval(syncRoom, 2500);
+    return () => clearInterval(interval);
+  }, [syncRoom]);
+
+  // Notificar salida al cerrar pestaña / desmontar
+  useEffect(() => {
+    const handleUnload = () => {
+      navigator.sendBeacon(
+        `/api/rooms/${encodeURIComponent(roomId)}/sync`,
+        JSON.stringify({ action: "leave", connectionId })
+      );
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      fetch(`/api/rooms/${encodeURIComponent(roomId)}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "leave", connectionId }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+  }, [roomId, connectionId]);
+
+  // Lista de participantes combinada: sincronizada del servidor con stream local para el usuario actual
   const participants = useMemo(() => {
-    if (!user) return [];
+    if (syncedParticipants.length > 0) {
+      const mapped = syncedParticipants.map((p) => {
+        if (p.connectionId === connectionId) {
+          return {
+            ...p,
+            id: p.connectionId,
+            name: user?.name ? `${user.name} (Tú)` : "Tú",
+            avatar: user?.avatar || p.avatar,
+            isHost: isHost,
+            micActive: micActive,
+            cameraActive: cameraActive,
+            isSpeaking: isSpeaking,
+            stream: localStream,
+            handRaised: handRaised,
+          };
+        }
+        return {
+          ...p,
+          id: p.connectionId,
+          micActive: Boolean(p.micActive),
+          cameraActive: Boolean(p.cameraActive),
+          isSpeaking: Boolean(p.isSpeaking),
+          handRaised: Boolean(p.handRaised),
+          isHost: p.isHost || p.role === "HOST",
+        };
+      });
+
+      // Asegurar que el usuario local siempre está incluido
+      if (!mapped.some((p) => p.connectionId === connectionId)) {
+        mapped.unshift({
+          id: connectionId,
+          connectionId,
+          name: user?.name ? `${user.name} (Tú)` : "Tú",
+          avatar: user?.avatar,
+          isHost: isHost,
+          micActive: micActive,
+          cameraActive: cameraActive,
+          isSpeaking: isSpeaking,
+          stream: localStream,
+          handRaised: handRaised,
+        });
+      }
+
+      return mapped;
+    }
+
     return [
       {
-        id: user.id || "local-user",
-        name: user.name || "Tú",
-        avatar: user.avatar,
+        id: connectionId,
+        connectionId,
+        name: user?.name ? `${user.name} (Tú)` : "Tú",
+        avatar: user?.avatar,
         isHost: isHost,
         micActive: micActive,
         cameraActive: cameraActive,
@@ -368,7 +494,7 @@ export default function WatchPartyRoomPage() {
         handRaised: handRaised,
       },
     ];
-  }, [user, isHost, micActive, cameraActive, isSpeaking, localStream, handRaised]);
+  }, [syncedParticipants, connectionId, user, isHost, micActive, cameraActive, isSpeaking, localStream, handRaised]);
 
   // Scroll chat
   useEffect(() => {
@@ -411,55 +537,70 @@ export default function WatchPartyRoomPage() {
     }
   };
 
-  const extractYouTubeId = (input: string): string => {
-    const trimmed = input.trim();
-    if (trimmed.includes("v=")) return trimmed.split("v=")[1].split("&")[0];
-    if (trimmed.includes("youtu.be/")) return trimmed.split("youtu.be/")[1].split("?")[0];
-    if (trimmed.includes("youtube.com/live/"))
-      return trimmed.split("youtube.com/live/")[1].split("?")[0];
-    return trimmed;
-  };
-
   const handleApplyStream = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!streamInput.trim()) return;
 
-    if (platform === "twitch") {
-      const clean = streamInput
-        .replace("https://www.twitch.tv/", "")
-        .replace("https://twitch.tv/", "")
-        .replace("@", "")
-        .trim();
-      setActiveStream(clean);
-      if (typeof addToast === "function") {
-        addToast(`Canal de Twitch cargado: ${clean}`, "success");
-      }
-    } else {
-      const id = extractYouTubeId(streamInput);
-      setActiveStream(id);
-      if (typeof addToast === "function") {
-        addToast("Vídeo de YouTube cargado", "success");
-      }
+    const clean = streamInput
+      .replace("https://www.twitch.tv/", "")
+      .replace("https://twitch.tv/", "")
+      .replace("@", "")
+      .trim();
+    setActiveStream(clean);
+    if (typeof addToast === "function") {
+      addToast(`Canal de Twitch cargado: ${clean}`, "success");
     }
     setStreamInput("");
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
+    const text = inputMessage.trim();
+    const senderName = user?.name || (isHost ? "Anfitrión" : `Invitado ${connectionId.slice(-4)}`);
     const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    // Inserción optimista
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now(),
-        sender: user?.name || "Invitado",
-        text: inputMessage.trim(),
+        id: "local-" + Date.now(),
+        sender: senderName,
+        text,
         time: timeStr,
-        isHost: isHost,
+        isHost,
       },
     ]);
     setInputMessage("");
+
+    try {
+      const res = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_message",
+          connectionId,
+          userId: user?.id || null,
+          sender: senderName,
+          avatar: user?.avatar || null,
+          text,
+          isHost,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.messages && Array.isArray(data.messages)) {
+          setMessages(data.messages);
+        }
+        if (data.participants && Array.isArray(data.participants)) {
+          setSyncedParticipants(data.participants);
+        }
+      }
+    } catch (err) {
+      console.error("Error sending message to sync route:", err);
+    }
   };
 
   const handleToggleHandRaise = () => {
@@ -564,25 +705,13 @@ export default function WatchPartyRoomPage() {
         {/* Change Stream Input */}
         <form onSubmit={handleApplyStream} className="hidden md:flex items-center gap-2 max-w-sm w-full mx-2">
           <div className="flex items-center bg-black/50 border border-white/10 rounded-xl px-2 py-1 w-full focus-within:border-purple-500 transition">
-            <button
-              type="button"
-              onClick={() => setPlatform(platform === "twitch" ? "youtube" : "twitch")}
-              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 transition ${
-                platform === "twitch"
-                  ? "bg-[#9146FF] text-white"
-                  : "bg-[#FF0000] text-white"
-              }`}
-            >
-              {platform === "twitch" ? <Radio className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
-              <span>{platform}</span>
-            </button>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 bg-[#9146FF] text-white">
+              <Radio className="w-3 h-3" />
+              <span>Twitch</span>
+            </span>
             <input
               type="text"
-              placeholder={
-                platform === "twitch"
-                  ? "Pega enlace o canal de Twitch..."
-                  : "Pega enlace o ID de YouTube..."
-              }
+              placeholder="Canal o enlace de Twitch (ej. ibai)..."
               value={streamInput}
               onChange={(e) => setStreamInput(e.target.value)}
               className="bg-transparent border-none text-xs text-white placeholder-gray-500 focus:outline-none px-2 w-full"
@@ -635,21 +764,14 @@ export default function WatchPartyRoomPage() {
       {/* Main Room Body */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 w-full overflow-hidden">
         {/* Stream & Audio/Video Column */}
-        <main className="flex-1 bg-black relative flex flex-col min-h-0 overflow-hidden">
+        <main className="w-full shrink-0 lg:shrink lg:flex-1 flex flex-col min-h-0 bg-black overflow-hidden">
           {/* Active Video Grid (When participants have cameras active) */}
           {allowsVideo && (
             <VideoGrid
               localParticipant={
-                participants[0] || {
-                  id: "local",
-                  name: "Tú",
-                  micActive,
-                  cameraActive,
-                  isSpeaking,
-                  stream: localStream,
-                }
+                participants.find((p) => p.connectionId === connectionId) || participants[0]
               }
-              remoteParticipants={[]}
+              remoteParticipants={participants.filter((p) => p.connectionId !== connectionId)}
               onToggleCamera={handleToggleCamera}
               onToggleMic={handleToggleMic}
             />
@@ -657,19 +779,14 @@ export default function WatchPartyRoomPage() {
 
           {/* Video Player Area with Guaranteed 16:9 Bidirectional Containment (Zero clipping) */}
           {activeStream ? (
-            <div className="flex-1 min-h-0 min-w-0 w-full h-full p-2 sm:p-3.5 flex items-center justify-center bg-black overflow-hidden">
+            <div className="w-full lg:flex-1 lg:min-h-0 flex items-center justify-center p-0 lg:p-3 overflow-hidden bg-black">
               <div
-                className="relative w-full aspect-video flex items-center justify-center rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black"
+                className="relative aspect-video w-full max-h-full max-w-full flex items-center justify-center rounded-none lg:rounded-2xl overflow-hidden border-0 lg:border border-white/10 shadow-2xl bg-black"
                 style={{
-                  maxWidth: "calc((100vh - 130px) * 16 / 9)",
-                  maxHeight: "100%",
+                  maxWidth: "calc((100vh - 120px) * 16 / 9)",
                 }}
               >
-                {platform === "twitch" ? (
-                  <TwitchPlayer channel={activeStream} />
-                ) : (
-                  <YouTubePlayer videoId={activeStream} />
-                )}
+                <TwitchPlayer channel={activeStream} />
               </div>
             </div>
           ) : (
@@ -683,43 +800,19 @@ export default function WatchPartyRoomPage() {
                 Añadir stream para comenzar
               </h2>
               <p className="text-xs sm:text-sm text-gray-400 max-w-md leading-relaxed mb-6">
-                Pega el enlace de cualquier directo o vídeo de Twitch o YouTube para probarlo y sincronizarlo al instante.
+                Pega el nombre de cualquier canal o enlace de Twitch para sincronizarlo al instante con tus amigos.
               </p>
 
               {/* Stream Input Form */}
               <div className="w-full bg-[#0D0F17] border border-white/10 rounded-2xl p-4 text-left shadow-xl">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-gray-300">Plataforma:</span>
-                  <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-lg border border-white/10 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setPlatform("twitch")}
-                      className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${
-                        platform === "twitch" ? "bg-[#9146FF] text-white" : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      Twitch
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPlatform("youtube")}
-                      className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${
-                        platform === "youtube" ? "bg-[#FF0000] text-white" : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      YouTube
-                    </button>
-                  </div>
-                </div>
-
                 <form onSubmit={handleApplyStream} className="flex gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30 rounded-xl text-xs font-bold shrink-0">
+                    <Radio className="w-3.5 h-3.5" />
+                    <span>Twitch</span>
+                  </div>
                   <input
                     type="text"
-                    placeholder={
-                      platform === "twitch"
-                        ? "Pega URL de Twitch o nombre de canal..."
-                        : "Pega URL de YouTube o ID de vídeo..."
-                    }
+                    placeholder="Pega URL o nombre de canal (ej. ibai, auronplay)..."
                     value={streamInput}
                     onChange={(e) => setStreamInput(e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
@@ -944,7 +1037,7 @@ export default function WatchPartyRoomPage() {
         </main>
 
         {/* Right Sidebar: Chat & Participants */}
-        <aside className="w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-white/10 bg-[#090B10] flex flex-col h-72 lg:h-auto shrink-0">
+        <aside className="flex-1 lg:flex-none lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-white/10 bg-[#090B10] flex flex-col min-h-0 overflow-hidden">
           {/* Sidebar Tabs */}
           <div className="flex items-center border-b border-white/10 p-2 gap-1 bg-[#090B10]">
             <button

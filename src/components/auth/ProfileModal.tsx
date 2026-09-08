@@ -16,7 +16,7 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: "profile" | "connections";
-  onOpenRoomWithChannel?: (platform: "twitch" | "youtube", channel: string) => void;
+  onOpenRoomWithChannel?: (platform: "twitch", channel: string) => void;
 }
 
 export default function ProfileModal({
@@ -25,7 +25,7 @@ export default function ProfileModal({
   defaultTab = "profile",
   onOpenRoomWithChannel,
 }: ProfileModalProps) {
-  const { user, updateProfile, linkTwitch, unlinkTwitch, linkYouTube, unlinkYouTube, logout } =
+  const { user, updateProfile, linkTwitch, unlinkTwitch, logout } =
     useAuth();
 
   const [activeTab, setActiveTab] = useState<"profile" | "connections">(defaultTab);
@@ -39,7 +39,6 @@ export default function ProfileModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [twitchInput, setTwitchInput] = useState(user?.twitchUsername || "");
-  const [youtubeInput, setYoutubeInput] = useState(user?.youtubeHandle || "");
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,16 +89,6 @@ export default function ProfileModal({
       await unlinkTwitch();
     } else {
       await linkTwitch(twitchInput);
-    }
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
-  };
-
-  const handleSaveYouTube = async () => {
-    if (!youtubeInput.trim()) {
-      await unlinkYouTube();
-    } else {
-      await linkYouTube(youtubeInput);
     }
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
@@ -243,9 +232,9 @@ export default function ProfileModal({
               <div className="text-xs">
                 <p className="font-semibold text-white">Canales Vinculados</p>
                 <p className="text-[11px] text-gray-400">
-                  {user.twitchUsername || user.youtubeHandle
-                    ? "Twitch o YouTube configurados"
-                    : "Conecta tus canales de Twitch y YouTube"}
+                  {user.twitchUsername
+                    ? "Twitch configurado"
+                    : "Conecta tu canal de Twitch"}
                 </p>
               </div>
               <button
@@ -343,67 +332,7 @@ export default function ProfileModal({
               )}
             </div>
 
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-lg bg-red-600/20 flex items-center justify-center text-red-500">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">Canal de YouTube</h4>
-                    <p className="text-[11px] text-gray-400">
-                      {user.youtubeHandle
-                        ? `Vinculado: youtube.com/${user.youtubeHandle}`
-                        : "No vinculado"}
-                    </p>
-                  </div>
-                </div>
 
-                {user.youtubeHandle ? (
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold flex items-center gap-1">
-                    <Check className="h-3 w-3" />
-                    Conectado
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.06] text-gray-400 text-[10px]">
-                    Desconectado
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="ej. @LofiGirl o ID de directo"
-                  value={youtubeInput}
-                  onChange={(e) => setYoutubeInput(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveYouTube}
-                  className="px-4 py-2 rounded-xl bg-[#FF0000] text-white text-xs font-bold hover:bg-[#cc0000] transition-colors cursor-pointer shrink-0"
-                >
-                  {user.youtubeHandle ? "Actualizar" : "Vincular"}
-                </button>
-              </div>
-
-              {user.youtubeHandle && onOpenRoomWithChannel && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenRoomWithChannel("youtube", user.youtubeHandle!);
-                    onClose();
-                  }}
-                  className="text-[11px] text-red-400 hover:underline flex items-center gap-1 pt-1 cursor-pointer"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  <span>Ver mi canal de YouTube en Watch Party</span>
-                </button>
-              )}
-            </div>
           </div>
         )}
       </div>

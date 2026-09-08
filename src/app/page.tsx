@@ -81,8 +81,8 @@ export default function HomePage() {
               {/* Subtitle */}
               <p className="text-base sm:text-lg text-gray-400 max-w-2xl font-normal leading-relaxed mb-8">
                 {isEn
-                  ? "Create a room, share a Twitch or YouTube stream, and experience every moment in real time with the people who matter."
-                  : "Crea una sala, comparte un stream de Twitch o YouTube y vive cada momento en tiempo real con las personas que importan."}
+                  ? "Create a room, share a Twitch stream, and experience every moment in real time with the people who matter."
+                  : "Crea una sala, comparte un stream de Twitch y vive cada momento en tiempo real con las personas que importan."}
               </p>
 
               {/* CTAs */}
@@ -163,8 +163,8 @@ export default function HomePage() {
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
                     {isEn
-                      ? "Paste any live or recorded video link from Twitch or YouTube to sync it instantly with friends or explore the interactive demo."
-                      : "Pega el enlace de cualquier directo de Twitch o YouTube para sincronizarlo al instante con tus amigos o explora la sala interactiva."}
+                      ? "Enter any Twitch channel to sync it instantly with friends or explore the interactive demo."
+                      : "Introduce cualquier canal de Twitch para sincronizarlo al instante con tus amigos o explora la sala interactiva."}
                   </p>
 
                   <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -186,7 +186,7 @@ export default function HomePage() {
                   {/* Clean bottom status indicator */}
                   <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-white/5">
                     <span>{isEn ? "Chat ready • WebRTC voice enabled" : "Chat listo • Voz WebRTC disponible"}</span>
-                    <span className="text-gray-400">{isEn ? "Compatible with Twitch & YouTube" : "Compatible con Twitch y YouTube"}</span>
+                    <span className="text-gray-400">{isEn ? "Compatible with Twitch" : "Compatible con Twitch"}</span>
                   </div>
                 </div>
               </div>
@@ -224,12 +224,12 @@ export default function HomePage() {
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Paste any live or recorded video link from Twitch or YouTube. You can also start an empty room and add content whenever you're ready."
-                      : "Pega el enlace de cualquier directo o vídeo de Twitch o YouTube. También puedes iniciar la sala vacía y añadir el contenido cuando estés listo."}
+                      ? "Enter any Twitch channel or stream. You can also start an empty room and add content whenever you're ready."
+                      : "Introduce el canal de Twitch que quieras ver. También puedes iniciar la sala vacía y añadir el canal cuando estés listo."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-purple-400 font-medium">
-                  {isEn ? "Compatible with live streams, broadcasts, and videos." : "Compatible con directos, retransmisiones y vídeos grabados."}
+                  {isEn ? "Compatible with live Twitch streams." : "Compatible con directos y retransmisiones de Twitch."}
                 </div>
               </div>
 
@@ -365,7 +365,7 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  {isEn ? "Compatible with Twitch and YouTube." : "Compatible con Twitch y YouTube."}
+                  {isEn ? "Compatible with live Twitch streams." : "Compatible con directos de Twitch."}
                 </div>
               </div>
 

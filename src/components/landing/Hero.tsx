@@ -16,17 +16,11 @@ interface HeroProps {
 }
 
 export default function Hero({ onCreateRoom }: HeroProps) {
-  const [activeTab, setActiveTab] = useState<"twitch" | "youtube">("twitch");
   const { t } = useLanguage();
 
   const handleCreateRoom = () => {
     trackEvent("create_room_click", { location: "hero" });
     onCreateRoom();
-  };
-
-  const handleSwitchTab = (tab: "twitch" | "youtube") => {
-    setActiveTab(tab);
-    trackEvent("stream_switch", { platform: tab, location: "hero_mockup" });
   };
 
   return (
@@ -117,32 +111,13 @@ export default function Hero({ onCreateRoom }: HeroProps) {
                     <p className="text-[11px] text-gray-400 flex items-center gap-1.5">
                       <span>{t.hero.mockupTeams}</span>
                       <span>•</span>
-                      <span>{activeTab === "twitch" ? "En Vivo • Twitch" : "Directo Especial • YouTube"}</span>
+                      <span>En Vivo • Twitch</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="glass-pill p-0.5 rounded-lg flex items-center text-xs">
-                  <button
-                    onClick={() => handleSwitchTab("twitch")}
-                    className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
-                      activeTab === "twitch"
-                        ? "bg-[#9146FF] text-white"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Twitch
-                  </button>
-                  <button
-                    onClick={() => handleSwitchTab("youtube")}
-                    className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
-                      activeTab === "youtube"
-                        ? "bg-red-600 text-white"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    YouTube
-                  </button>
+                <div className="glass-pill px-3 py-1 rounded-lg flex items-center text-xs text-[#be99ff] bg-[#9146FF]/15 border border-[#9146FF]/30 font-medium">
+                  Twitch Sync
                 </div>
               </div>
 

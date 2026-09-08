@@ -46,9 +46,9 @@ export default function CTA({ onCreateRoom }: CTAProps) {
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500 font-normal pt-6 border-t border-white/[0.06]">
             <span>{t.cta.trustFree}</span>
             <span>•</span>
-            <span>{t.cta.trustNoCard}</span>
+            <span>{t.cta.trustNoInstall}</span>
             <span>•</span>
-            <span>{t.cta.trustSquad}</span>
+            <span>{t.cta.trustUnlimited}</span>
           </div>
         </div>
       </div>
