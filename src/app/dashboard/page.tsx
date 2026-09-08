@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Flame,
   CheckCircle2,
+  KeyRound,
 } from "lucide-react";
 
 interface RoomItem {
@@ -76,7 +77,29 @@ interface IntegrationStatus {
   totalAccounts: number;
 }
 
-export default function DashboardPage() {
+const DEFAULT_STATUS: IntegrationStatus = {
+  twitch: {
+    connected: false,
+    hasFollowsPermission: false,
+    displayName: null,
+    avatarUrl: null,
+    channelsCount: 0,
+    liveCount: 0,
+    lastSyncedAt: null,
+  },
+  youtube: {
+    connected: false,
+    hasYoutubePermission: false,
+    displayName: null,
+    avatarUrl: null,
+    channelsCount: 0,
+    lastSyncedAt: null,
+  },
+  canUnlink: false,
+  totalAccounts: 0,
+};
+
+function DashboardContent() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
@@ -85,11 +108,12 @@ export default function DashboardPage() {
   const [userRooms, setUserRooms] = useState<RoomItem[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
 
-  // Integrations & channels state
-  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
+  // Integrations & channels state with guaranteed default values
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus>(DEFAULT_STATUS);
   const [channels, setChannels] = useState<FollowedChannelItem[]>([]);
   const [loadingIntegrations, setLoadingIntegrations] = useState(true);
   const [syncingLive, setSyncingLive] = useState(false);
+  const [syncingYoutube, setSyncingYoutube] = useState(false);
 
   // Active sub-tab for "Desde tus cuentas"
   const [accountsTab, setAccountsTab] = useState<"live" | "youtube">("live");
@@ -98,6 +122,10 @@ export default function DashboardPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [modalPlatform, setModalPlatform] = useState<"twitch" | "youtube">("twitch");
   const [modalChannel, setModalChannel] = useState("");
+
+  // Safe accessors
+  const twitch = integrationStatus?.twitch ?? DEFAULT_STATUS.twitch;
+  const youtube = integrationStatus?.youtube ?? DEFAULT_STATUS.youtube;
 
   useEffect(() => {
     fetchUserRooms();
@@ -109,9 +137,13 @@ export default function DashboardPage() {
     try {
       if (user?.id) {
         const res = await fetch(`/api/rooms?hostId=${encodeURIComponent(user.id)}`);
-        const data = await res.json();
-        if (data.rooms && Array.isArray(data.rooms)) {
-          setUserRooms(data.rooms);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data?.rooms && Array.isArray(data.rooms)) {
+            setUserRooms(data.rooms);
+          } else {
+            setUserRooms([]);
+          }
         } else {
           setUserRooms([]);
         }
@@ -134,13 +166,22 @@ export default function DashboardPage() {
       ]);
 
       if (statusRes.ok) {
-        const statusData = await statusRes.json();
-        setIntegrationStatus(statusData);
+        const statusData = await statusRes.json().catch(() => null);
+        if (statusData && typeof statusData === "object") {
+          setIntegrationStatus({
+            twitch: statusData.twitch || DEFAULT_STATUS.twitch,
+            youtube: statusData.youtube || DEFAULT_STATUS.youtube,
+            canUnlink: Boolean(statusData.canUnlink),
+            totalAccounts: Number(statusData.totalAccounts || 0),
+          });
+        }
       }
 
       if (channelsRes.ok) {
-        const channelsData = await channelsRes.json();
-        setChannels(channelsData.channels || []);
+        const channelsData = await channelsRes.json().catch(() => null);
+        if (channelsData?.channels && Array.isArray(channelsData.channels)) {
+          setChannels(channelsData.channels);
+        }
       }
     } catch (err) {
       console.error("Error fetching integrations:", err);
@@ -150,14 +191,18 @@ export default function DashboardPage() {
   };
 
   const handleRefreshLiveStatus = async () => {
-    if (!integrationStatus?.twitch.connected) return;
+    if (!twitch.connected) return;
+    if (!twitch.hasFollowsPermission) {
+      router.push("/profile?tab=accounts");
+      return;
+    }
     setSyncingLive(true);
     try {
       const res = await fetch("/api/integrations/twitch/sync", { method: "POST" });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         addToast(
-          `Directos actualizados: ${data.liveCount} streamers en vivo`,
+          `Directos actualizados: ${data.liveCount || 0} streamers en vivo`,
           "success"
         );
         await fetchIntegrationsAndChannels();
@@ -168,6 +213,28 @@ export default function DashboardPage() {
       addToast("Error al conectar con Twitch", "error");
     } finally {
       setSyncingLive(false);
+    }
+  };
+
+  const handleSyncYoutube = async () => {
+    if (!youtube.connected || !youtube.hasYoutubePermission) {
+      router.push("/profile?tab=accounts");
+      return;
+    }
+    setSyncingYoutube(true);
+    try {
+      const res = await fetch("/api/integrations/youtube/sync", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        addToast(`Suscripciones de YouTube sincronizadas: ${data.count || 0} canales`, "success");
+        await fetchIntegrationsAndChannels();
+      } else {
+        addToast(data.message || "Error al sincronizar YouTube", "error");
+      }
+    } catch {
+      addToast("Error al conectar con YouTube", "error");
+    } finally {
+      setSyncingYoutube(false);
     }
   };
 
@@ -183,9 +250,7 @@ export default function DashboardPage() {
   const allTwitchChannels = channels.filter((c) => c.platform === "TWITCH");
   const youtubeChannels = channels.filter((c) => c.platform === "YOUTUBE");
 
-  const hasAnyAccountConnected = Boolean(
-    integrationStatus?.twitch.connected || integrationStatus?.youtube.connected
-  );
+  const hasAnyAccountConnected = Boolean(twitch.connected || youtube.connected);
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col justify-between">
@@ -230,18 +295,18 @@ export default function DashboardPage() {
 
                 {/* Connected account tags */}
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                  {integrationStatus?.twitch.connected ? (
+                  {twitch.connected ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30">
                       <Radio className="w-3 h-3" />
-                      <span>Twitch: {integrationStatus.twitch.displayName}</span>
+                      <span>Twitch: {twitch.displayName || "Conectado"}</span>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     </span>
                   ) : null}
 
-                  {integrationStatus?.youtube.connected ? (
+                  {youtube.connected ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30">
                       <Tv className="w-3 h-3" />
-                      <span>YouTube: {integrationStatus.youtube.displayName}</span>
+                      <span>YouTube: {youtube.displayName || "Conectado"}</span>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     </span>
                   ) : null}
@@ -472,7 +537,7 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {integrationStatus?.twitch.connected && (
+                {twitch.connected && twitch.hasFollowsPermission && (
                   <button
                     onClick={handleRefreshLiveStatus}
                     disabled={syncingLive}
@@ -521,10 +586,10 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* If accounts are connected: Tab LIVE (Twitch) */}
+          {/* Tab LIVE (Twitch) */}
           {hasAnyAccountConnected && accountsTab === "live" && (
             <div>
-              {!integrationStatus?.twitch.connected ? (
+              {!twitch.connected ? (
                 <div className="p-8 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
                   <Radio className="w-8 h-8 text-[#9146FF] mx-auto" />
                   <h4 className="text-sm font-bold text-white">Twitch no está conectado</h4>
@@ -538,6 +603,23 @@ export default function DashboardPage() {
                     >
                       <Radio className="w-3.5 h-3.5" />
                       <span>Conectar Twitch</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : !twitch.hasFollowsPermission ? (
+                <div className="p-8 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
+                  <KeyRound className="w-8 h-8 text-amber-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">Falta permiso de canales seguidos</h4>
+                  <p className="text-xs text-gray-400">
+                    Autoriza el acceso a canales seguidos para detectar automáticamente quién está en directo.
+                  </p>
+                  <div className="pt-1">
+                    <Link
+                      href="/profile"
+                      className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>Autorizar canales seguidos</span>
                     </Link>
                   </div>
                 </div>
@@ -644,10 +726,11 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* If accounts are connected: Tab YOUTUBE */}
+          {/* Tab YOUTUBE (Strict 3-State Flow) */}
           {hasAnyAccountConnected && accountsTab === "youtube" && (
             <div>
-              {!integrationStatus?.youtube.connected ? (
+              {/* State 1: YouTube NOT connected */}
+              {!youtube.connected ? (
                 <div className="p-8 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
                   <Tv className="w-8 h-8 text-[#FF0000] mx-auto" />
                   <h4 className="text-sm font-bold text-white">YouTube no está conectado</h4>
@@ -657,14 +740,33 @@ export default function DashboardPage() {
                   <div className="pt-1">
                     <Link
                       href="/profile"
-                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition"
+                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition shadow-lg shadow-red-600/25"
                     >
                       <Tv className="w-3.5 h-3.5" />
                       <span>Conectar YouTube</span>
                     </Link>
                   </div>
                 </div>
+              ) : !youtube.hasYoutubePermission ? (
+                /* State 2: YouTube connected WITHOUT permission */
+                <div className="p-8 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
+                  <KeyRound className="w-8 h-8 text-amber-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">Falta autorización de suscripciones</h4>
+                  <p className="text-xs text-gray-400">
+                    Autoriza el acceso de lectura a tus suscripciones de YouTube para importarlas.
+                  </p>
+                  <div className="pt-1">
+                    <Link
+                      href="/profile"
+                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition shadow-lg shadow-red-600/20"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>Autorizar suscripciones</span>
+                    </Link>
+                  </div>
+                </div>
               ) : youtubeChannels.length > 0 ? (
+                /* State 3: YouTube connected WITH permission and channels */
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {youtubeChannels.map((yt) => (
                     <div
@@ -717,7 +819,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                /* Empty state: No YouTube subscriptions synced */
+                /* State 3: YouTube connected WITH permission, but empty channels */
                 <div className="p-10 text-center rounded-3xl border border-white/10 bg-white/[0.02] max-w-lg mx-auto space-y-3">
                   <Tv className="w-10 h-10 text-gray-600 mx-auto" />
                   <h4 className="text-sm font-bold text-white">
@@ -727,13 +829,14 @@ export default function DashboardPage() {
                     Sincroniza tus canales para verlos aquí y lanzar Watch Parties rápidamente.
                   </p>
                   <div className="pt-2">
-                    <Link
-                      href="/profile"
-                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition"
+                    <button
+                      onClick={handleSyncYoutube}
+                      disabled={syncingYoutube}
+                      className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 transition cursor-pointer disabled:opacity-50 shadow-lg shadow-red-600/20"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Ir a Sincronizar en Perfil</span>
-                    </Link>
+                      <RefreshCw className={`w-3.5 h-3.5 ${syncingYoutube ? "animate-spin" : ""}`} />
+                      <span>{syncingYoutube ? "Sincronizando..." : "Sincronizar suscripciones"}</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -755,5 +858,19 @@ export default function DashboardPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-purple-400 animate-spin" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }

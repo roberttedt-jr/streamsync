@@ -31,6 +31,7 @@ import {
   Link2,
   AlertCircle,
   X,
+  KeyRound,
 } from "lucide-react";
 
 interface IntegrationStatus {
@@ -55,6 +56,28 @@ interface IntegrationStatus {
   totalAccounts: number;
 }
 
+const DEFAULT_STATUS: IntegrationStatus = {
+  twitch: {
+    connected: false,
+    hasFollowsPermission: false,
+    displayName: null,
+    avatarUrl: null,
+    channelsCount: 0,
+    liveCount: 0,
+    lastSyncedAt: null,
+  },
+  youtube: {
+    connected: false,
+    hasYoutubePermission: false,
+    displayName: null,
+    avatarUrl: null,
+    channelsCount: 0,
+    lastSyncedAt: null,
+  },
+  canUnlink: false,
+  totalAccounts: 0,
+};
+
 interface FollowedChannelItem {
   id: string;
   platform: "TWITCH" | "YOUTUBE";
@@ -77,9 +100,9 @@ function ProfileContent() {
     "accounts" | "twitch" | "youtube" | "history" | "stats" | "settings"
   >("accounts");
 
-  // Integration state
-  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState(true);
+  // Integration state with guaranteed safe default values
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus>(DEFAULT_STATUS);
+  const [loadingStatus, setLoadingStatus] = useState(false);
   const [syncingTwitch, setSyncingTwitch] = useState(false);
   const [syncingYoutube, setSyncingYoutube] = useState(false);
 
@@ -101,10 +124,15 @@ function ProfileContent() {
   const [avatarPreview, setAvatarPreview] = useState(user?.avatar || "");
   const [saving, setSaving] = useState(false);
 
-  // Real watch history
+  // Real watch history (zero fake data)
   const [history] = useState<
     { id: string; roomName: string; platform: "twitch" | "youtube"; channel: string; date: string }[]
   >([]);
+
+  // Safe accessor shortcuts
+  const twitch = integrationStatus?.twitch ?? DEFAULT_STATUS.twitch;
+  const youtube = integrationStatus?.youtube ?? DEFAULT_STATUS.youtube;
+  const canUnlink = integrationStatus?.canUnlink ?? false;
 
   // Keep state in sync with user
   useEffect(() => {
@@ -116,17 +144,24 @@ function ProfileContent() {
     }
   }, [user]);
 
-  // Handle URL query parameters (linked, sync, error)
+  // Handle URL query parameters safely
   useEffect(() => {
+    if (!searchParams) return;
     const linkedParam = searchParams.get("linked");
     const syncParam = searchParams.get("sync");
     const errorParam = searchParams.get("error");
 
-    if (errorParam === "AccountAlreadyLinked") {
-      addToast(
-        "Esta cuenta externa ya está vinculada a otro usuario. No es posible fusionarla.",
-        "error"
-      );
+    if (errorParam) {
+      if (errorParam === "AccountAlreadyLinked") {
+        addToast(
+          "Esta cuenta externa ya está vinculada a otro usuario. No es posible fusionarla.",
+          "error"
+        );
+      } else if (errorParam === "AccessDenied" || errorParam === "OAuthCallback") {
+        addToast("Autorización cancelada o denegada.", "info");
+      } else {
+        addToast("Ocurrió un aviso durante la autenticación.", "info");
+      }
       router.replace("/profile");
       return;
     }
@@ -143,14 +178,14 @@ function ProfileContent() {
     if (syncParam === "twitch") {
       addToast("Permisos concedidos. Sincronizando canales de Twitch...", "info");
       router.replace("/profile");
-      handleSyncTwitch();
+      executeTwitchSync();
       return;
     }
 
     if (syncParam === "youtube") {
       addToast("Permisos concedidos. Sincronizando suscripciones de YouTube...", "info");
       router.replace("/profile");
-      handleSyncYoutube();
+      executeYoutubeSync();
       return;
     }
   }, [searchParams]);
@@ -167,7 +202,14 @@ function ProfileContent() {
       const res = await fetch("/api/integrations/status");
       if (res.ok) {
         const data = await res.json();
-        setIntegrationStatus(data);
+        if (data && typeof data === "object") {
+          setIntegrationStatus({
+            twitch: data.twitch || DEFAULT_STATUS.twitch,
+            youtube: data.youtube || DEFAULT_STATUS.youtube,
+            canUnlink: Boolean(data.canUnlink),
+            totalAccounts: Number(data.totalAccounts || 0),
+          });
+        }
       }
     } catch (err) {
       console.error("Error fetching integration status:", err);
@@ -182,7 +224,7 @@ function ProfileContent() {
       const res = await fetch("/api/integrations/channels");
       if (res.ok) {
         const data = await res.json();
-        const items: FollowedChannelItem[] = data.channels || [];
+        const items: FollowedChannelItem[] = Array.isArray(data?.channels) ? data.channels : [];
         setTwitchChannels(items.filter((c) => c.platform === "TWITCH"));
         setYoutubeChannels(items.filter((c) => c.platform === "YOUTUBE"));
       }
@@ -198,36 +240,31 @@ function ProfileContent() {
     signIn(provider, { callbackUrl: `/profile?linked=${provider}` });
   };
 
-  // Sync Twitch
-  const handleSyncTwitch = async () => {
-    // If not granted follows permission, re-authenticate with elevated scope
-    if (integrationStatus?.twitch.connected && !integrationStatus.twitch.hasFollowsPermission) {
-      signIn(
-        "twitch",
-        { callbackUrl: "/profile?sync=twitch" },
-        { scope: "openid user:read:email user:read:follows" }
-      );
-      return;
-    }
+  // Safe Authorize Twitch Follows
+  const handleAuthorizeTwitch = () => {
+    signIn(
+      "twitch",
+      { callbackUrl: "/profile?sync=twitch" },
+      { scope: "openid user:read:email user:read:follows" }
+    );
+  };
 
+  // Execute Twitch Sync (only when connected and has permission)
+  const executeTwitchSync = async () => {
     setSyncingTwitch(true);
     try {
       const res = await fetch("/api/integrations/twitch/sync", { method: "POST" });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.status === 403 && data.error === "MissingScope") {
-        // Redirect to grant permission
-        signIn(
-          "twitch",
-          { callbackUrl: "/profile?sync=twitch" },
-          { scope: "openid user:read:email user:read:follows" }
-        );
+        addToast("Se requiere permiso para leer seguidos. Pulsa en Autorizar canales seguidos.", "info");
+        await fetchIntegrationStatus();
         return;
       }
 
       if (res.ok && data.success) {
         addToast(
-          `Canales de Twitch sincronizados: ${data.count} seguidos (${data.liveCount} en directo)`,
+          `Canales de Twitch sincronizados: ${data.count || 0} seguidos (${data.liveCount || 0} en directo)`,
           "success"
         );
         await Promise.all([fetchIntegrationStatus(), fetchChannels(), refreshUser()]);
@@ -241,41 +278,47 @@ function ProfileContent() {
     }
   };
 
-  // Sync YouTube
-  const handleSyncYoutube = async () => {
-    if (integrationStatus?.youtube.connected && !integrationStatus.youtube.hasYoutubePermission) {
-      signIn(
-        "google",
-        { callbackUrl: "/profile?sync=youtube" },
-        {
-          scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
-          prompt: "consent",
-          access_type: "offline",
-        }
-      );
+  // Safe Twitch Sync Click Handler
+  const handleTwitchSyncClick = () => {
+    if (!twitch.connected) {
+      handleConnectProvider("twitch");
       return;
     }
+    if (!twitch.hasFollowsPermission) {
+      handleAuthorizeTwitch();
+      return;
+    }
+    executeTwitchSync();
+  };
 
+  // Safe Authorize YouTube Subscriptions
+  const handleAuthorizeYoutube = () => {
+    signIn(
+      "google",
+      { callbackUrl: "/profile?sync=youtube" },
+      {
+        scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
+        prompt: "consent",
+        access_type: "offline",
+      }
+    );
+  };
+
+  // Execute YouTube Sync (only when connected and has permission)
+  const executeYoutubeSync = async () => {
     setSyncingYoutube(true);
     try {
       const res = await fetch("/api/integrations/youtube/sync", { method: "POST" });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.status === 403 && data.error === "MissingScope") {
-        signIn(
-          "google",
-          { callbackUrl: "/profile?sync=youtube" },
-          {
-            scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
-            prompt: "consent",
-            access_type: "offline",
-          }
-        );
+        addToast("Se requiere permiso para leer suscripciones. Pulsa en Autorizar suscripciones.", "info");
+        await fetchIntegrationStatus();
         return;
       }
 
       if (res.ok && data.success) {
-        addToast(`Suscripciones de YouTube sincronizadas: ${data.count} canales`, "success");
+        addToast(`Suscripciones de YouTube sincronizadas: ${data.count || 0} canales`, "success");
         await Promise.all([fetchIntegrationStatus(), fetchChannels(), refreshUser()]);
       } else {
         addToast(data.message || "Error al sincronizar YouTube", "error");
@@ -287,11 +330,24 @@ function ProfileContent() {
     }
   };
 
+  // Safe YouTube Click Handler (Enforces the 3-state flow)
+  const handleYoutubeClick = () => {
+    if (!youtube.connected) {
+      handleConnectProvider("google");
+      return;
+    }
+    if (!youtube.hasYoutubePermission) {
+      handleAuthorizeYoutube();
+      return;
+    }
+    executeYoutubeSync();
+  };
+
   // Safe Unlink Account
   const handleConfirmUnlink = async () => {
     if (!unlinkModalProvider) return;
 
-    if (!integrationStatus?.canUnlink) {
+    if (!canUnlink) {
       addToast("No puedes desconectar tu único método de inicio de sesión.", "error");
       setUnlinkModalProvider(null);
       return;
@@ -304,7 +360,7 @@ function ProfileContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider: unlinkModalProvider }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.success) {
         addToast(data.message || "Cuenta desconectada", "info");
@@ -349,11 +405,11 @@ function ProfileContent() {
       avatar: avatarPreview,
     });
     setSaving(false);
-    if (res.success) {
+    if (res?.success) {
       addToast("Perfil actualizado correctamente", "success");
       refreshUser();
     } else {
-      addToast(res.error || "Error al actualizar perfil", "error");
+      addToast(res?.error || "Error al actualizar perfil", "error");
     }
   };
 
@@ -453,10 +509,10 @@ function ProfileContent() {
 
               {/* Connected Accounts Pills */}
               <div className="flex flex-wrap items-center gap-2 mt-4 justify-center sm:justify-start">
-                {integrationStatus?.twitch.connected ? (
+                {twitch.connected ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30">
                     <Radio className="w-3.5 h-3.5" />
-                    <span>Twitch: {integrationStatus.twitch.displayName}</span>
+                    <span>Twitch: {twitch.displayName || "Conectado"}</span>
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   </span>
                 ) : (
@@ -465,10 +521,10 @@ function ProfileContent() {
                   </span>
                 )}
 
-                {integrationStatus?.youtube.connected ? (
+                {youtube.connected ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30">
                     <Tv className="w-3.5 h-3.5" />
-                    <span>YouTube: {integrationStatus.youtube.displayName}</span>
+                    <span>YouTube: {youtube.displayName || "Conectado"}</span>
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   </span>
                 ) : (
@@ -575,8 +631,7 @@ function ProfileContent() {
                 <span>Cuentas Conectadas e Integraciones</span>
               </h2>
               <p className="text-xs text-gray-400 mt-1">
-                Conecta Twitch y YouTube/Google para importar automáticamente tus canales seguidos,
-                suscripciones y crear Watch Parties en un clic.
+                Conecta Twitch y YouTube/Google para importar tus canales seguidos y crear Watch Parties sincronizadas.
               </p>
             </div>
 
@@ -595,7 +650,7 @@ function ProfileContent() {
                       </div>
                     </div>
 
-                    {integrationStatus?.twitch.connected ? (
+                    {twitch.connected ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span>Conectada</span>
@@ -607,26 +662,25 @@ function ProfileContent() {
                     )}
                   </div>
 
-                  {integrationStatus?.twitch.connected ? (
+                  {twitch.connected ? (
                     <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Usuario vinculado:</span>
                         <span className="font-bold text-white font-mono">
-                          @{integrationStatus.twitch.displayName || "twitch_user"}
+                          @{twitch.displayName || "twitch_user"}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Canales seguidos:</span>
                         <span className="font-bold text-purple-300">
-                          {integrationStatus.twitch.channelsCount} canales (
-                          {integrationStatus.twitch.liveCount} en directo)
+                          {twitch.channelsCount} canales ({twitch.liveCount} en directo)
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Permisos:</span>
-                        {integrationStatus.twitch.hasFollowsPermission ? (
+                        {twitch.hasFollowsPermission ? (
                           <span className="text-emerald-400 flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Canales seguidos activos</span>
@@ -634,7 +688,7 @@ function ProfileContent() {
                         ) : (
                           <span className="text-amber-400 flex items-center gap-1">
                             <AlertCircle className="w-3.5 h-3.5" />
-                            <span>Requiere autorización de seguidos</span>
+                            <span>Falta permiso de canales seguidos</span>
                           </span>
                         )}
                       </div>
@@ -647,11 +701,45 @@ function ProfileContent() {
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                  {integrationStatus?.twitch.connected ? (
+                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  {!twitch.connected ? (
+                    <button
+                      onClick={() => handleConnectProvider("twitch")}
+                      className="w-full py-2.5 rounded-xl bg-[#9146FF] hover:bg-[#772ce8] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-[#9146FF]/25"
+                    >
+                      <Radio className="w-4 h-4" />
+                      <span>Conectar Twitch</span>
+                    </button>
+                  ) : !twitch.hasFollowsPermission ? (
                     <>
                       <button
-                        onClick={handleSyncTwitch}
+                        onClick={handleAuthorizeTwitch}
+                        className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-purple-600/25"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>Autorizar canales seguidos</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (!canUnlink) {
+                            addToast("No puedes desconectar tu único método de inicio de sesión.", "error");
+                            return;
+                          }
+                          setUnlinkModalProvider("twitch");
+                        }}
+                        disabled={!canUnlink}
+                        title={!canUnlink ? "Es tu único método de login" : "Desconectar Twitch"}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      >
+                        <Unlink className="w-3.5 h-3.5" />
+                        <span>Desconectar</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleTwitchSyncClick}
                         disabled={syncingTwitch}
                         className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50"
                       >
@@ -661,40 +749,25 @@ function ProfileContent() {
 
                       <button
                         onClick={() => {
-                          if (!integrationStatus.canUnlink) {
-                            addToast(
-                              "No puedes desconectar tu único método de inicio de sesión.",
-                              "error"
-                            );
+                          if (!canUnlink) {
+                            addToast("No puedes desconectar tu único método de inicio de sesión.", "error");
                             return;
                           }
                           setUnlinkModalProvider("twitch");
                         }}
-                        disabled={!integrationStatus.canUnlink}
-                        title={
-                          !integrationStatus.canUnlink
-                            ? "Es tu único método de login"
-                            : "Desconectar Twitch"
-                        }
+                        disabled={!canUnlink}
+                        title={!canUnlink ? "Es tu único método de login" : "Desconectar Twitch"}
                         className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                       >
                         <Unlink className="w-3.5 h-3.5" />
                         <span>Desconectar</span>
                       </button>
                     </>
-                  ) : (
-                    <button
-                      onClick={() => handleConnectProvider("twitch")}
-                      className="w-full py-2.5 rounded-xl bg-[#9146FF] hover:bg-[#772ce8] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-[#9146FF]/25"
-                    >
-                      <Radio className="w-4 h-4" />
-                      <span>Conectar Twitch</span>
-                    </button>
                   )}
                 </div>
               </div>
 
-              {/* YouTube / Google Account Card */}
+              {/* YouTube / Google Account Card (Strict 3-State Flow) */}
               <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -704,11 +777,11 @@ function ProfileContent() {
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-white">YouTube / Google</h3>
-                        <p className="text-xs text-gray-400">Suscripciones y directos de YouTube</p>
+                        <p className="text-xs text-gray-400">Suscripciones y canales de YouTube</p>
                       </div>
                     </div>
 
-                    {integrationStatus?.youtube.connected ? (
+                    {youtube.connected ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span>Conectada</span>
@@ -720,25 +793,25 @@ function ProfileContent() {
                     )}
                   </div>
 
-                  {integrationStatus?.youtube.connected ? (
+                  {youtube.connected ? (
                     <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Cuenta vinculada:</span>
                         <span className="font-bold text-white font-mono">
-                          {integrationStatus.youtube.displayName || "Google Account"}
+                          {youtube.displayName || "Google Account"}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Suscripciones sincronizadas:</span>
                         <span className="font-bold text-red-300">
-                          {integrationStatus.youtube.channelsCount} canales
+                          {youtube.channelsCount} canales
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">Permisos:</span>
-                        {integrationStatus.youtube.hasYoutubePermission ? (
+                        {youtube.hasYoutubePermission ? (
                           <span className="text-emerald-400 flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Acceso a suscripciones concedido</span>
@@ -759,11 +832,48 @@ function ProfileContent() {
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                  {integrationStatus?.youtube.connected ? (
+                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  {/* State 1: YouTube NOT connected -> ONLY "Conectar YouTube" */}
+                  {!youtube.connected ? (
+                    <button
+                      onClick={() => handleConnectProvider("google")}
+                      className="w-full py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-red-600/25"
+                    >
+                      <Tv className="w-4 h-4" />
+                      <span>Conectar YouTube</span>
+                    </button>
+                  ) : !youtube.hasYoutubePermission ? (
+                    /* State 2: YouTube connected WITHOUT expanded permission -> ONLY "Autorizar suscripciones" */
                     <>
                       <button
-                        onClick={handleSyncYoutube}
+                        onClick={handleAuthorizeYoutube}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-[#FF0000] hover:bg-[#cc0000] text-white transition flex items-center gap-2 cursor-pointer shadow-lg shadow-red-600/20"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>Autorizar suscripciones</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (!canUnlink) {
+                            addToast("No puedes desconectar tu único método de inicio de sesión.", "error");
+                            return;
+                          }
+                          setUnlinkModalProvider("google");
+                        }}
+                        disabled={!canUnlink}
+                        title={!canUnlink ? "Es tu único método de login" : "Desconectar YouTube"}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      >
+                        <Unlink className="w-3.5 h-3.5" />
+                        <span>Desconectar</span>
+                      </button>
+                    </>
+                  ) : (
+                    /* State 3: YouTube connected WITH permission -> "Sincronizar suscripciones" */
+                    <>
+                      <button
+                        onClick={handleYoutubeClick}
                         disabled={syncingYoutube}
                         className="px-4 py-2 rounded-xl text-xs font-bold bg-[#FF0000] hover:bg-[#cc0000] text-white transition flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-lg shadow-red-600/20"
                       >
@@ -775,35 +885,20 @@ function ProfileContent() {
 
                       <button
                         onClick={() => {
-                          if (!integrationStatus.canUnlink) {
-                            addToast(
-                              "No puedes desconectar tu único método de inicio de sesión.",
-                              "error"
-                            );
+                          if (!canUnlink) {
+                            addToast("No puedes desconectar tu único método de inicio de sesión.", "error");
                             return;
                           }
                           setUnlinkModalProvider("google");
                         }}
-                        disabled={!integrationStatus.canUnlink}
-                        title={
-                          !integrationStatus.canUnlink
-                            ? "Es tu único método de login"
-                            : "Desconectar YouTube"
-                        }
+                        disabled={!canUnlink}
+                        title={!canUnlink ? "Es tu único método de login" : "Desconectar YouTube"}
                         className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                       >
                         <Unlink className="w-3.5 h-3.5" />
                         <span>Desconectar</span>
                       </button>
                     </>
-                  ) : (
-                    <button
-                      onClick={() => handleConnectProvider("google")}
-                      className="w-full py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-red-600/25"
-                    >
-                      <Tv className="w-4 h-4" />
-                      <span>Conectar YouTube</span>
-                    </button>
                   )}
                 </div>
               </div>
@@ -831,9 +926,9 @@ function ProfileContent() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {integrationStatus?.twitch.connected && (
+                {twitch.connected && twitch.hasFollowsPermission && (
                   <button
-                    onClick={handleSyncTwitch}
+                    onClick={executeTwitchSync}
                     disabled={syncingTwitch}
                     className="px-3 py-2 rounded-xl text-xs font-semibold bg-[#9146FF]/20 hover:bg-[#9146FF]/30 text-[#be99ff] border border-[#9146FF]/30 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
@@ -874,25 +969,37 @@ function ProfileContent() {
                     No tienes canales de Twitch sincronizados aún.
                   </h4>
                   <p className="text-xs text-gray-400 mt-1">
-                    Conecta tu cuenta de Twitch en la pestaña Cuentas Conectadas o escribe un nombre arriba.
+                    {!twitch.connected
+                      ? "Conecta tu cuenta de Twitch para importar automáticamente tus creadores seguidos."
+                      : !twitch.hasFollowsPermission
+                      ? "Autoriza el acceso a canales seguidos para importarlos automáticamente."
+                      : "Pulsa en Sincronizar seguidos para descargar tu lista en vivo."}
                   </p>
                 </div>
-                {integrationStatus?.twitch.connected ? (
-                  <button
-                    onClick={handleSyncTwitch}
-                    disabled={syncingTwitch}
-                    className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${syncingTwitch ? "animate-spin" : ""}`} />
-                    <span>Sincronizar ahora</span>
-                  </button>
-                ) : (
+                {!twitch.connected ? (
                   <button
                     onClick={() => handleConnectProvider("twitch")}
                     className="px-4 py-2 rounded-xl bg-[#9146FF] hover:bg-[#772ce8] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition"
                   >
                     <Radio className="w-3.5 h-3.5" />
                     <span>Conectar Twitch</span>
+                  </button>
+                ) : !twitch.hasFollowsPermission ? (
+                  <button
+                    onClick={handleAuthorizeTwitch}
+                    className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Autorizar canales seguidos</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={executeTwitchSync}
+                    disabled={syncingTwitch}
+                    className="liquid-btn-primary px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${syncingTwitch ? "animate-spin" : ""}`} />
+                    <span>Sincronizar ahora</span>
                   </button>
                 )}
               </div>
@@ -983,9 +1090,9 @@ function ProfileContent() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {integrationStatus?.youtube.connected && (
+                {youtube.connected && youtube.hasYoutubePermission && (
                   <button
-                    onClick={handleSyncYoutube}
+                    onClick={executeYoutubeSync}
                     disabled={syncingYoutube}
                     className="px-3 py-2 rounded-xl text-xs font-semibold bg-[#FF0000]/20 hover:bg-[#FF0000]/30 text-red-300 border border-[#FF0000]/30 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
@@ -1026,25 +1133,37 @@ function ProfileContent() {
                     No tienes canales de YouTube sincronizados aún.
                   </h4>
                   <p className="text-xs text-gray-400 mt-1">
-                    Conecta tu cuenta de Google/YouTube en Cuentas Conectadas o añade canales manualmente arriba.
+                    {!youtube.connected
+                      ? "Conecta tu cuenta de Google/YouTube para acceder a tus contenidos suscritos."
+                      : !youtube.hasYoutubePermission
+                      ? "Autoriza el permiso de suscripciones para importarlas de forma segura."
+                      : "Pulsa en Sincronizar suscripciones para descargar tu lista."}
                   </p>
                 </div>
-                {integrationStatus?.youtube.connected ? (
-                  <button
-                    onClick={handleSyncYoutube}
-                    disabled={syncingYoutube}
-                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${syncingYoutube ? "animate-spin" : ""}`} />
-                    <span>Sincronizar ahora</span>
-                  </button>
-                ) : (
+                {!youtube.connected ? (
                   <button
                     onClick={() => handleConnectProvider("google")}
-                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition"
+                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shadow-lg shadow-red-600/25"
                   >
                     <Tv className="w-3.5 h-3.5" />
                     <span>Conectar YouTube</span>
+                  </button>
+                ) : !youtube.hasYoutubePermission ? (
+                  <button
+                    onClick={handleAuthorizeYoutube}
+                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shadow-lg shadow-red-600/20"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Autorizar suscripciones</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={executeYoutubeSync}
+                    disabled={syncingYoutube}
+                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shadow-lg shadow-red-600/20"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${syncingYoutube ? "animate-spin" : ""}`} />
+                    <span>Sincronizar ahora</span>
                   </button>
                 )}
               </div>
@@ -1100,7 +1219,7 @@ function ProfileContent() {
           </div>
         )}
 
-        {/* TAB 4: History (Zero fake data) */}
+        {/* TAB 4: History */}
         {activeTab === "history" && (
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">

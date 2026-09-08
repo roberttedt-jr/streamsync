@@ -67,6 +67,17 @@ export async function POST() {
       );
     }
 
+    // Require user:read:follows scope
+    if (!account.scope?.includes("user:read:follows")) {
+      return NextResponse.json(
+        {
+          error: "MissingScope",
+          message: "Se requiere autorización para leer canales seguidos de Twitch.",
+        },
+        { status: 403 }
+      );
+    }
+
     // Refresh token if expired
     let token = account.access_token;
     const isExpired = account.expires_at ? account.expires_at * 1000 < Date.now() : false;
@@ -90,13 +101,33 @@ export async function POST() {
       { headers: helixHeaders }
     );
 
-    if (followsRes.status === 401 || followsRes.status === 403) {
+    if (followsRes.status === 401) {
+      return NextResponse.json(
+        {
+          error: "TokenExpired",
+          message: "Tu sesión con Twitch ha caducado. Vuelve a autorizar tu cuenta.",
+        },
+        { status: 401 }
+      );
+    }
+
+    if (followsRes.status === 403) {
       return NextResponse.json(
         {
           error: "MissingScope",
-          message: "Se requiere el permiso de canales seguidos. Reconecta tu cuenta de Twitch para autorizarlo.",
+          message: "Se requiere autorización para leer canales seguidos de Twitch.",
         },
         { status: 403 }
+      );
+    }
+
+    if (followsRes.status === 429) {
+      return NextResponse.json(
+        {
+          error: "RateLimit",
+          message: "Límite de peticiones de Twitch alcanzado. Inténtalo de nuevo en un momento.",
+        },
+        { status: 429 }
       );
     }
 
@@ -113,7 +144,6 @@ export async function POST() {
     const followedList = followsData.data || [];
 
     if (followedList.length === 0) {
-      // Empty followed list - clean up any previously stored and return
       await prisma.followedChannel.deleteMany({
         where: { userId, platform: "TWITCH" },
       });
@@ -121,7 +151,6 @@ export async function POST() {
     }
 
     // Check which of the followed broadcasters are currently live
-    // Helix supports up to 100 user_id parameters
     const broadcasterIds = followedList.map((f: any) => f.broadcaster_id);
     const liveStreamsMap = new Map<string, { game_name: string; title: string; thumbnail_url: string }>();
 

@@ -5,11 +5,34 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const DEFAULT_UNAUTHENTICATED_STATUS = {
+  twitch: {
+    connected: false,
+    hasFollowsPermission: false,
+    displayName: null,
+    avatarUrl: null,
+    channelsCount: 0,
+    liveCount: 0,
+    lastSyncedAt: null,
+  },
+  youtube: {
+    connected: false,
+    hasYoutubePermission: false,
+    displayName: null,
+    avatarUrl: null,
+    channelsCount: 0,
+    lastSyncedAt: null,
+  },
+  canUnlink: false,
+  totalAccounts: 0,
+};
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || !process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      // Return safe unauthenticated status instead of throwing or breaking clients
+      return NextResponse.json(DEFAULT_UNAUTHENTICATED_STATUS);
     }
 
     const userId = session.user.id;
@@ -57,7 +80,6 @@ export async function GET() {
 
     const twitchLiveCount = twitchChannels.filter((c) => c.isLive).length;
 
-    // User can only unlink if they have more than 1 login method
     const canUnlink = accounts.length > 1;
 
     return NextResponse.json({
@@ -86,6 +108,6 @@ export async function GET() {
     });
   } catch (err: any) {
     console.error("Error in /api/integrations/status:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(DEFAULT_UNAUTHENTICATED_STATUS);
   }
 }

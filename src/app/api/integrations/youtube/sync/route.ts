@@ -66,6 +66,23 @@ export async function POST() {
       );
     }
 
+    // Require youtube.readonly scope
+    const hasYoutubeScope = Boolean(
+      account.scope?.includes("youtube.readonly") ||
+        account.scope?.includes("https://www.googleapis.com/auth/youtube.readonly")
+    );
+
+    if (!hasYoutubeScope) {
+      return NextResponse.json(
+        {
+          error: "MissingScope",
+          message:
+            "Se requiere autorización para leer suscripciones de YouTube. Pulsa en Autorizar suscripciones.",
+        },
+        { status: 403 }
+      );
+    }
+
     // Refresh token if expired
     let token = account.access_token;
     const isExpired = account.expires_at ? account.expires_at * 1000 < Date.now() : false;
@@ -84,12 +101,32 @@ export async function POST() {
       }
     );
 
-    if (ytRes.status === 401 || ytRes.status === 403) {
+    if (ytRes.status === 401) {
+      return NextResponse.json(
+        {
+          error: "TokenExpired",
+          message: "Tu sesión de Google/YouTube ha caducado. Vuelve a autorizar tu cuenta.",
+        },
+        { status: 401 }
+      );
+    }
+
+    if (ytRes.status === 403) {
+      const errJson = await ytRes.json().catch(() => ({}));
+      const reason = errJson?.error?.errors?.[0]?.reason;
+      if (reason === "quotaExceeded") {
+        return NextResponse.json(
+          {
+            error: "QuotaExceeded",
+            message: "Cuota de la API de YouTube agotada temporalmente. Inténtalo más tarde.",
+          },
+          { status: 429 }
+        );
+      }
       return NextResponse.json(
         {
           error: "MissingScope",
-          message:
-            "Se requiere permiso para leer suscripciones de YouTube. Reconecta tu cuenta de Google autorizando el acceso a YouTube.",
+          message: "Se requiere autorización para leer suscripciones de YouTube.",
         },
         { status: 403 }
       );
