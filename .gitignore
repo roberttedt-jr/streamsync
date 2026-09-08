@@ -7,8 +7,9 @@ node_modules
 .yarn/install-state.gz
 .pnp.*
 
-.env*.local
 .env
+.env.local
+.env*.local
 
 .next/
 out/

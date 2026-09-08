@@ -33,6 +33,23 @@ function AuthFormContent() {
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
+  const [providersStatus, setProvidersStatus] = useState<{ twitch: boolean; google: boolean }>({
+    twitch: false,
+    google: false,
+  });
+
+  // Check which providers have their environment variables set
+  useEffect(() => {
+    fetch("/api/auth/providers-status")
+      .then((res) => res.json())
+      .then((data) => {
+        setProvidersStatus({
+          twitch: Boolean(data.twitch),
+          google: Boolean(data.google),
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   // Form states
   const [identifier, setIdentifier] = useState("");
@@ -68,12 +85,27 @@ function AuthFormContent() {
   };
 
   const handleOAuth = async (provider: "twitch" | "google") => {
+    if (provider === "twitch" && !providersStatus.twitch) {
+      addToast(
+        "Twitch OAuth pendiente: añade TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en el panel de Vercel o en .env.local",
+        "info"
+      );
+      return;
+    }
+    if (provider === "google" && !providersStatus.google) {
+      addToast(
+        "Google/YouTube OAuth pendiente: añade GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el panel de Vercel o en .env.local",
+        "info"
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       addToast(`Iniciando conexión con ${provider === "twitch" ? "Twitch" : "YouTube / Google"}...`, "info");
       await signIn(provider, { callbackUrl });
     } catch (err: any) {
-      addToast(err?.message || "No se pudo conectar con el proveedor", "error");
+      addToast("No se pudo iniciar la conexión con el proveedor", "error");
       setLoading(false);
     }
   };
@@ -214,10 +246,26 @@ function AuthFormContent() {
                     type="button"
                     onClick={() => handleOAuth("twitch")}
                     disabled={loading}
-                    className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-white font-bold text-sm bg-[#9146FF] hover:bg-[#772ce8] active:scale-[0.99] transition-all shadow-lg shadow-[#9146FF]/25 cursor-pointer disabled:opacity-50"
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm transition-all shadow-lg cursor-pointer ${
+                      providersStatus.twitch
+                        ? "bg-[#9146FF] hover:bg-[#772ce8] shadow-[#9146FF]/25 active:scale-[0.99]"
+                        : "bg-[#9146FF]/50 border border-purple-400/20 hover:bg-[#9146FF]/70"
+                    }`}
+                    title={
+                      providersStatus.twitch
+                        ? "Entrar con tu cuenta de Twitch"
+                        : "Pendiente: Configura TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en Vercel o .env.local"
+                    }
                   >
-                    <Radio className="w-4 h-4" />
-                    <span>Entrar con Twitch</span>
+                    <Radio className="w-4 h-4 shrink-0" />
+                    <span className="flex items-center gap-1.5">
+                      <span>Entrar con Twitch</span>
+                      {!providersStatus.twitch && (
+                        <span className="text-[9px] font-mono bg-white/20 px-1 py-0.2 rounded text-white/90">
+                          Setup
+                        </span>
+                      )}
+                    </span>
                   </button>
 
                   {/* YouTube Button */}
@@ -225,12 +273,37 @@ function AuthFormContent() {
                     type="button"
                     onClick={() => handleOAuth("google")}
                     disabled={loading}
-                    className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-white font-bold text-sm bg-[#FF0000] hover:bg-[#cc0000] active:scale-[0.99] transition-all shadow-lg shadow-[#FF0000]/25 cursor-pointer disabled:opacity-50"
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm transition-all shadow-lg cursor-pointer ${
+                      providersStatus.google
+                        ? "bg-[#FF0000] hover:bg-[#cc0000] shadow-[#FF0000]/25 active:scale-[0.99]"
+                        : "bg-[#FF0000]/50 border border-red-400/20 hover:bg-[#FF0000]/70"
+                    }`}
+                    title={
+                      providersStatus.google
+                        ? "Entrar con tu cuenta de Google / YouTube"
+                        : "Pendiente: Configura GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en Vercel o .env.local"
+                    }
                   >
-                    <Tv className="w-4 h-4" />
-                    <span>Entrar con YouTube</span>
+                    <Tv className="w-4 h-4 shrink-0" />
+                    <span className="flex items-center gap-1.5">
+                      <span>Entrar con YouTube</span>
+                      {!providersStatus.google && (
+                        <span className="text-[9px] font-mono bg-white/20 px-1 py-0.2 rounded text-white/90">
+                          Setup
+                        </span>
+                      )}
+                    </span>
                   </button>
                 </div>
+
+                {(!providersStatus.twitch || !providersStatus.google) && (
+                  <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-[11px] text-gray-300 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
+                      <strong>Configuración pendiente:</strong> Para habilitar OAuth directo con Twitch o YouTube, añade las variables en el panel de Vercel o en tu archivo local <code className="bg-black/50 text-purple-300 px-1 py-0.5 rounded font-mono text-[10px]">.env.local</code>. Mientras tanto, puedes usar <strong>Continuar como Invitado</strong> con acceso completo.
+                    </p>
+                  </div>
+                )}
 
                 {/* Quick Guest Button */}
                 <button
