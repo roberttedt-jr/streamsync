@@ -14,6 +14,10 @@ import {
   Film,
   Sparkles,
   FileText,
+  MessageSquare,
+  Mic,
+  Video,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -44,6 +48,9 @@ export default function CreateRoomModal({
   const [streamUrl, setStreamUrl] = useState(defaultChannel);
   const [category, setCategory] = useState(defaultCategory);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [communicationMode, setCommunicationMode] = useState<
+    "CHAT_ONLY" | "VOICE" | "VIDEO" | "FLEXIBLE"
+  >("FLEXIBLE");
 
   // Sync defaults when modal opens with prefilled stream
   React.useEffect(() => {
@@ -131,6 +138,7 @@ export default function CreateRoomModal({
           isPrivate,
           password: password.trim() || undefined,
           maxParticipants,
+          communicationMode,
           hostId: user?.id,
         }),
       });
@@ -140,16 +148,39 @@ export default function CreateRoomModal({
         throw new Error(data.error || "No se pudo crear la sala");
       }
 
-      incrementRoomsCreated();
-      addToast("¡Sala creada con éxito!", "success");
+      const targetCode = data.room?.code || data.watchParty?.code || randomCode;
+
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("streamsync_created_room_" + targetCode, "true");
+        }
+      } catch {}
+
+      try {
+        if (typeof incrementRoomsCreated === "function") {
+          incrementRoomsCreated();
+        }
+      } catch {}
+
+      try {
+        if (typeof addToast === "function") {
+          addToast("¡Sala creada con éxito!", "success");
+        }
+      } catch {}
+
       onClose();
 
       router.push(
-        `/room/${randomCode}?platform=${platform}&stream=${encodeURIComponent(validation.cleanId)}`
+        `/room/${targetCode}?platform=${platform}&stream=${encodeURIComponent(validation.cleanId)}`
       );
     } catch (err: any) {
+      console.error("Error creating room:", err);
       setError(err.message || "Error al crear la sala en el servidor");
-      addToast(err.message || "Error al crear la sala", "error");
+      if (typeof addToast === "function") {
+        try {
+          addToast(err.message || "Error al crear la sala", "error");
+        } catch {}
+      }
     } finally {
       setLoading(false);
     }
@@ -316,6 +347,95 @@ export default function CreateRoomModal({
             </div>
           </div>
 
+          {/* 6. Modo de Comunicación */}
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5">
+              Cómo queréis comunicaros en la sala <span className="text-purple-400">*</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Option 1: Flexible */}
+              <button
+                type="button"
+                onClick={() => setCommunicationMode("FLEXIBLE")}
+                className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                  communicationMode === "FLEXIBLE"
+                    ? "bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-600/10 text-white"
+                    : "bg-white/[0.02] border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span className="text-xs font-bold">Voz y cámara opcional</span>
+                  </div>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold">
+                    Recomendado
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-400 leading-tight">
+                  Cada participante decide libremente si usar solo chat, entrar a hablar por micro o encender su cámara.
+                </p>
+              </button>
+
+              {/* Option 2: Solo chat */}
+              <button
+                type="button"
+                onClick={() => setCommunicationMode("CHAT_ONLY")}
+                className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                  communicationMode === "CHAT_ONLY"
+                    ? "bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-600/10 text-white"
+                    : "bg-white/[0.02] border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <MessageSquare className="w-4 h-4 text-sky-400 shrink-0" />
+                  <span className="text-xs font-bold">Solo chat</span>
+                </div>
+                <p className="text-[11px] text-gray-400 leading-tight">
+                  Solo texto en tiempo real. Máximo espacio para el reproductor, sin micro ni cámara.
+                </p>
+              </button>
+
+              {/* Option 3: Chat + micrófono */}
+              <button
+                type="button"
+                onClick={() => setCommunicationMode("VOICE")}
+                className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                  communicationMode === "VOICE"
+                    ? "bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-600/10 text-white"
+                    : "bg-white/[0.02] border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Mic className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="text-xs font-bold">Chat + micrófono</span>
+                </div>
+                <p className="text-[11px] text-gray-400 leading-tight">
+                  Chat de texto y canal de audio con cola de turnos para comentar sin pisaros la voz.
+                </p>
+              </button>
+
+              {/* Option 4: Chat + videollamada */}
+              <button
+                type="button"
+                onClick={() => setCommunicationMode("VIDEO")}
+                className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                  communicationMode === "VIDEO"
+                    ? "bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-600/10 text-white"
+                    : "bg-white/[0.02] border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Video className="w-4 h-4 text-pink-400 shrink-0" />
+                  <span className="text-xs font-bold">Chat + videollamada</span>
+                </div>
+                <p className="text-[11px] text-gray-400 leading-tight">
+                  Videollamada en directo con cuadrícula de cámaras de los participantes junto al stream.
+                </p>
+              </button>
+            </div>
+          </div>
+
           {/* 6. Descripción (Opcional) */}
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">
@@ -378,7 +498,11 @@ export default function CreateRoomModal({
               className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-purple-600/30 disabled:opacity-50"
             >
               <span>{loading ? "Creando sala..." : "Crear Watch Party"}</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              {loading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+              ) : (
+                <ArrowRight className="h-3.5 w-3.5" />
+              )}
             </button>
           </div>
         </form>

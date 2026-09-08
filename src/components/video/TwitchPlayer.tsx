@@ -41,12 +41,15 @@ export default function TwitchPlayer({ channel }: TwitchPlayerProps) {
         }
 
         const currentHostname = window.location.hostname;
+        const parents = Array.from(
+          new Set([currentHostname, "streamsync-livid.vercel.app", "localhost"])
+        ).filter(Boolean);
 
         playerRef.current = new window.Twitch.Player(containerId, {
           width: "100%",
           height: "100%",
           channel: channel,
-          parent: [currentHostname],
+          parent: parents,
           autoplay: true,
           muted: true,
         });
@@ -73,8 +76,8 @@ export default function TwitchPlayer({ channel }: TwitchPlayerProps) {
   }, [channel]);
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-surfaceBorder shadow-2xl">
-      <div id={containerId} className="w-full h-full" />
+    <div className="relative w-full h-full min-h-0 min-w-0 bg-black overflow-hidden flex items-center justify-center">
+      <div id={containerId} className="w-full h-full min-h-0 min-w-0 absolute inset-0" />
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // Global in-memory room store to ensure resilience if DATABASE_URL is not configured
 declare global {
@@ -84,6 +86,7 @@ export async function GET(request: Request) {
   try {
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
       const whereClause: any = {
+        isClosed: false,
         ...(hostId ? { hostId } : { isPrivate: false }),
       };
 
@@ -133,6 +136,7 @@ export async function GET(request: Request) {
   // Also include matching rooms from memory store if not already in DB
   const existingCodes = new Set(realRooms.map((r) => r.code));
   for (const r of memoryStore.values()) {
+    if (r.isClosed) continue;
     if (existingCodes.has(r.code)) continue;
 
     if (hostId && r.hostId !== hostId) continue;
@@ -170,6 +174,7 @@ export async function POST(request: Request) {
       hostId = null,
       maxParticipants = 10,
       password = null,
+      communicationMode = "FLEXIBLE",
     } = body;
 
     if (!code) {
@@ -194,6 +199,29 @@ export async function POST(request: Request) {
       }
     }
 
+    // Determine communication capabilities
+    const validModes = ["CHAT_ONLY", "VOICE", "VIDEO", "FLEXIBLE"];
+    const mode = validModes.includes(communicationMode) ? communicationMode : "FLEXIBLE";
+    const allowVoice = mode !== "CHAT_ONLY";
+    const allowVideo = mode === "VIDEO" || mode === "FLEXIBLE";
+
+    // Securely resolve hostId from session or verified DB user
+    let validHostId: string | null = null;
+    try {
+      const session = await getServerSession(authOptions).catch(() => null);
+      if (session?.user && (session.user as any).id) {
+        validHostId = (session.user as any).id;
+      } else if (hostId && process.env.DATABASE_URL) {
+        const existingUser = await prisma.user.findUnique({
+          where: { id: hostId },
+          select: { id: true },
+        });
+        if (existingUser) validHostId = existingUser.id;
+      }
+    } catch {
+      // Non-critical, fallback to null if validation fails
+    }
+
     const roomRecord = {
       code,
       name: name || `Watch Party de ${category}`,
@@ -205,7 +233,11 @@ export async function POST(request: Request) {
       isPrivate: Boolean(isPrivate),
       maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 10,
       password: password ? String(password).trim() : null,
-      hostId: hostId || null,
+      communicationMode: mode,
+      allowVoice,
+      allowVideo,
+      isClosed: false,
+      hostId: validHostId,
       createdAt: new Date().toISOString(),
       participants: [],
       participantCount: 0,
@@ -229,6 +261,10 @@ export async function POST(request: Request) {
             isPrivate: roomRecord.isPrivate,
             maxParticipants: roomRecord.maxParticipants,
             password: roomRecord.password,
+            communicationMode: roomRecord.communicationMode,
+            allowVoice: roomRecord.allowVoice,
+            allowVideo: roomRecord.allowVideo,
+            isClosed: false,
           },
           create: {
             code: roomRecord.code,
@@ -241,6 +277,10 @@ export async function POST(request: Request) {
             isPrivate: roomRecord.isPrivate,
             maxParticipants: roomRecord.maxParticipants,
             password: roomRecord.password,
+            communicationMode: roomRecord.communicationMode,
+            allowVoice: roomRecord.allowVoice,
+            allowVideo: roomRecord.allowVideo,
+            isClosed: false,
             hostId: roomRecord.hostId,
           },
           include: {
@@ -250,13 +290,13 @@ export async function POST(request: Request) {
           },
         });
 
-        return NextResponse.json({ success: true, room });
+        return NextResponse.json({ success: true, room, watchParty: room });
       } catch (dbErr) {
         console.error("Database upsert error, keeping memory store:", dbErr);
       }
     }
 
-    return NextResponse.json({ success: true, room: roomRecord });
+    return NextResponse.json({ success: true, room: roomRecord, watchParty: roomRecord });
   } catch (error) {
     console.error("Error creating room:", error);
     return NextResponse.json({ error: "Payload inválido para crear la sala" }, { status: 400 });

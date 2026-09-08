@@ -70,12 +70,16 @@ model Room {
   description     String?
   isPrivate       Boolean           @default(false)
   password        String?
-  maxParticipants Int               @default(10)
-  hostId          String?
-  host            User?             @relation("UserHostedRooms", fields: [hostId], references: [id], onDelete: SetNull)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  participants    RoomParticipant[]
+  maxParticipants   Int               @default(10)
+  communicationMode String            @default("FLEXIBLE")
+  allowVoice        Boolean           @default(true)
+  allowVideo        Boolean           @default(true)
+  isClosed          Boolean           @default(false)
+  hostId            String?
+  host              User?             @relation("UserHostedRooms", fields: [hostId], references: [id], onDelete: SetNull)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  participants      RoomParticipant[]
 }
 
 model RoomParticipant {
