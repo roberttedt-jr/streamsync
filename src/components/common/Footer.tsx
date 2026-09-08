@@ -3,8 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { Gamepad2 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Footer() {
+  const { t, language } = useLanguage();
+
   return (
     <footer className="border-t border-white/[0.08] bg-[#07090E] text-gray-400 text-xs mt-auto">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -21,7 +24,10 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-gray-400 text-xs max-w-sm leading-relaxed">
-              La plataforma definitiva para disfrutar de directos de Twitch y YouTube sincronizados al milisegundo con amigos, chat de voz ultrarrápido y overlay de estadísticas.
+              {t?.footer?.description ||
+                (language === "en"
+                  ? "The ultimate platform to enjoy synchronized Twitch & YouTube streams with friends, ultra-fast voice chat, and live game stats."
+                  : "La plataforma definitiva para disfrutar de directos de Twitch y YouTube sincronizados al milisegundo con amigos, chat de voz ultrarrápido y overlay de estadísticas.")}
             </p>
 
             {/* Redes y Plataformas Oficiales */}
@@ -95,27 +101,27 @@ export default function Footer() {
 
           <div>
             <h4 className="text-xs font-semibold text-white mb-3 font-heading">
-              Navegación
+              {t?.footer?.navTitle || (language === "en" ? "Navigation" : "Navegación")}
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/" className="hover:text-white transition-colors">
-                  Inicio
+                  {t?.nav?.home || (language === "en" ? "Home" : "Inicio")}
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard" className="hover:text-white transition-colors">
-                  Dashboard de Salas
+                  {t?.nav?.dashboard || (language === "en" ? "Dashboard" : "Dashboard de Salas")}
                 </Link>
               </li>
               <li>
                 <Link href="/explore" className="hover:text-white transition-colors">
-                  Explorar Streams
+                  {t?.nav?.explore || (language === "en" ? "Explore" : "Explorar Streams")}
                 </Link>
               </li>
               <li>
                 <Link href="/profile" className="hover:text-white transition-colors">
-                  Mi Perfil
+                  {t?.nav?.profile || (language === "en" ? "Profile" : "Mi Perfil")}
                 </Link>
               </li>
             </ul>
@@ -123,17 +129,17 @@ export default function Footer() {
 
           <div>
             <h4 className="text-xs font-semibold text-white mb-3 font-heading">
-              Legal & Soporte
+              {t?.footer?.legalTitle || (language === "en" ? "Legal & Support" : "Legal & Soporte")}
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/terms" className="hover:text-white transition-colors">
-                  Términos del Servicio
+                  {t?.footer?.terms || (language === "en" ? "Terms of Service" : "Términos del Servicio")}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-white transition-colors">
-                  Política de Privacidad
+                  {t?.footer?.privacy || (language === "en" ? "Privacy Policy" : "Política de Privacidad")}
                 </Link>
               </li>
               <li>
@@ -143,7 +149,7 @@ export default function Footer() {
                   rel="noreferrer"
                   className="hover:text-white transition-colors"
                 >
-                  Código Abierto en GitHub
+                  {t?.footer?.openSource || (language === "en" ? "Open Source on GitHub" : "Código Abierto en GitHub")}
                 </a>
               </li>
             </ul>
@@ -151,10 +157,10 @@ export default function Footer() {
         </div>
 
         <div className="pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <div>© 2026 StreamSync. Desarrollado por Roberto. Todos los derechos reservados.</div>
+          <div>{t?.footer?.rights || "© 2026 StreamSync. Desarrollado por Roberto. Todos los derechos reservados."}</div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            <span>Servidores operativos • Baja latencia</span>
+            <span>{language === "en" ? "Operating servers • Low latency" : "Servidores operativos • Baja latencia"}</span>
           </div>
         </div>
       </div>

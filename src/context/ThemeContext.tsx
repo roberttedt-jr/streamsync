@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "dark" | "light";
+type Theme = "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -17,30 +17,21 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
+  const theme: Theme = "dark";
 
   useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("streamsync_theme") as Theme | null;
-    if (saved === "light" || saved === "dark") {
-      setThemeState(saved);
-      document.documentElement.classList.toggle("light", saved === "light");
-      document.documentElement.classList.toggle("dark", saved === "dark");
-    } else {
-      document.documentElement.classList.add("dark");
-    }
+    // Permanently ensure dark mode only
+    document.documentElement.classList.remove("light");
+    document.documentElement.classList.add("dark");
+    localStorage.setItem("streamsync_theme", "dark");
   }, []);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem("streamsync_theme", newTheme);
-    document.documentElement.classList.toggle("light", newTheme === "light");
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  const setTheme = () => {
+    // No-op: Dark mode only
   };
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    // No-op: Dark mode only
   };
 
   return (

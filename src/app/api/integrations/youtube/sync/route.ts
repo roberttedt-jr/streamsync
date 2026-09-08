@@ -5,8 +5,15 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-async function refreshGoogleToken(account: any) {
-  if (!account.refresh_token) return account.access_token;
+interface RefreshResult {
+  token: string | null;
+  expiredOrRevoked?: boolean;
+}
+
+async function refreshGoogleToken(account: any): Promise<RefreshResult> {
+  if (!account.refresh_token) {
+    return { token: account.access_token };
+  }
 
   try {
     const params = new URLSearchParams({
@@ -23,12 +30,14 @@ async function refreshGoogleToken(account: any) {
     });
 
     if (!res.ok) {
-      console.error("Google token refresh failed:", res.status);
-      return account.access_token;
+      console.error("Google token refresh failed with status:", res.status);
+      return { token: null, expiredOrRevoked: true };
     }
 
     const data = await res.json();
-    const expiresAt = data.expires_in ? Math.floor(Date.now() / 1000) + data.expires_in : null;
+    const expiresAt = data.expires_in
+      ? Math.floor(Date.now() / 1000) + data.expires_in
+      : null;
 
     await prisma.account.update({
       where: { id: account.id },
@@ -39,10 +48,10 @@ async function refreshGoogleToken(account: any) {
       },
     });
 
-    return data.access_token;
+    return { token: data.access_token };
   } catch (err) {
     console.error("Error refreshing Google token:", err);
-    return account.access_token;
+    return { token: account.access_token };
   }
 }
 
@@ -50,23 +59,35 @@ export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || !process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "UNAUTHORIZED",
+          message: "Debes iniciar sesión para sincronizar tus suscripciones.",
+        },
+        { status: 401 }
+      );
     }
 
     const userId = session.user.id;
 
+    // Retrieve account strictly from DB using session user ID
     const account = await prisma.account.findFirst({
       where: { userId, provider: "google" },
     });
 
     if (!account || !account.access_token) {
       return NextResponse.json(
-        { error: "NotConnected", message: "Tu cuenta de Google/YouTube no está conectada." },
+        {
+          ok: false,
+          code: "YOUTUBE_NOT_CONNECTED",
+          message: "Conecta YouTube antes de sincronizar tus suscripciones.",
+        },
         { status: 400 }
       );
     }
 
-    // Require youtube.readonly scope
+    // Validate youtube.readonly permission
     const hasYoutubeScope = Boolean(
       account.scope?.includes("youtube.readonly") ||
         account.scope?.includes("https://www.googleapis.com/auth/youtube.readonly")
@@ -75,88 +96,153 @@ export async function POST() {
     if (!hasYoutubeScope) {
       return NextResponse.json(
         {
-          error: "MissingScope",
-          message:
-            "Se requiere autorización para leer suscripciones de YouTube. Pulsa en Autorizar suscripciones.",
+          ok: false,
+          code: "YOUTUBE_PERMISSION_REQUIRED",
+          message: "Autoriza el acceso a tus suscripciones de YouTube.",
         },
         { status: 403 }
       );
     }
 
-    // Refresh token if expired
+    // Check expiration and refresh token if needed
     let token = account.access_token;
-    const isExpired = account.expires_at ? account.expires_at * 1000 < Date.now() : false;
+    const isExpired = account.expires_at
+      ? account.expires_at * 1000 < Date.now() + 60000
+      : false;
+
     if (isExpired) {
-      token = await refreshGoogleToken(account);
+      const refreshed = await refreshGoogleToken(account);
+      if (refreshed.expiredOrRevoked || !refreshed.token) {
+        return NextResponse.json(
+          {
+            ok: false,
+            code: "YOUTUBE_TOKEN_EXPIRED",
+            message: "Tu sesión de Google/YouTube ha caducado. Vuelve a autorizar tu cuenta.",
+          },
+          { status: 401 }
+        );
+      }
+      token = refreshed.token;
     }
 
-    // Fetch user subscriptions from YouTube Data API v3
-    const ytRes = await fetch(
-      "https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=50",
-      {
+    // Fetch user subscriptions with pagination
+    let nextPageToken: string | undefined = undefined;
+    const allItems: any[] = [];
+    let pageCount = 0;
+    const MAX_PAGES = 5; // Up to 250 subscriptions maximum
+
+    do {
+      const url = new URL("https://www.googleapis.com/youtube/v3/subscriptions");
+      url.searchParams.set("part", "snippet,contentDetails");
+      url.searchParams.set("mine", "true");
+      url.searchParams.set("maxResults", "50");
+      if (nextPageToken) {
+        url.searchParams.set("pageToken", nextPageToken);
+      }
+
+      const ytRes = await fetch(url.toString(), {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-      }
-    );
+      });
 
-    if (ytRes.status === 401) {
-      return NextResponse.json(
-        {
-          error: "TokenExpired",
-          message: "Tu sesión de Google/YouTube ha caducado. Vuelve a autorizar tu cuenta.",
-        },
-        { status: 401 }
-      );
-    }
-
-    if (ytRes.status === 403) {
-      const errJson = await ytRes.json().catch(() => ({}));
-      const reason = errJson?.error?.errors?.[0]?.reason;
-      if (reason === "quotaExceeded") {
+      if (ytRes.status === 401) {
         return NextResponse.json(
           {
-            error: "QuotaExceeded",
-            message: "Cuota de la API de YouTube agotada temporalmente. Inténtalo más tarde.",
+            ok: false,
+            code: "YOUTUBE_TOKEN_EXPIRED",
+            message: "Tu sesión de Google/YouTube ha caducado. Vuelve a autorizar tu cuenta.",
+          },
+          { status: 401 }
+        );
+      }
+
+      if (ytRes.status === 403) {
+        const errJson = await ytRes.json().catch(() => ({}));
+        const reason = errJson?.error?.errors?.[0]?.reason;
+        if (reason === "quotaExceeded") {
+          return NextResponse.json(
+            {
+              ok: false,
+              code: "YOUTUBE_QUOTA_EXCEEDED",
+              message: "Cuota de la API de YouTube agotada temporalmente. Inténtalo más tarde.",
+            },
+            { status: 429 }
+          );
+        }
+        return NextResponse.json(
+          {
+            ok: false,
+            code: "YOUTUBE_PERMISSION_REQUIRED",
+            message: "Autoriza el acceso a tus suscripciones de YouTube.",
+          },
+          { status: 403 }
+        );
+      }
+
+      if (ytRes.status === 404) {
+        return NextResponse.json(
+          {
+            ok: false,
+            code: "YOUTUBE_NOT_FOUND",
+            message: "No se encontró el recurso o canal de YouTube.",
+          },
+          { status: 404 }
+        );
+      }
+
+      if (ytRes.status === 429) {
+        return NextResponse.json(
+          {
+            ok: false,
+            code: "YOUTUBE_RATE_LIMITED",
+            message: "Demasiadas peticiones a YouTube. Espera un momento antes de reintentar.",
           },
           { status: 429 }
         );
       }
-      return NextResponse.json(
-        {
-          error: "MissingScope",
-          message: "Se requiere autorización para leer suscripciones de YouTube.",
-        },
-        { status: 403 }
-      );
-    }
 
-    if (!ytRes.ok) {
-      const errText = await ytRes.text();
-      console.error("YouTube Data API error:", ytRes.status, errText);
-      return NextResponse.json(
-        {
-          error: "YouTubeApiError",
-          message: "Error al comunicarse con YouTube. Inténtalo de nuevo más tarde.",
-        },
-        { status: 502 }
-      );
-    }
+      if (!ytRes.ok) {
+        console.error("YouTube Data API response error status:", ytRes.status);
+        return NextResponse.json(
+          {
+            ok: false,
+            code: "YOUTUBE_API_ERROR",
+            message: "Error al comunicarse con el servicio de YouTube.",
+          },
+          { status: 502 }
+        );
+      }
 
-    const ytData = await ytRes.json();
-    const items = ytData.items || [];
+      const ytData = await ytRes.json();
+      if (Array.isArray(ytData.items)) {
+        allItems.push(...ytData.items);
+      }
 
-    if (items.length === 0) {
-      await prisma.followedChannel.deleteMany({
-        where: { userId, platform: "YOUTUBE" },
-      });
-      return NextResponse.json({ success: true, count: 0 });
-    }
+      nextPageToken = ytData.nextPageToken;
+      pageCount++;
+    } while (nextPageToken && pageCount < MAX_PAGES);
 
     const now = new Date();
 
-    for (const item of items) {
+    if (allItems.length === 0) {
+      await prisma.followedChannel.deleteMany({
+        where: { userId, platform: "YOUTUBE" },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        success: true,
+        count: 0,
+        channels: [],
+        syncedAt: now.toISOString(),
+      });
+    }
+
+    const savedChannels: any[] = [];
+
+    for (const item of allItems) {
       const channelId = item.snippet?.resourceId?.channelId;
       if (!channelId) continue;
 
@@ -165,8 +251,9 @@ export async function POST() {
         item.snippet?.thumbnails?.medium?.url ||
         item.snippet?.thumbnails?.default?.url ||
         null;
+      const channelUrl = `https://www.youtube.com/channel/${channelId}`;
 
-      await prisma.followedChannel.upsert({
+      const saved = await prisma.followedChannel.upsert({
         where: {
           userId_platform_channelId: {
             userId,
@@ -182,27 +269,40 @@ export async function POST() {
           avatarUrl,
           category: "YouTube",
           isLive: false,
-          url: `https://www.youtube.com/channel/${channelId}`,
+          url: channelUrl,
           lastSyncedAt: now,
         },
         update: {
           displayName: title,
           avatarUrl,
-          url: `https://www.youtube.com/channel/${channelId}`,
+          url: channelUrl,
           lastSyncedAt: now,
         },
+      });
+
+      savedChannels.push({
+        channelId: saved.channelId,
+        displayName: saved.displayName,
+        avatarUrl: saved.avatarUrl,
+        url: saved.url,
       });
     }
 
     return NextResponse.json({
+      ok: true,
       success: true,
-      count: items.length,
-      lastSyncedAt: now.toISOString(),
+      count: savedChannels.length,
+      channels: savedChannels,
+      syncedAt: now.toISOString(),
     });
   } catch (err: any) {
-    console.error("Error in /api/integrations/youtube/sync:", err);
+    console.error("Error in /api/integrations/youtube/sync:", err?.message || err);
     return NextResponse.json(
-      { error: "SyncFailed", message: "Error al sincronizar canales de YouTube." },
+      {
+        ok: false,
+        code: "YOUTUBE_API_ERROR",
+        message: "Error al sincronizar canales de YouTube. Inténtalo de nuevo.",
+      },
       { status: 500 }
     );
   }

@@ -30,8 +30,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -57,9 +56,9 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
   };
 
   const navLinks = [
-    { label: "Inicio", href: "/" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Explorar", href: "/explore" },
+    { label: t?.nav?.home || (language === "en" ? "Home" : "Inicio"), href: "/" },
+    { label: t?.nav?.dashboard || (language === "en" ? "Dashboard" : "Panel"), href: "/dashboard" },
+    { label: t?.nav?.explore || (language === "en" ? "Explore" : "Explorar"), href: "/explore" },
   ];
 
   return (
@@ -101,25 +100,15 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
             })}
           </div>
 
-          {/* Right Controls: Theme, Language, User/Auth */}
+          {/* Right Controls: Language, User/Auth */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-gray-300 hover:text-white transition cursor-pointer"
-              title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-              aria-label="Alternar tema"
-            >
-              {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-amber-400" /> : <Moon className="h-3.5 w-3.5 text-violet-400" />}
-            </button>
-
             {/* Language Pill */}
-            <div className="flex items-center glass-pill rounded-lg p-0.5 text-[11px] font-medium">
+            <div className="flex items-center glass-pill rounded-lg p-0.5 text-[11px] font-medium border border-white/10">
               <button
                 onClick={() => setLanguage("es")}
-                className={`px-2 py-0.5 rounded-md transition-colors ${
+                className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                   language === "es"
-                    ? "bg-white/[0.1] text-white font-semibold"
+                    ? "bg-white/[0.15] text-white font-bold shadow-sm"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -127,9 +116,9 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
               </button>
               <button
                 onClick={() => setLanguage("en")}
-                className={`px-2 py-0.5 rounded-md transition-colors ${
+                className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                   language === "en"
-                    ? "bg-white/[0.1] text-white font-semibold"
+                    ? "bg-white/[0.15] text-white font-bold shadow-sm"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -168,7 +157,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                       className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <LayoutDashboard className="h-3.5 w-3.5 text-violet-400" />
-                      <span>Mi Dashboard</span>
+                      <span>{t?.nav?.dashboard || (language === "en" ? "Dashboard" : "Mi Dashboard")}</span>
                     </Link>
 
                     <Link
@@ -177,7 +166,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                       className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <UserIcon className="h-3.5 w-3.5 text-gray-400" />
-                      <span>Mi Perfil & Canales</span>
+                      <span>{t?.nav?.profile || (language === "en" ? "My Profile" : "Mi Perfil & Canales")}</span>
                     </Link>
 
                     <button
@@ -188,7 +177,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                       className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:text-white hover:bg-white/[0.06] flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>Crear Nueva Sala</span>
+                      <span>{t?.nav?.createRoom || (language === "en" ? "Create Room" : "Crear Nueva Sala")}</span>
                     </button>
 
                     <div className="border-t border-white/[0.06] my-1" />
@@ -201,7 +190,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                       className="w-full px-4 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <LogOut className="h-3.5 w-3.5" />
-                      <span>Cerrar Sesión</span>
+                      <span>{t?.nav?.logout || (language === "en" ? "Sign out" : "Cerrar Sesión")}</span>
                     </button>
                   </div>
                 )}
@@ -212,13 +201,13 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                   href="/auth"
                   className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition cursor-pointer"
                 >
-                  Entrar
+                  {t?.nav?.login || (language === "en" ? "Sign in" : "Entrar")}
                 </Link>
                 <Link
                   href="/auth?tab=register"
                   className="liquid-btn-primary rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer"
                 >
-                  Registro
+                  {language === "en" ? "Register" : "Registro"}
                 </Link>
               </div>
             )}
@@ -229,7 +218,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
               className="liquid-btn-secondary rounded-xl px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5 text-violet-400" />
-              <span>Crear Sala</span>
+              <span>{t?.nav?.createRoom || (language === "en" ? "Create Room" : "Crear Sala")}</span>
             </button>
           </div>
 
@@ -266,7 +255,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                 onClick={() => setMobileOpen(false)}
                 className="p-2.5 rounded-xl hover:bg-white/[0.04]"
               >
-                Mi Perfil & Canales
+                {t?.nav?.profile || (language === "en" ? "My Profile" : "Mi Perfil & Canales")}
               </Link>
             )}
           </div>
@@ -274,14 +263,8 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
           <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
-                onClick={toggleTheme}
-                className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-gray-300"
-              >
-                {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-amber-400" /> : <Moon className="h-3.5 w-3.5 text-violet-400" />}
-              </button>
-              <button
                 onClick={() => setLanguage(language === "es" ? "en" : "es")}
-                className="px-2 py-1 rounded text-xs bg-white/[0.04] border border-white/[0.08] text-gray-300 font-mono"
+                className="px-2.5 py-1 rounded text-xs bg-white/[0.06] border border-white/[0.1] text-gray-200 font-bold cursor-pointer"
               >
                 {language.toUpperCase()}
               </button>
@@ -295,7 +278,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
                     logout();
                     setMobileOpen(false);
                   }}
-                  className="p-1.5 text-red-400"
+                  className="p-1.5 text-red-400 cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -304,9 +287,9 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
               <Link
                 href="/auth"
                 onClick={() => setMobileOpen(false)}
-                className="text-xs bg-white text-black px-3 py-1.5 rounded-xl font-bold"
+                className="text-xs bg-white text-black px-3 py-1.5 rounded-xl font-bold cursor-pointer"
               >
-                Entrar / Registro
+                {t?.nav?.login || (language === "en" ? "Sign in / Register" : "Entrar / Registro")}
               </Link>
             )}
           </div>

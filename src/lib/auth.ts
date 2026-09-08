@@ -78,7 +78,8 @@ export function buildProviders(customScope?: string | null, targetProvider?: str
 
 export function getAuthOptions(
   customScope?: string | null,
-  targetProvider?: string | null
+  targetProvider?: string | null,
+  knownSessionUserId?: string | null
 ): NextAuthOptions {
   return {
     adapter: process.env.DATABASE_URL ? PrismaAdapter(prisma) : undefined,
@@ -160,23 +161,28 @@ export function getAuthOptions(
 
         // Handle safe account linking if user is already logged in
         try {
-          const { cookies } = await import("next/headers");
-          const { decode } = await import("next-auth/jwt");
-          const cookieStore = cookies();
-          const secret =
-            process.env.AUTH_SECRET ||
-            process.env.NEXTAUTH_SECRET ||
-            "streamsync-dev-auth-secret-key-do-not-use-in-production";
+          let currentUserId: string | undefined = knownSessionUserId || undefined;
 
-          const sessionToken =
-            cookieStore.get("__Secure-next-auth.session-token")?.value ||
-            cookieStore.get("next-auth.session-token")?.value;
+          if (!currentUserId) {
+            const { cookies } = await import("next/headers");
+            const { decode } = await import("next-auth/jwt");
+            const cookieStore = cookies();
+            const secret =
+              process.env.AUTH_SECRET ||
+              process.env.NEXTAUTH_SECRET ||
+              "streamsync-dev-auth-secret-key-do-not-use-in-production";
 
-          if (sessionToken && process.env.DATABASE_URL) {
-            const decoded = await decode({ token: sessionToken, secret });
-            const currentUserId = decoded?.id as string | undefined;
+            const sessionToken =
+              cookieStore.get("__Secure-next-auth.session-token")?.value ||
+              cookieStore.get("next-auth.session-token")?.value;
 
-            if (currentUserId) {
+            if (sessionToken) {
+              const decoded = await decode({ token: sessionToken, secret });
+              currentUserId = (decoded?.id || decoded?.sub) as string | undefined;
+            }
+          }
+
+          if (currentUserId && process.env.DATABASE_URL) {
               // Check if external account already belongs to another user
               const existingAccount = await prisma.account.findUnique({
                 where: {
@@ -246,7 +252,6 @@ export function getAuthOptions(
                 return "/profile?linked=" + encodeURIComponent(account.provider);
               }
             }
-          }
         } catch (err) {
           console.error("Account linking evaluation error:", err);
         }

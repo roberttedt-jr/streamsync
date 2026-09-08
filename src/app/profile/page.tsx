@@ -105,6 +105,7 @@ function ProfileContent() {
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [syncingTwitch, setSyncingTwitch] = useState(false);
   const [syncingYoutube, setSyncingYoutube] = useState(false);
+  const [youtubeSyncError, setYoutubeSyncError] = useState<string | null>(null);
 
   // Channels state
   const [twitchChannels, setTwitchChannels] = useState<FollowedChannelItem[]>([]);
@@ -183,9 +184,9 @@ function ProfileContent() {
     }
 
     if (syncParam === "youtube") {
-      addToast("Permisos concedidos. Sincronizando suscripciones de YouTube...", "info");
+      addToast("Permisos concedidos. Ya puedes sincronizar tus suscripciones de YouTube.", "success");
+      fetchIntegrationStatus();
       router.replace("/profile");
-      executeYoutubeSync();
       return;
     }
   }, [searchParams]);
@@ -307,24 +308,35 @@ function ProfileContent() {
   // Execute YouTube Sync (only when connected and has permission)
   const executeYoutubeSync = async () => {
     setSyncingYoutube(true);
+    setYoutubeSyncError(null);
     try {
       const res = await fetch("/api/integrations/youtube/sync", { method: "POST" });
       const data = await res.json().catch(() => ({}));
 
-      if (res.status === 403 && data.error === "MissingScope") {
-        addToast("Se requiere permiso para leer suscripciones. Pulsa en Autorizar suscripciones.", "info");
+      if (res.status === 403 && (data.error === "MissingScope" || data.code === "YOUTUBE_PERMISSION_REQUIRED")) {
+        const msg = "Se requiere permiso para leer suscripciones. Pulsa en Autorizar suscripciones.";
+        setYoutubeSyncError(msg);
+        addToast(msg, "info");
         await fetchIntegrationStatus();
         return;
       }
 
-      if (res.ok && data.success) {
-        addToast(`Suscripciones de YouTube sincronizadas: ${data.count || 0} canales`, "success");
+      if (res.ok && (data.success || data.ok)) {
+        if (data.count === 0) {
+          addToast("No tienes suscripciones disponibles para importar en YouTube.", "info");
+        } else {
+          addToast(`Suscripciones de YouTube sincronizadas: ${data.count || 0} canales`, "success");
+        }
         await Promise.all([fetchIntegrationStatus(), fetchChannels(), refreshUser()]);
       } else {
-        addToast(data.message || "Error al sincronizar YouTube", "error");
+        const errorMsg = data.message || "Error al sincronizar YouTube";
+        setYoutubeSyncError(errorMsg);
+        addToast(errorMsg, "error");
       }
     } catch {
-      addToast("Error de conexión al sincronizar YouTube", "error");
+      const connErr = "Error de conexión al sincronizar YouTube";
+      setYoutubeSyncError(connErr);
+      addToast(connErr, "error");
     } finally {
       setSyncingYoutube(false);
     }
@@ -830,6 +842,22 @@ function ProfileContent() {
                       reproducir vídeos sincronizados en tus watch parties.
                     </p>
                   )}
+
+                  {youtubeSyncError && (
+                    <div className="mt-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                        <span className="truncate">{youtubeSyncError}</span>
+                      </div>
+                      <button
+                        onClick={executeYoutubeSync}
+                        disabled={syncingYoutube}
+                        className="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs font-semibold transition shrink-0 cursor-pointer disabled:opacity-50"
+                      >
+                        Reintentar
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
@@ -1118,6 +1146,22 @@ function ProfileContent() {
                 </form>
               </div>
             </div>
+
+            {youtubeSyncError && (
+              <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                  <span className="truncate">{youtubeSyncError}</span>
+                </div>
+                <button
+                  onClick={executeYoutubeSync}
+                  disabled={syncingYoutube}
+                  className="px-3 py-1 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs font-semibold transition shrink-0 cursor-pointer disabled:opacity-50"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
 
             {loadingChannels ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

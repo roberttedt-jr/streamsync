@@ -2,6 +2,15 @@ export type Language = "es" | "en";
 
 export const translations = {
   es: {
+    nav: {
+      home: "Inicio",
+      explore: "Explorar",
+      dashboard: "Panel",
+      createRoom: "Crear Sala",
+      login: "Iniciar sesión",
+      profile: "Mi Perfil",
+      logout: "Cerrar sesión",
+    },
     header: {
       howItWorks: "Cómo funciona",
       features: "Características",
@@ -156,6 +165,15 @@ export const translations = {
     },
   },
   en: {
+    nav: {
+      home: "Home",
+      explore: "Explore",
+      dashboard: "Dashboard",
+      createRoom: "Create Room",
+      login: "Sign in",
+      profile: "My Profile",
+      logout: "Sign out",
+    },
     header: {
       howItWorks: "How it works",
       features: "Features",

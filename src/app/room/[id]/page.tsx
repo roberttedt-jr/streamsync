@@ -31,6 +31,8 @@ import {
   Info,
   Layers,
   Compass,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface RoomData {
@@ -83,6 +85,7 @@ export default function WatchPartyRoomPage() {
   const [deafened, setDeafened] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
   const [turnQueue, setTurnQueue] = useState<{ id: string; name: string }[]>([]);
+  const [isAudioDockMinimized, setIsAudioDockMinimized] = useState(false);
 
   // Modals & Panels
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
@@ -375,89 +378,20 @@ export default function WatchPartyRoomPage() {
 
       {/* Main Room Body */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 w-full overflow-hidden">
-        {/* Stream Player Area */}
-        <main className="flex-1 bg-black relative flex items-center justify-center min-h-0 overflow-hidden">
+        {/* Stream & Audio Column */}
+        <main className="flex-1 bg-black relative flex flex-col min-h-0 overflow-hidden">
           {activeStream ? (
-            <div className="w-full h-full relative">
+            <div className="flex-1 min-h-0 w-full relative bg-black flex items-center justify-center">
               {platform === "twitch" ? (
                 <TwitchPlayer channel={activeStream} />
               ) : (
                 <YouTubePlayer videoId={activeStream} />
               )}
-
-              {/* WebRTC Voice Chat HUD Overlay */}
-              <div className="absolute bottom-4 left-4 z-30 flex items-center gap-3 bg-[#090B10]/90 backdrop-blur-xl border border-white/10 p-2.5 rounded-2xl shadow-2xl">
-                <div className="relative">
-                  <div
-                    className={`w-9 h-9 rounded-xl overflow-hidden bg-purple-600/30 flex items-center justify-center border-2 transition-all ${
-                      micActive ? "border-emerald-400" : "border-white/10"
-                    }`}
-                  >
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-bold text-xs text-white">
-                        {user?.name ? user.name.slice(0, 2).toUpperCase() : "TÚ"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                    {micActive ? (
-                      <span className="text-emerald-400">Micrófono activo</span>
-                    ) : (
-                      <span className="text-red-400">Silenciado</span>
-                    )}
-                  </span>
-                  <span className="text-[10px] text-gray-400">Audio WebRTC</span>
-                </div>
-
-                {/* Voice Controls */}
-                <div className="flex items-center gap-1.5 pl-2 border-l border-white/10">
-                  <button
-                    onClick={() => setMicActive(!micActive)}
-                    className={`p-2 rounded-xl border transition cursor-pointer ${
-                      micActive
-                        ? "bg-white/5 border-white/10 text-white hover:bg-white/10"
-                        : "bg-red-500/20 border-red-500/40 text-red-400"
-                    }`}
-                    title={micActive ? "Silenciar micrófono (M)" : "Activar micrófono (M)"}
-                  >
-                    {micActive ? <Mic className="w-4 h-4 text-emerald-400" /> : <MicOff className="w-4 h-4 text-red-400" />}
-                  </button>
-
-                  <button
-                    onClick={() => setDeafened(!deafened)}
-                    className={`p-2 rounded-xl border transition cursor-pointer ${
-                      deafened
-                        ? "bg-red-500/20 border-red-500/40 text-red-400"
-                        : "bg-white/5 border-white/10 text-gray-300 hover:text-white"
-                    }`}
-                    title="Ensordecer audio de la sala"
-                  >
-                    {deafened ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
-                  </button>
-
-                  <button
-                    onClick={handleToggleHandRaise}
-                    className={`p-2 rounded-xl border transition cursor-pointer flex items-center gap-1 ${
-                      handRaised
-                        ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                        : "bg-white/5 border-white/10 text-gray-400 hover:text-amber-300"
-                    }`}
-                    title="Pedir turno para hablar"
-                  >
-                    <Hand className={`w-4 h-4 ${handRaised ? "animate-bounce" : ""}`} />
-                  </button>
-                </div>
-              </div>
             </div>
           ) : (
             /* Professional Empty State: "Añadir stream para comenzar" */
-            <div className="flex flex-col items-center justify-center p-6 text-center max-w-lg w-full mx-auto my-auto animate-in fade-in duration-300">
-              <div className="w-16 h-16 rounded-3xl bg-purple-600/20 border border-purple-500/30 shadow-2xl flex items-center justify-center text-purple-300 mb-4 backdrop-blur-xl">
+            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center p-6 text-center max-w-lg mx-auto my-auto overflow-y-auto animate-in fade-in duration-300">
+              <div className="w-16 h-16 rounded-3xl bg-purple-600/20 border border-purple-500/30 shadow-2xl flex items-center justify-center text-purple-300 mb-4 backdrop-blur-xl shrink-0">
                 <Tv className="h-8 w-8" />
               </div>
 
@@ -526,6 +460,155 @@ export default function WatchPartyRoomPage() {
               </div>
             </div>
           )}
+
+          {/* Dedicated Audio / Voice Control Dock (Docked below video player, 100% unobstructed player controls) */}
+          <div
+            className={`w-full bg-[#090B10] border-t border-white/10 px-4 flex items-center justify-between gap-3 shrink-0 z-20 transition-all duration-200 ${
+              isAudioDockMinimized
+                ? "py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+                : "py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]"
+            }`}
+          >
+            {isAudioDockMinimized ? (
+              /* Minimized compact bar */
+              <div className="w-full flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      micActive ? "bg-emerald-400 animate-pulse" : "bg-red-500"
+                    }`}
+                  />
+                  <span className="font-semibold text-gray-300">
+                    {micActive ? "Micrófono activo" : "Micrófono silenciado"}
+                  </span>
+                  {handRaised && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Mano alzada
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setMicActive(!micActive)}
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                      micActive
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+                        : "bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20"
+                    }`}
+                  >
+                    {micActive ? <Mic className="w-3.5 h-3.5 text-emerald-400" /> : <MicOff className="w-3.5 h-3.5 text-red-400" />}
+                    <span>{micActive ? "Silenciar" : "Hablar"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsAudioDockMinimized(false)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition cursor-pointer"
+                    title="Expandir panel de voz"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Full Audio Dock */
+              <>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative shrink-0">
+                    <div
+                      className={`w-9 h-9 rounded-xl overflow-hidden bg-purple-600/30 flex items-center justify-center border-2 transition-all ${
+                        micActive ? "border-emerald-400 shadow-md shadow-emerald-500/20" : "border-white/10"
+                      }`}
+                    >
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-bold text-xs text-white">
+                          {user?.name ? user.name.slice(0, 2).toUpperCase() : "TÚ"}
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#090B10] ${
+                        micActive ? "bg-emerald-400" : "bg-red-500"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white truncate">
+                        {micActive ? (
+                          <span className="text-emerald-400">Micrófono activo</span>
+                        ) : (
+                          <span className="text-red-400">Silenciado</span>
+                        )}
+                      </span>
+                      {handRaised && (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          Turno pedido
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-gray-400 truncate">
+                      Audio WebRTC • Tecla M para alternar
+                    </span>
+                  </div>
+                </div>
+
+                {/* Voice & Turn Controls */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setMicActive(!micActive)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                      micActive
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+                        : "bg-red-500/20 border-red-500/40 text-red-300 hover:bg-red-500/30"
+                    }`}
+                    title={micActive ? "Silenciar micrófono (M)" : "Activar micrófono (M)"}
+                  >
+                    {micActive ? <Mic className="w-4 h-4 text-emerald-400" /> : <MicOff className="w-4 h-4 text-red-400" />}
+                    <span className="hidden sm:inline">{micActive ? "Silenciar" : "Activar"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setDeafened(!deafened)}
+                    className={`p-2 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                      deafened
+                        ? "bg-red-500/20 border-red-500/40 text-red-400"
+                        : "bg-white/5 border-white/10 text-gray-300 hover:text-white"
+                    }`}
+                    title={deafened ? "Reactivar sonido" : "Ensordecer audio de la sala"}
+                  >
+                    {deafened ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+
+                  <button
+                    onClick={handleToggleHandRaise}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                      handRaised
+                        ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                        : "bg-white/5 border-white/10 text-gray-300 hover:text-amber-300"
+                    }`}
+                    title={handRaised ? "Bajar la mano" : "Pedir turno para hablar"}
+                  >
+                    <Hand className={`w-4 h-4 ${handRaised ? "animate-bounce text-amber-400" : ""}`} />
+                    <span className="hidden sm:inline">
+                      {handRaised ? "Mano alzada" : "Pedir turno"}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsAudioDockMinimized(true)}
+                    className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition cursor-pointer"
+                    title="Minimizar panel de voz"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </main>
 
         {/* Right Sidebar: Chat & Participants */}

@@ -8,6 +8,7 @@ import Footer from "@/components/common/Footer";
 import OnboardingTutorial from "@/components/common/OnboardingTutorial";
 import CreateRoomModal from "@/components/room/CreateRoomModal";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { CATEGORIES } from "@/lib/categories";
 import {
   Play,
@@ -28,6 +29,9 @@ import {
 export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { language, t } = useLanguage();
+  const isEn = language === "en";
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCategoryModal, setSelectedCategoryModal] = useState("Gaming");
 
@@ -59,20 +63,26 @@ export default function HomePage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
-                <span>StreamSync • Watch Parties para Cualquier Directo</span>
+                <span>
+                  {isEn
+                    ? "StreamSync • Watch Parties for Any Live Stream"
+                    : "StreamSync • Watch Parties para Cualquier Directo"}
+                </span>
               </div>
 
               {/* Main Title */}
               <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-6">
-                Los directos se disfrutan{" "}
+                {isEn ? "Live streams are better " : "Los directos se disfrutan "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
-                  mejor juntos.
+                  {isEn ? "enjoyed together." : "mejor juntos."}
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-base sm:text-lg text-gray-400 max-w-2xl font-normal leading-relaxed mb-8">
-                Crea una sala, comparte un stream de Twitch o YouTube y vive cada momento en tiempo real con las personas que importan.
+                {isEn
+                  ? "Create a room, share a Twitch or YouTube stream, and experience every moment in real time with the people who matter."
+                  : "Crea una sala, comparte un stream de Twitch o YouTube y vive cada momento en tiempo real con las personas que importan."}
               </p>
 
               {/* CTAs */}
@@ -82,14 +92,14 @@ export default function HomePage() {
                   className="liquid-btn-primary rounded-2xl px-7 py-3.5 text-sm font-bold flex items-center justify-center gap-2.5 w-full sm:w-auto shadow-xl shadow-purple-600/30 cursor-pointer hover:scale-105 transition"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  <span>Crear una sala</span>
+                  <span>{isEn ? "Create a room" : "Crear una sala"}</span>
                 </button>
 
                 <a
                   href="#como-funciona"
                   className="liquid-btn-secondary rounded-2xl px-6 py-3.5 text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto transition cursor-pointer"
                 >
-                  <span>Explorar cómo funciona</span>
+                  <span>{isEn ? "Explore how it works" : "Explorar cómo funciona"}</span>
                   <ArrowRight className="w-4 h-4 text-gray-400" />
                 </a>
               </div>
@@ -98,17 +108,17 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium mt-10">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  Sin registro obligatorio (modo invitado)
+                  {isEn ? "No registration required (guest mode)" : "Sin registro obligatorio (modo invitado)"}
                 </span>
                 <span className="hidden sm:inline text-white/20">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                  Sincronización milimétrica a 0ms
+                  {isEn ? "0ms millisecond sync" : "Sincronización milimétrica a 0ms"}
                 </span>
                 <span className="hidden sm:inline text-white/20">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                  Voz WebRTC en tiempo real
+                  {isEn ? "Real-time WebRTC voice" : "Voz WebRTC en tiempo real"}
                 </span>
               </div>
             </div>
@@ -123,20 +133,20 @@ export default function HomePage() {
                     <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
                     <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
                     <span className="ml-3 text-xs font-mono text-purple-300 hidden sm:inline">
-                      Sala de demostración • Vista previa
+                      {isEn ? "Demo Room • Interactive Preview" : "Sala de demostración • Vista previa"}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <div className="px-2.5 py-0.5 rounded-full text-emerald-400 text-xs flex items-center gap-1.5 font-mono bg-emerald-500/10 border border-emerald-500/20">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>0ms Latencia</span>
+                      <span>{isEn ? "0ms Latency" : "0ms Latencia"}</span>
                     </div>
                     <Link
                       href="/room/demo"
                       className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 transition"
                     >
-                      <span>Abrir demostración</span>
+                      <span>{isEn ? "Open demo" : "Abrir demostración"}</span>
                       <ExternalLink className="w-3 h-3" />
                     </Link>
                   </div>
@@ -149,10 +159,12 @@ export default function HomePage() {
                   </div>
 
                   <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-2">
-                    Añadir stream para comenzar
+                    {isEn ? "Add a stream to get started" : "Añadir stream para comenzar"}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
-                    Pega el enlace de cualquier directo de Twitch o YouTube para sincronizarlo al instante con tus amigos o explora la sala interactiva.
+                    {isEn
+                      ? "Paste any live or recorded video link from Twitch or YouTube to sync it instantly with friends or explore the interactive demo."
+                      : "Pega el enlace de cualquier directo de Twitch o YouTube para sincronizarlo al instante con tus amigos o explora la sala interactiva."}
                   </p>
 
                   <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -161,20 +173,20 @@ export default function HomePage() {
                       className="liquid-btn-primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-purple-600/25"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Probar Sala de Demostración</span>
+                      <span>{isEn ? "Try Demo Room" : "Probar Sala de Demostración"}</span>
                     </Link>
                     <button
                       onClick={() => handleCreateRoom()}
                       className="liquid-btn-secondary px-5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white"
                     >
-                      <span>Crear mi propia sala</span>
+                      <span>{isEn ? "Create my own room" : "Crear mi propia sala"}</span>
                     </button>
                   </div>
 
                   {/* Clean bottom status indicator */}
                   <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-white/5">
-                    <span>Chat listo • Voz WebRTC disponible</span>
-                    <span className="text-gray-400">Compatible con Twitch y YouTube</span>
+                    <span>{isEn ? "Chat ready • WebRTC voice enabled" : "Chat listo • Voz WebRTC disponible"}</span>
+                    <span className="text-gray-400">{isEn ? "Compatible with Twitch & YouTube" : "Compatible con Twitch y YouTube"}</span>
                   </div>
                 </div>
               </div>
@@ -187,13 +199,15 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <span className="text-xs font-mono font-bold tracking-widest text-purple-400 uppercase mb-2 block">
-                PASO A PASO
+                {isEn ? "STEP BY STEP" : "PASO A PASO"}
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">
-                ¿Cómo funciona StreamSync?
+                {isEn ? "How does StreamSync work?" : "¿Cómo funciona StreamSync?"}
               </h2>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Sin configuraciones complejas ni programas externos. Todo funciona directamente desde el navegador en tres sencillos pasos:
+                {isEn
+                  ? "No complex setups or downloads. Everything runs straight in your browser in three easy steps:"
+                  : "Sin configuraciones complejas ni programas externos. Todo funciona directamente desde el navegador en tres sencillos pasos:"}
               </p>
             </div>
 
@@ -205,13 +219,17 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
                     <Radio className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">1. Elige tu stream</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "1. Choose your stream" : "1. Elige tu stream"}
+                  </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Pega el enlace de cualquier directo o vídeo de <strong>Twitch</strong> o <strong>YouTube</strong>. También puedes iniciar la sala vacía y añadir el contenido cuando estés listo.
+                    {isEn
+                      ? "Paste any live or recorded video link from Twitch or YouTube. You can also start an empty room and add content whenever you're ready."
+                      : "Pega el enlace de cualquier directo o vídeo de Twitch o YouTube. También puedes iniciar la sala vacía y añadir el contenido cuando estés listo."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-purple-400 font-medium">
-                  Compatible con directos, retransmisiones y vídeos grabados.
+                  {isEn ? "Compatible with live streams, broadcasts, and videos." : "Compatible con directos, retransmisiones y vídeos grabados."}
                 </div>
               </div>
 
@@ -222,13 +240,17 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-5">
                     <Share2 className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">2. Invita a tu gente</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "2. Invite your people" : "2. Invita a tu gente"}
+                  </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Comparte el enlace de la sala con un solo clic en Discord, WhatsApp, Telegram o redes sociales. Tus amigos pueden entrar al instante como invitados sin necesidad de instalar nada.
+                    {isEn
+                      ? "Share your room link in one click on Discord, WhatsApp, Telegram, or social networks. Friends can join instantly as guests without installing anything."
+                      : "Comparte el enlace de la sala con un solo clic en Discord, WhatsApp, Telegram o redes sociales. Tus amigos pueden entrar al instante como invitados sin necesidad de instalar nada."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-cyan-400 font-medium">
-                  Salas públicas en el directorio o privadas con enlace seguro.
+                  {isEn ? "Public rooms in directory or private rooms with secure link." : "Salas públicas en el directorio o privadas con enlace seguro."}
                 </div>
               </div>
 
@@ -239,31 +261,37 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
                     <Users className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">3. Disfrutad juntos</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "3. Enjoy together" : "3. Disfrutad juntos"}
+                  </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Vídeo sincronizado al milisegundo, chat en tiempo real y audio WebRTC con cola de turnos para comentar cada jugada o momento sin pisaros la voz.
+                    {isEn
+                      ? "Millisecond-synced video, real-time chat, and WebRTC audio with a turn queue to comment on every moment without speaking over each other."
+                      : "Vídeo sincronizado al milisegundo, chat en tiempo real y audio WebRTC con cola de turnos para comentar cada jugada o momento sin pisaros la voz."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-emerald-400 font-medium">
-                  Latencia de sincronización de 0ms con WebSockets.
+                  {isEn ? "0ms synchronization latency with WebSockets." : "Latencia de sincronización de 0ms con WebSockets."}
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section: Categorías (22 Categorías reales) */}
+        {/* Section: Categorías */}
         <section className="py-20 border-t border-white/10 bg-black/40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-14">
               <span className="text-xs font-mono font-bold tracking-widest text-purple-400 uppercase mb-2 block">
-                VARIEDAD DE CONTENIDO
+                {isEn ? "CONTENT VARIETY" : "VARIEDAD DE CONTENIDO"}
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">
-                Watch parties para cualquier tipo de directo
+                {isEn ? "Watch parties for any type of live stream" : "Watch parties para cualquier tipo de directo"}
               </h2>
               <p className="text-sm text-gray-400 leading-relaxed">
-                StreamSync no es solo para videojuegos. Reúne a tu comunidad para ver conciertos, partidos de fútbol, tertulias, directos de cocina, sesiones de código y más.
+                {isEn
+                  ? "StreamSync is not just for games. Bring your community together to watch concerts, football matches, podcasts, cooking streams, coding sessions, and more."
+                  : "StreamSync no es solo para videojuegos. Reúne a tu comunidad para ver conciertos, partidos de fútbol, tertulias, directos de cocina, sesiones de código y más."}
               </p>
             </div>
 
@@ -297,7 +325,7 @@ export default function HomePage() {
                 href="/explore"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition cursor-pointer"
               >
-                <span>Explorar salas por categoría</span>
+                <span>{isEn ? "Explore rooms by category" : "Explorar salas por categoría"}</span>
                 <ArrowRight className="w-3.5 h-3.5 text-purple-400" />
               </Link>
             </div>
@@ -309,13 +337,15 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <span className="text-xs font-mono font-bold tracking-widest text-purple-400 uppercase mb-2 block">
-                TECNOLOGÍA EN TIEMPO REAL
+                {isEn ? "REAL-TIME TECHNOLOGY" : "TECNOLOGÍA EN TIEMPO REAL"}
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
-                Diseñado para disfrutar sin interrupciones
+                {isEn ? "Engineered for uninterrupted streaming" : "Diseñado para disfrutar sin interrupciones"}
               </h2>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Herramientas reales diseñadas para que ver emisiones en directo compartidas sea una experiencia fluida y sin desajustes.
+                {isEn
+                  ? "Real tools designed to make watching live broadcasts together seamless and latency-free."
+                  : "Herramientas reales diseñadas para que ver emisiones en directo compartidas sea una experiencia fluida y sin desajustes."}
               </p>
             </div>
 
@@ -325,13 +355,17 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
                     <Zap className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Sincronización Total a 0ms</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "Total 0ms Sync" : "Sincronización Total a 0ms"}
+                  </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Algoritmo de compensación de latencia de red. Si el host pausa, rebobina o cambia de canal, todos los miembros ven la actualización al mismo instante.
+                    {isEn
+                      ? "Network latency compensation algorithm. If the host pauses, rewinds or changes channel, all squad members update at the exact same instant."
+                      : "Algoritmo de compensación de latencia de red. Si el host pausa, rebobina o cambia de canal, todos los miembros ven la actualización al mismo instante."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  Compatible con Twitch y YouTube.
+                  {isEn ? "Compatible with Twitch and YouTube." : "Compatible con Twitch y YouTube."}
                 </div>
               </div>
 
@@ -340,13 +374,17 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-5">
                     <Volume2 className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Voz WebRTC con Cola de Turnos</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "WebRTC Voice with Turn Queue" : "Voz WebRTC con Cola de Turnos"}
+                  </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Audio espacial con atenuación automática. Los participantes pueden pedir turno para hablar y evitar que todos hablen a la vez.
+                    {isEn
+                      ? "Spatial audio with auto ducking. Participants can request a turn to speak and avoid cross-talk during key moments."
+                      : "Audio espacial con atenuación automática. Los participantes pueden pedir turno para hablar y evitar que todos hablen a la vez."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  Cifrado de punto a punto (SRTP/DTLS).
+                  {isEn ? "Peer-to-peer encryption (SRTP/DTLS)." : "Cifrado de punto a punto (SRTP/DTLS)."}
                 </div>
               </div>
 
@@ -355,13 +393,17 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
                     <Layers className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Multiplataforma y Sin Apps</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "Cross-Platform & No Apps" : "Multiplataforma y Sin Apps"}
+                  </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Cero descargas o instalaciones requeridas. Funciona en ordenadores, portátiles y tablets directamente a través de tu navegador moderno favorito.
+                    {isEn
+                      ? "Zero downloads or installs required. Works on PCs, laptops, and tablets directly inside your favorite modern browser."
+                      : "Cero descargas o instalaciones requeridas. Funciona en ordenadores, portátiles y tablets directamente a través de tu navegador moderno favorito."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  Responsive para cualquier dispositivo.
+                  {isEn ? "Fully responsive for any screen." : "Responsive para cualquier dispositivo."}
                 </div>
               </div>
             </div>

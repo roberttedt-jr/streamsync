@@ -225,8 +225,12 @@ function DashboardContent() {
     try {
       const res = await fetch("/api/integrations/youtube/sync", { method: "POST" });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) {
-        addToast(`Suscripciones de YouTube sincronizadas: ${data.count || 0} canales`, "success");
+      if (res.ok && (data.success || data.ok)) {
+        if (data.count === 0) {
+          addToast("No tienes suscripciones disponibles para importar en YouTube.", "info");
+        } else {
+          addToast(`Suscripciones de YouTube sincronizadas: ${data.count || 0} canales`, "success");
+        }
         await fetchIntegrationsAndChannels();
       } else {
         addToast(data.message || "Error al sincronizar YouTube", "error");
