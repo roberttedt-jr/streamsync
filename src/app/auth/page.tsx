@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import Navbar from "@/components/common/Navbar";
@@ -105,6 +104,7 @@ function AuthFormContent() {
     setLoading(true);
     try {
       addToast(`Iniciando conexión con ${provider === "twitch" ? "Twitch" : "YouTube / Google"}...`, "info");
+      const { signIn } = await import("next-auth/react");
       await signIn(provider, { callbackUrl });
     } catch (err: any) {
       addToast("No se pudo iniciar la conexión con el proveedor", "error");
