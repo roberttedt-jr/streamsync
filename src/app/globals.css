@@ -28,6 +28,14 @@ html.light {
   --border-hover: rgba(0, 0, 0, 0.16);
 }
 
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -41,6 +49,32 @@ body {
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+/* Prevent Safari iOS automatic zoom on input focus */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Native safe area utility classes */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
 
 h1, h2, h3, h4, .font-heading {
   font-family: 'Plus Jakarta Sans', sans-serif;

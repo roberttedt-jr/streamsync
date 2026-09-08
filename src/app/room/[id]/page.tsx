@@ -41,7 +41,11 @@ import {
   Settings,
   PhoneOff,
   MessageSquare,
+  Phone,
+  ArrowLeft,
+  ExternalLink,
 } from "lucide-react";
+
 
 interface RoomData {
   id?: string;
@@ -96,6 +100,7 @@ export default function WatchPartyRoomPage() {
   const [activeStream, setActiveStream] = useState<string | null>(initialStream);
   const [streamInput, setStreamInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chat" | "stream" | "participants" | "call">("chat");
 
   // Tab-unique connectionId for multi-user presence
   const [connectionId] = useState<string>(() => {
@@ -722,72 +727,37 @@ export default function WatchPartyRoomPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#08090D] text-[#F8FAFC] overflow-hidden font-sans select-none">
-      {/* Top Header Bar */}
-      <header className="h-14 border-b border-white/[0.08] bg-[#090B10]/95 backdrop-blur-xl px-4 flex items-center justify-between gap-3 z-40 shrink-0">
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col h-[100dvh] w-full bg-[#08090D] text-[#F8FAFC] overflow-hidden font-sans select-none">
+      {/* Top Header Bar with Safe-Top for Dynamic Island / Notch */}
+      <header className="border-b border-white/[0.08] bg-[#090B10]/95 backdrop-blur-xl px-3 sm:px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] flex items-center justify-between gap-2 sm:gap-3 z-40 shrink-0 min-h-[56px]">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-white hover:opacity-80 transition group cursor-pointer"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+            title="Volver al dashboard"
+            aria-label="Volver al dashboard"
           >
-            <div className="h-8 w-8 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
-              <Tv className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-black tracking-tight hidden sm:inline">
-              Stream<span className="text-purple-400">Sync</span>
-            </span>
+            <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <div className="h-4 w-[1px] bg-white/[0.1] mx-1 hidden sm:block" />
-
-          {/* Room Badge */}
-          <div className="flex items-center gap-2">
-            {isDemo ? (
-              <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600/20 border border-purple-500/30 text-purple-300">
-                Sala demo • Vista previa
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/5 border border-white/10 text-gray-200 truncate max-w-[140px] sm:max-w-[200px]">
+          {/* Room Title & Live status */}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[240px]">
                 {roomData?.name || `Sala #${roomId}`}
               </span>
-            )}
-
-            {/* Comm mode badge */}
-            <span className="hidden md:flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border bg-white/5 border-white/10 text-gray-400">
-              {commMode === "CHAT_ONLY" && (
-                <>
-                  <MessageSquare className="w-3 h-3 text-sky-400" />
-                  <span>Solo Chat</span>
-                </>
-              )}
-              {commMode === "VOICE" && (
-                <>
-                  <Mic className="w-3 h-3 text-emerald-400" />
-                  <span>Chat + Voz</span>
-                </>
-              )}
-              {commMode === "VIDEO" && (
-                <>
-                  <Video className="w-3 h-3 text-pink-400" />
-                  <span>Videollamada (Beta)</span>
-                </>
-              )}
-              {commMode === "FLEXIBLE" && (
-                <>
-                  <Sparkles className="w-3 h-3 text-purple-400" />
-                  <span>Flexible</span>
-                </>
-              )}
-            </span>
-
-            <span className="hidden lg:flex items-center gap-1 text-[11px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>En vivo</span>
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="hidden xs:inline">En vivo</span>
+              </span>
+            </div>
+            <span className="text-[10px] text-gray-400 truncate">
+              {participants.length} {participants.length === 1 ? "participante" : "participantes"} • Twitch
             </span>
           </div>
         </div>
 
-        {/* Change Stream Input */}
+        {/* Change Stream Input (Desktop center) */}
         <form onSubmit={handleApplyStream} className="hidden md:flex items-center gap-2 max-w-sm w-full mx-2">
           <div className="flex items-center bg-black/50 border border-white/10 rounded-xl px-2 py-1 w-full focus-within:border-purple-500 transition">
             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 bg-[#9146FF] text-white">
@@ -805,23 +775,25 @@ export default function WatchPartyRoomPage() {
         </form>
 
         {/* Right Tools */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Host Options Gear (Only for Room Host) */}
           {isHost && (
             <button
               onClick={() => setShowHostOptionsModal(true)}
-              className="p-2 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 hover:text-white border border-purple-500/30 transition cursor-pointer"
+              className="p-2.5 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-300 hover:text-white border border-purple-500/30 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="Opciones y administración de la sala"
+              aria-label="Ajustes de anfitrión"
             >
               <Settings className="w-4 h-4" />
             </button>
           )}
 
-          {/* Shortcuts Modal Toggle */}
+          {/* Shortcuts Modal Toggle (Desktop) */}
           <button
             onClick={() => setShowShortcutsModal(true)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition cursor-pointer"
+            className="hidden sm:flex p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition cursor-pointer min-h-[44px] min-w-[44px] items-center justify-center"
             title="Atajos de teclado (Tecla ?)"
+            aria-label="Atajos de teclado"
           >
             <Keyboard className="w-4 h-4" />
           </button>
@@ -829,25 +801,401 @@ export default function WatchPartyRoomPage() {
           {/* Share Link */}
           <button
             onClick={handleCopyLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-gray-200 border border-white/10 transition cursor-pointer"
+            className="p-2.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-gray-200 border border-white/10 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5"
+            title="Copiar enlace de invitación"
+            aria-label="Compartir sala"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-purple-400" />}
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-purple-400" />}
             <span className="hidden sm:inline">{copied ? "Copiado" : "Compartir"}</span>
           </button>
 
           {/* Leave / Back */}
           <button
             onClick={() => setShowLeaveModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition cursor-pointer"
+            className="p-2.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5"
+            title="Salir de la sala"
+            aria-label="Salir de la sala"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Salir</span>
           </button>
         </div>
       </header>
 
-      {/* Main Room Body */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 w-full overflow-hidden">
+      {/* Mobile Room Body (< lg) */}
+      <div className="flex lg:hidden flex-1 min-h-0 flex-col w-full overflow-hidden bg-[#090B10]">
+        {/* Mobile Twitch Player Area (16:9 strict, zero letterboxing) */}
+        {activeStream ? (
+          <div className="w-full shrink-0 aspect-video bg-black relative flex items-center justify-center overflow-hidden border-b border-white/10">
+            <TwitchPlayer channel={activeStream} />
+          </div>
+        ) : (
+          <div className="w-full shrink-0 aspect-video bg-[#0C0F17] flex flex-col items-center justify-center p-4 text-center border-b border-white/10">
+            <Tv className="w-8 h-8 text-purple-400 mb-1.5" />
+            <p className="text-xs font-bold text-white">Sin directo seleccionado</p>
+            <button
+              onClick={() => setMobileTab("stream")}
+              className="mt-2 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-bold cursor-pointer"
+            >
+              Configurar Stream
+            </button>
+          </div>
+        )}
+
+        {/* Mobile Segmented Control Bar */}
+        <div className="flex items-center bg-[#0C0F17] border-b border-white/10 px-2 py-1.5 shrink-0">
+          <div className="flex items-center w-full bg-white/[0.04] p-1 rounded-xl gap-1">
+            <button
+              onClick={() => setMobileTab("chat")}
+              className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                mobileTab === "chat"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Chat</span>
+            </button>
+
+            <button
+              onClick={() => setMobileTab("stream")}
+              className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                mobileTab === "stream"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5" />
+              <span>Stream</span>
+            </button>
+
+            <button
+              onClick={() => setMobileTab("participants")}
+              className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                mobileTab === "participants"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Personas ({participants.length})</span>
+            </button>
+
+            {allowsVoice && (
+              <button
+                onClick={() => setMobileTab("call")}
+                className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mobileTab === "call"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                    : micActive || cameraActive
+                    ? "text-emerald-400 font-bold"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {micActive ? (
+                  <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                ) : (
+                  <Phone className="w-3.5 h-3.5" />
+                )}
+                <span>Llamada</span>
+                {(micActive || cameraActive) && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Active Tab View (Fills remaining height) */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#090B10]">
+          {/* TAB 1: Chat Feed */}
+          {mobileTab === "chat" && (
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 overscroll-contain">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-4 text-gray-500">
+                    <MessageSquare className="w-8 h-8 mb-2 opacity-30" />
+                    <p className="text-xs leading-relaxed max-w-xs">
+                      El chat está listo. Escribe para saludar a los participantes.
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((msg) => (
+                    <div key={msg.id} className="text-xs space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        {msg.isHost && <Crown className="w-3 h-3 text-yellow-400" />}
+                        <span className="font-bold text-gray-300">{msg.sender}</span>
+                        <span className="text-[10px] text-gray-500 font-mono">{msg.time}</span>
+                      </div>
+                      <p className="text-gray-200 text-sm leading-relaxed">{msg.text}</p>
+                    </div>
+                  ))
+                )}
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* Fixed Chat Input with iOS Safe Area Bottom */}
+              <form
+                onSubmit={handleSendMessage}
+                className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-[#0C0F17] shrink-0"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Escribe un mensaje..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    className="flex-1 bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-base text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 min-h-[44px]"
+                  />
+                  <button
+                    type="submit"
+                    className="min-h-[44px] min-w-[44px] px-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition cursor-pointer flex items-center justify-center shrink-0"
+                    aria-label="Enviar mensaje"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* TAB 2: Stream Info */}
+          {mobileTab === "stream" && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] overscroll-contain">
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Directo Activo</span>
+                  <span className="flex items-center gap-1 text-[11px] text-purple-400 font-bold bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+                    <Radio className="w-3 h-3" />
+                    <span>Twitch</span>
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black text-white">{activeStream || "Sin canal"}</span>
+                  {activeStream && (
+                    <a
+                      href={`https://twitch.tv/${activeStream}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 font-semibold cursor-pointer"
+                    >
+                      <span>Abrir en Twitch</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Change Stream Form for Host or Demo */}
+              {(isHost || isDemo) && (
+                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
+                  <span className="text-xs font-bold text-gray-300">Cambiar canal de Twitch</span>
+                  <form onSubmit={handleApplyStream} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Canal o URL (ej. ibai)..."
+                      value={streamInput}
+                      onChange={(e) => setStreamInput(e.target.value)}
+                      className="flex-1 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-base text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 min-h-[44px]"
+                    />
+                    <button
+                      type="submit"
+                      className="liquid-btn-primary px-4 rounded-xl text-xs font-bold cursor-pointer min-h-[44px]"
+                    >
+                      Cargar
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* Room Info */}
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2 text-xs text-gray-300">
+                <div>
+                  <span className="text-gray-500">Nombre: </span>
+                  <strong className="text-white">{roomData?.name || "Sala StreamSync"}</strong>
+                </div>
+                <div>
+                  <span className="text-gray-500">Código de sala: </span>
+                  <span className="font-mono text-purple-300 font-bold">{roomData?.code || roomId}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Categoría: </span>
+                  <strong className="text-gray-200">{roomData?.category || "Entretenimiento en directo"}</strong>
+                </div>
+                {roomData?.description && (
+                  <p className="text-gray-400 italic pt-1 border-t border-white/5">
+                    "{roomData.description}"
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Participants List */}
+          {mobileTab === "participants" && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 pb-[max(1.5rem,env(safe-area-inset-bottom))] overscroll-contain">
+              {participants.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] border border-white/5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold text-xs text-white shrink-0">
+                      {p.avatar ? (
+                        <img src={p.avatar} alt={p.name} className="w-full h-full object-cover rounded-xl" />
+                      ) : (
+                        p.name.slice(0, 2).toUpperCase()
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-white">{p.name}</span>
+                        {p.isHost && <Crown className="w-3.5 h-3.5 text-yellow-400" />}
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {allowsVoice
+                          ? p.micActive
+                            ? "Micrófono activo"
+                            : "Silenciado"
+                          : "Solo chat"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {allowsVoice && (
+                    <div className="flex items-center gap-2">
+                      {p.handRaised && (
+                        <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300" title="Mano levantada">
+                          <Hand className="w-4 h-4" />
+                        </span>
+                      )}
+                      {p.micActive ? (
+                        <Mic className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <MicOff className="w-4 h-4 text-red-400" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 4: WebRTC Call Center */}
+          {mobileTab === "call" && allowsVoice && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] overscroll-contain">
+              {/* Call status banner */}
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={`w-3 h-3 rounded-full ${
+                      micActive ? "bg-emerald-400 animate-pulse" : localStream ? "bg-emerald-500" : "bg-red-500"
+                    }`}
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-white">
+                      {localStream ? (micActive ? "Conectado y hablando" : "Conectado (silenciado)") : "Desconectado de llamada"}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {localStream ? "Voz activa en tiempo real" : "Pulsa Hablar para unirte a la llamada"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Video Grid inside call tab if camera is active */}
+              {allowsVideo && (cameraActive || Array.from(remoteStreams.values()).length > 0) && (
+                <div className="rounded-2xl overflow-hidden border border-white/10 bg-black p-2">
+                  <VideoGrid
+                    localParticipant={
+                      participants.find((p) => p.connectionId === connectionId) || participants[0]
+                    }
+                    remoteParticipants={participants.filter((p) => p.connectionId !== connectionId)}
+                    onToggleCamera={handleToggleCamera}
+                    onToggleMic={handleToggleMic}
+                  />
+                </div>
+              )}
+
+              {/* Large Tactile Touch Controls (>= 48px) */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Mic Button */}
+                <button
+                  onClick={handleToggleMic}
+                  className={`min-h-[56px] p-3 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2.5 transition cursor-pointer ${
+                    micActive
+                      ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                      : "bg-red-500/20 border-red-500/40 text-red-300"
+                  }`}
+                >
+                  {micActive ? <Mic className="w-5 h-5 text-emerald-400" /> : <MicOff className="w-5 h-5 text-red-400" />}
+                  <span>{micActive ? "Silenciar" : "Hablar"}</span>
+                </button>
+
+                {/* Camera Button */}
+                {allowsVideo && (
+                  <button
+                    onClick={handleToggleCamera}
+                    className={`min-h-[56px] p-3 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2.5 transition cursor-pointer ${
+                      cameraActive
+                        ? "bg-pink-500/20 border-pink-500/40 text-pink-300"
+                        : "bg-white/5 border-white/10 text-gray-300"
+                    }`}
+                  >
+                    {cameraActive ? <Video className="w-5 h-5 text-pink-400" /> : <VideoOff className="w-5 h-5 text-gray-400" />}
+                    <span>{cameraActive ? "Cámara On" : "Cámara Off"}</span>
+                  </button>
+                )}
+
+                {/* Turn / Hand Raise */}
+                <button
+                  onClick={handleToggleHandRaise}
+                  className={`min-h-[56px] p-3 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2.5 transition cursor-pointer ${
+                    handRaised
+                      ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                      : "bg-white/5 border-white/10 text-gray-300"
+                  }`}
+                >
+                  <Hand className={`w-5 h-5 ${handRaised ? "text-amber-400 animate-bounce" : ""}`} />
+                  <span>{handRaised ? "Mano alzada" : "Pedir turno"}</span>
+                </button>
+
+                {/* Deafen / Sound */}
+                <button
+                  onClick={() => setDeafened(!deafened)}
+                  className={`min-h-[56px] p-3 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2.5 transition cursor-pointer ${
+                    deafened
+                      ? "bg-red-500/20 border-red-500/40 text-red-400"
+                      : "bg-white/5 border-white/10 text-gray-300"
+                  }`}
+                >
+                  {deafened ? <VolumeX className="w-5 h-5 text-red-400" /> : <Volume2 className="w-5 h-5" />}
+                  <span>{deafened ? "Silenciado" : "Sonido On"}</span>
+                </button>
+              </div>
+
+              {/* Leave Voice Button */}
+              {localStream && (
+                <button
+                  onClick={handleLeaveVoice}
+                  className="w-full min-h-[50px] rounded-2xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <PhoneOff className="w-5 h-5" />
+                  <span>Desconectar de la llamada</span>
+                </button>
+              )}
+
+              <p className="text-[11px] text-gray-500 text-center">
+                Voz y cámara opcionales (Beta WebRTC punto a punto). Conexión encriptada entre navegadores.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop Main Room Body (lg+) */}
+      <div className="hidden lg:flex flex-1 flex-row min-h-0 w-full overflow-hidden">
         {/* Stream & Audio/Video Column */}
         <main className="w-full shrink-0 lg:shrink lg:flex-1 flex flex-col min-h-0 bg-black overflow-hidden">
           {/* Active Video Grid (When participants have cameras active) */}
@@ -868,7 +1216,7 @@ export default function WatchPartyRoomPage() {
               <div
                 className="relative aspect-video w-full max-h-full max-w-full flex items-center justify-center rounded-none lg:rounded-2xl overflow-hidden border-0 lg:border border-white/10 shadow-2xl bg-black"
                 style={{
-                  maxWidth: "calc((100vh - 120px) * 16 / 9)",
+                  maxWidth: "calc((100dvh - 120px) * 16 / 9)",
                 }}
               >
                 <TwitchPlayer channel={activeStream} />

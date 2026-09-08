@@ -123,9 +123,9 @@ export default function HostOptionsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none">
       <div
-        className="relative w-full max-w-lg rounded-3xl bg-[#0D1017] border border-white/10 shadow-2xl p-6 text-white space-y-5 max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-[#0D1017] border border-white/10 shadow-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6 text-white space-y-5 max-h-[92dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -141,9 +141,10 @@ export default function HostOptionsModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            className="p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Cerrar modal"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 

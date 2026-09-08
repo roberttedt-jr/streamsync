@@ -62,11 +62,11 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
   ];
 
   return (
-    <nav className="sticky top-4 z-40 w-full px-4 sm:px-6 lg:px-8 pointer-events-none mb-4">
+    <nav className="sticky top-2 sm:top-4 pt-[env(safe-area-inset-top)] z-40 w-full px-3 sm:px-6 lg:px-8 pointer-events-none mb-2 sm:mb-4">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <div className="w-full glass-panel rounded-2xl px-4 sm:px-6 py-2.5 flex items-center justify-between pointer-events-auto transition-all">
+        <div className="w-full glass-panel rounded-2xl px-3.5 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between pointer-events-auto transition-all">
           {/* Brand Logo & Isotype */}
-          <Link href="/" className="flex items-center gap-2.5 group cursor-pointer">
+          <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-h-[44px]">
             <div className="relative h-8 w-8 shrink-0 transition-transform group-hover:scale-105">
               <img
                 src="/streamsync-logo.png"
@@ -228,7 +228,7 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
           {/* Mobile hamburger button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.05]"
+            className="md:hidden min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/[0.08] flex items-center justify-center transition cursor-pointer"
             aria-label="Abrir menú"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -239,14 +239,14 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="md:hidden mt-2 max-w-6xl mx-auto rounded-2xl glass-panel p-4 pointer-events-auto space-y-3">
-          <div className="flex flex-col space-y-1 text-xs font-medium text-gray-300">
+          <div className="flex flex-col space-y-1 text-sm font-medium text-gray-300">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className={`p-2.5 rounded-xl transition ${
-                  pathname === link.href ? "bg-white/[0.08] text-white font-bold" : "hover:bg-white/[0.04]"
+                className={`min-h-[44px] px-3.5 py-2.5 rounded-xl transition flex items-center ${
+                  pathname === link.href ? "bg-white/[0.1] text-white font-bold" : "hover:bg-white/[0.05]"
                 }`}
               >
                 {link.label}
@@ -256,12 +256,13 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
               <Link
                 href="/profile"
                 onClick={() => setMobileOpen(false)}
-                className="p-2.5 rounded-xl hover:bg-white/[0.04]"
+                className="min-h-[44px] px-3.5 py-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-center"
               >
                 {t?.nav?.profile || (language === "en" ? "My Profile" : "Mi Perfil & Canales")}
               </Link>
             )}
           </div>
+
 
           <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -123,9 +123,9 @@ export default function MediaPermissionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none">
       <div
-        className="relative w-full max-w-md rounded-3xl bg-[#0D1017] border border-white/10 shadow-2xl p-6 text-white space-y-5"
+        className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#0D1017] border border-white/10 shadow-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6 text-white space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -158,11 +158,13 @@ export default function MediaPermissionModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            className="p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Cerrar modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
+
 
         {/* Privacy & Trust Badge */}
         <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-start gap-2.5 text-xs text-gray-300">
@@ -192,7 +194,7 @@ export default function MediaPermissionModal({
           <button
             onClick={handleRequestAccess}
             disabled={isRequesting}
-            className={`w-full py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg disabled:opacity-50 ${
+            className={`w-full min-h-[48px] py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg disabled:opacity-50 ${
               requestedType === "video"
                 ? "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/30"
                 : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30"
@@ -225,12 +227,13 @@ export default function MediaPermissionModal({
                 onChooseChatOnly();
                 onClose();
               }}
-              className="w-full py-2.5 px-4 rounded-2xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer"
+              className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer flex items-center justify-center"
             >
               Prefiero continuar solo con chat de texto
             </button>
           )}
         </div>
+
       </div>
     </div>
   );

@@ -173,13 +173,13 @@ export default function CreateRoomModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-xl rounded-3xl bg-[#0D111A] border border-white/[0.1] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-xl rounded-t-3xl sm:rounded-3xl bg-[#0D111A] border border-white/[0.1] shadow-2xl overflow-hidden max-h-[92dvh] flex flex-col pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.08] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
               <Sparkles className="h-4 w-4" />
@@ -195,11 +195,13 @@ export default function CreateRoomModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+            className="p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Cerrar modal"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
+
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
@@ -447,14 +449,14 @@ export default function CreateRoomModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-white transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-400 hover:text-white transition cursor-pointer min-h-[44px] flex items-center justify-center"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-purple-600/30 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-purple-600/30 disabled:opacity-50 min-h-[44px]"
             >
               <span>{loading ? "Creando sala..." : "Crear Watch Party"}</span>
               {loading ? (
@@ -464,6 +466,7 @@ export default function CreateRoomModal({
               )}
             </button>
           </div>
+
         </form>
       </div>
     </div>

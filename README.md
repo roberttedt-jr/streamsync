@@ -59,6 +59,48 @@ StreamSync incluye un modo de acceso inmediato como invitado (`Continuar como In
 
 ---
 
+## 📱 Experiencia Móvil & Instalación PWA
+
+StreamSync está optimizado como una Progressive Web App (PWA) de alto rendimiento, diseñada para sentirse como una aplicación nativa en iOS (Safari) y Android (Chrome).
+
+### Cómo instalar StreamSync:
+- **iPhone / iPad (Safari):**
+  1. Abre `https://streamsync-livid.vercel.app` en Safari.
+  2. Toca el botón **Compartir** (icono de flecha hacia arriba).
+  3. Selecciona **Añadir a pantalla de inicio**.
+  4. Verifica el nombre exacto `StreamSync` y confirma pulsando **Añadir**.
+  5. La app se ejecutará en modo **standalone**, aprovechando la pantalla completa, con integración de barra de estado oscura y respeto estricto por la Dynamic Island, notch y safe areas.
+
+- **Android (Chrome):**
+  1. Abre `https://streamsync-livid.vercel.app` en Chrome.
+  2. Pulsa en el menú de opciones (⋮) o en el banner inferior **Instalar aplicación**.
+  3. Confirma para añadir el acceso directo con icono maskable adaptativo en tu cajón de aplicaciones.
+
+### Especificaciones Técnicas de la PWA:
+- **Nombre de la App:** `StreamSync`
+- **Nombre Corto:** `StreamSync`
+- **Modo de Visualización:** `standalone` (con fallback `display_override: ["window-controls-overlay", "standalone"]`)
+- **Iconos Oficiales:**
+  - `192x192 PNG` (`/streamsync-logo-192.png`)
+  - `512x512 PNG` (`/streamsync-logo-512.png`)
+  - `180x180 Apple Touch Icon` (`/apple-touch-icon.png`)
+  - `192x192 Maskable` (`/streamsync-maskable-192.png`)
+  - `512x512 Maskable` (`/streamsync-maskable-512.png`)
+- **Estrategia de Service Worker:**
+  - Caché de shell estático y activos visuales (iconos, manifest, fuentes).
+  - *Network-First* para carga de páginas HTML.
+  - *Network-Only* estricto para `/api/*`, sesiones de Auth.js, WebSockets y señalización WebRTC.
+  - Detección reactiva de desconexión: aviso flotante *"Sin conexión. Reconectando..."*.
+- **Zoom y Accesibilidad (WCAG 2.1):**
+  - Se mantiene la posibilidad de zoom del sistema por motivos de accesibilidad (`userScalable: true`), resolviendo el zoom involuntario de iOS Safari estableciendo un tamaño mínimo de fuente de 16px (`font-size: 16px`) en todos los inputs, textareas y selectores móviles.
+- **Limitaciones Conocidas y Transparencia:**
+  - StreamSync es una PWA instalable desde la web, no una app nativa binaria distribuida en Apple App Store o Google Play Store.
+  - Los permisos de cámara y micrófono dependen de la autorización explícita del usuario y de las capacidades WebRTC del navegador móvil.
+  - Las funciones en tiempo real (reproductor de Twitch, presencia, chat y llamadas) requieren conexión activa a internet.
+
+
+---
+
 ## 📜 Licencia y Avisos Legales
 
 © 2026 StreamSync. Desarrollado por **Roberto**. Todos los derechos reservados.

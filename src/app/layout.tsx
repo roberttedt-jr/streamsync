@@ -1,12 +1,30 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import PWAHandler from "@/components/common/PWAHandler";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#09090B",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://streamsync-livid.vercel.app"),
+  applicationName: "StreamSync",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "StreamSync",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   title: "StreamSync — Watch Parties de Twitch con tu comunidad",
   description: "Crea una sala, comparte un directo de Twitch y disfruta del stream con presencia y chat compartidos en tiempo real.",
   keywords: [
@@ -57,6 +75,7 @@ export default function RootLayout({
           <LanguageProvider>
             <AuthProvider>
               <ToastProvider>
+                <PWAHandler />
                 {children}
               </ToastProvider>
             </AuthProvider>
