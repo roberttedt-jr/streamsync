@@ -34,6 +34,7 @@ function AuthFormContent() {
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
+  const [redirectingProvider, setRedirectingProvider] = useState<"twitch" | "google" | null>(null);
   const [providersStatus, setProvidersStatus] = useState<{ twitch: boolean; google: boolean }>({
     twitch: false,
     google: false,
@@ -45,12 +46,28 @@ function AuthFormContent() {
       .then((res) => res.json())
       .then((data) => {
         setProvidersStatus({
-          twitch: Boolean(data.twitch),
-          google: Boolean(data.google),
+          twitch: Boolean(data?.twitch),
+          google: Boolean(data?.google),
         });
       })
       .catch(() => {});
   }, []);
+
+  // Show toast if redirected back with an error param
+  const errorParam = searchParams?.get("error");
+  useEffect(() => {
+    if (errorParam) {
+      if (errorParam === "OAuthSignin" || errorParam === "OAuthCallback") {
+        addToast("Error durante la conexión OAuth. Por favor, intenta de nuevo.", "error");
+      } else if (errorParam === "OAuthCreateAccount") {
+        addToast("No se pudo vincular la cuenta OAuth.", "error");
+      } else if (errorParam === "TwitchNotConfigured") {
+        addToast("Twitch OAuth pendiente de configuración en Vercel.", "info");
+      } else if (errorParam === "GoogleNotConfigured") {
+        addToast("Google/YouTube OAuth pendiente de configuración en Vercel.", "info");
+      }
+    }
+  }, [errorParam, addToast]);
 
   // Form states
   const [identifier, setIdentifier] = useState("");
@@ -85,30 +102,33 @@ function AuthFormContent() {
     }
   };
 
-  const handleOAuth = async (provider: "twitch" | "google") => {
-    if (provider === "twitch" && !providersStatus.twitch) {
-      addToast(
-        "Twitch OAuth pendiente: añade TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en el panel de Vercel o en .env.local",
-        "info"
-      );
-      return;
-    }
-    if (provider === "google" && !providersStatus.google) {
-      addToast(
-        "Google/YouTube OAuth pendiente: añade GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el panel de Vercel o en .env.local",
-        "info"
-      );
+  const handleOAuth = (provider: "twitch" | "google") => {
+    if (provider === "twitch") {
+      if (!providersStatus.twitch) {
+        addToast(
+          "Twitch OAuth pendiente: añade TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en el panel de Vercel o en .env.local",
+          "info"
+        );
+        return;
+      }
+      setRedirectingProvider("twitch");
+      addToast("Redirigiendo a Twitch...", "info");
+      window.location.href = `/api/auth/signin/twitch?callbackUrl=${encodeURIComponent(callbackUrl)}`;
       return;
     }
 
-    setLoading(true);
-    try {
-      addToast(`Iniciando conexión con ${provider === "twitch" ? "Twitch" : "YouTube / Google"}...`, "info");
-      const { signIn } = await import("next-auth/react");
-      await signIn(provider, { callbackUrl });
-    } catch (err: any) {
-      addToast("No se pudo iniciar la conexión con el proveedor", "error");
-      setLoading(false);
+    if (provider === "google") {
+      if (!providersStatus.google) {
+        addToast(
+          "Google/YouTube OAuth pendiente: añade GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el panel de Vercel o en .env.local",
+          "info"
+        );
+        return;
+      }
+      setRedirectingProvider("google");
+      addToast("Redirigiendo a YouTube / Google...", "info");
+      window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+      return;
     }
   };
 
@@ -247,54 +267,82 @@ function AuthFormContent() {
                   <button
                     type="button"
                     onClick={() => handleOAuth("twitch")}
-                    disabled={loading}
-                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm transition-all shadow-lg cursor-pointer ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleOAuth("twitch");
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm transition-all shadow-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-[#0c1017] ${
                       providersStatus.twitch
-                        ? "bg-[#9146FF] hover:bg-[#772ce8] shadow-[#9146FF]/25 active:scale-[0.99]"
-                        : "bg-[#9146FF]/50 border border-purple-400/20 hover:bg-[#9146FF]/70"
+                        ? "bg-[#9146FF] hover:bg-[#772ce8] shadow-[#9146FF]/25 active:scale-[0.98]"
+                        : "bg-[#9146FF]/60 border border-purple-400/30 hover:bg-[#9146FF]/80 active:scale-[0.98]"
                     }`}
                     title={
                       providersStatus.twitch
                         ? "Entrar con tu cuenta de Twitch"
-                        : "Pendiente: Configura TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en Vercel o .env.local"
+                        : "Pendiente: Configura TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en Vercel"
                     }
                   >
-                    <Radio className="w-4 h-4 shrink-0" />
-                    <span className="flex items-center gap-1.5">
-                      <span>Entrar con Twitch</span>
-                      {!providersStatus.twitch && (
-                        <span className="text-[9px] font-mono bg-white/20 px-1 py-0.2 rounded text-white/90">
-                          Setup
+                    {redirectingProvider === "twitch" ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                        <span>Redirigiendo a Twitch...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Radio className="w-4 h-4 shrink-0" />
+                        <span className="flex items-center gap-1.5">
+                          <span>Entrar con Twitch</span>
+                          {!providersStatus.twitch && (
+                            <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.5 rounded text-white/90 font-medium">
+                              Setup
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
+                      </>
+                    )}
                   </button>
 
                   {/* YouTube Button */}
                   <button
                     type="button"
                     onClick={() => handleOAuth("google")}
-                    disabled={loading}
-                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm transition-all shadow-lg cursor-pointer ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleOAuth("google");
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm transition-all shadow-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#0c1017] ${
                       providersStatus.google
-                        ? "bg-[#FF0000] hover:bg-[#cc0000] shadow-[#FF0000]/25 active:scale-[0.99]"
-                        : "bg-[#FF0000]/50 border border-red-400/20 hover:bg-[#FF0000]/70"
+                        ? "bg-[#FF0000] hover:bg-[#cc0000] shadow-[#FF0000]/25 active:scale-[0.98]"
+                        : "bg-[#FF0000]/60 border border-red-400/30 hover:bg-[#FF0000]/80 active:scale-[0.98]"
                     }`}
                     title={
                       providersStatus.google
                         ? "Entrar con tu cuenta de Google / YouTube"
-                        : "Pendiente: Configura GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en Vercel o .env.local"
+                        : "Pendiente: Configura GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en Vercel"
                     }
                   >
-                    <Tv className="w-4 h-4 shrink-0" />
-                    <span className="flex items-center gap-1.5">
-                      <span>Entrar con YouTube</span>
-                      {!providersStatus.google && (
-                        <span className="text-[9px] font-mono bg-white/20 px-1 py-0.2 rounded text-white/90">
-                          Setup
+                    {redirectingProvider === "google" ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                        <span>Redirigiendo a YouTube...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Tv className="w-4 h-4 shrink-0" />
+                        <span className="flex items-center gap-1.5">
+                          <span>Entrar con YouTube</span>
+                          {!providersStatus.google && (
+                            <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.5 rounded text-white/90 font-medium">
+                              Setup
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
+                      </>
+                    )}
                   </button>
                 </div>
 
