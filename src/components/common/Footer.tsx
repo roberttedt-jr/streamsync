@@ -148,7 +148,7 @@ export default function Footer() {
           <div>{t?.footer?.rights || "© 2026 StreamSync. Desarrollado por Roberto. Todos los derechos reservados."}</div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            <span>{language === "en" ? "Operating servers • Low latency" : "Servidores operativos • Baja latencia"}</span>
+            <span>{language === "en" ? "Operating servers • High availability" : "Servidores operativos • Alta disponibilidad"}</span>
           </div>
         </div>
       </div>

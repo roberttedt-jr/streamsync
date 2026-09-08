@@ -259,7 +259,7 @@ export default function HostOptionsModal({
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs mb-0.5">
                   <Video className="w-3.5 h-3.5 text-pink-400" />
-                  <span>Videollamada</span>
+                  <span>Videollamada (Beta)</span>
                 </div>
                 <span className="text-[10px] text-gray-400">Cámaras y micrófonos</span>
               </button>

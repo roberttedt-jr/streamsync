@@ -769,7 +769,7 @@ export default function WatchPartyRoomPage() {
               {commMode === "VIDEO" && (
                 <>
                   <Video className="w-3 h-3 text-pink-400" />
-                  <span>Videollamada</span>
+                  <span>Videollamada (Beta)</span>
                 </>
               )}
               {commMode === "FLEXIBLE" && (
@@ -1378,7 +1378,7 @@ export default function WatchPartyRoomPage() {
           <div className="w-full max-w-sm bg-[#0D0F17] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in">
             <h3 className="text-base font-bold text-white">¿Deseas salir de la sala?</h3>
             <p className="text-xs text-gray-400">
-              Desconectarás el chat de voz, tu cámara y la sincronización de vídeo en tiempo real.
+              Desconectarás la llamada, tu presencia en la sala y el chat en tiempo real.
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button

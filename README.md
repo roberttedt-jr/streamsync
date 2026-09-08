@@ -10,11 +10,12 @@ Desarrollado por **Roberto Tedt (roberttedt-jr)**.
 
 ## ✨ Características Principales
 
-- **Salas compartidas con presencia en tiempo real:** Visualiza quién está conectado en la sala con lista interactiva de participantes y estados de conexión.
-- **Chat en directo entre participantes:** Mensajería instantánea dentro de la sala con avatares personalizados y soporte para participantes e invitados.
-- **Voz y cámara opcionales, solo tras autorización explícita:** Comunicación WebRTC directa entre navegadores, respetando la privacidad sin grabación ni almacenamiento en servidores.
-- **Controles y configuración de sala para anfitriones:** Gestión de privacidad, contraseña, límites de participantes y opciones de eliminación segura de la sala por parte del anfitrión.
-- **Reproductor Twitch adaptable para escritorio y móvil:** Integración oficial del reproductor de Twitch optimizada para evitar espacios negros y recortados en cualquier tamaño de pantalla.
+- **Salas privadas o públicas:** Crea salas compartidas abiertas para la comunidad o privadas mediante enlace exclusivo de un solo clic.
+- **Participantes visibles y presencia compartida:** Visualiza en tiempo real quién está en la sala con roles de anfitrión y contador de miembros actualizado en vivo.
+- **Chat en directo entre personas conectadas:** Mensajería instantánea bidireccional sin recargas de página para comentar cada jugada en directo.
+- **Reproductor Twitch adaptado a escritorio y móvil:** Relación de aspecto 16:9 estricta, sin zonas negras artificiales y con controles inferiores despejados.
+- **Gestión de sala para anfitriones:** El creador puede cambiar de stream en cualquier momento y eliminar la sala de forma segura con confirmación explícita ("ELIMINAR").
+- **Voz y cámara opcionales (Beta WebRTC):** Estrictamente opt-in. Solo se activa si el usuario lo autoriza expresamente, garantizando la privacidad.
 
 ---
 
@@ -23,8 +24,9 @@ Desarrollado por **Roberto Tedt (roberttedt-jr)**.
 - **Framework:** Next.js 14 (App Router)
 - **Autenticación:** Auth.js / NextAuth (Twitch OAuth con sincronización de seguidos, Modo Invitado y credenciales locales)
 - **Base de Datos & ORM:** Prisma con PostgreSQL (Neon)
-- **Estilos:** Tailwind CSS con interfaz Dark Mode premium
-- **Comunicaciones:** WebRTC peer-to-peer para voz y cámara opcional
+- **Tiempo Real & Presencia:** Heartbeat serverless con poda automática (TTL 6s) y fallback en memoria
+- **Señalización & Medios:** WebRTC mesh peer-to-peer (STUN Google) con intercambio de señales serverless
+- **Estilos:** Tailwind CSS con diseño Dark Mode premium responsive
 
 ---
 

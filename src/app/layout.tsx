@@ -7,15 +7,16 @@ import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://streamsync-livid.vercel.app"),
-  title: "StreamSync — Watch Parties de Twitch",
-  description: "Crea una sala, comparte un directo de Twitch y disfruta del stream con tu comunidad.",
+  title: "StreamSync — Watch Parties de Twitch con tu comunidad",
+  description: "Crea una sala, comparte un directo de Twitch y disfruta del stream con presencia y chat compartidos en tiempo real.",
   keywords: [
     "StreamSync",
     "Watch Parties de Twitch",
+    "Twitch-only Watch Parties",
     "ver Twitch con amigos",
     "salas de Twitch",
     "stream con tu comunidad",
-    "watch parties en directo",
+    "presencia y chat en tiempo real",
   ],
   icons: {
     icon: [
@@ -29,8 +30,8 @@ export const metadata: Metadata = {
     shortcut: "/favicon-32x32.png",
   },
   openGraph: {
-    title: "StreamSync — Watch Parties de Twitch",
-    description: "Crea una sala, comparte un directo de Twitch y disfruta del stream con tu comunidad.",
+    title: "StreamSync — Watch Parties de Twitch con tu comunidad",
+    description: "Crea una sala, comparte un directo de Twitch y disfruta del stream con presencia y chat compartidos en tiempo real.",
     type: "website",
     url: "https://streamsync-livid.vercel.app",
     images: [

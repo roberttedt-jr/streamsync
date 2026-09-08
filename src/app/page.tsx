@@ -64,25 +64,23 @@ export default function HomePage() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
                 <span>
-                  {isEn
-                    ? "StreamSync • Twitch Watch Parties"
-                    : "StreamSync • Watch Parties de Twitch"}
+                  {isEn ? "Twitch-only Watch Parties" : "Twitch-only Watch Parties"}
                 </span>
               </div>
 
               {/* Main Title */}
               <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-6">
-                StreamSync —{" "}
+                <span className="text-white">Watch Parties de Twitch </span>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
-                  {isEn ? "Twitch Watch Parties" : "Watch Parties de Twitch"}
+                  {isEn ? "with your community" : "con tu comunidad"}
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-base sm:text-lg text-gray-400 max-w-2xl font-normal leading-relaxed mb-8">
                 {isEn
-                  ? "Create a room, share a Twitch stream, and enjoy watching together with your community."
-                  : "Crea una sala, comparte un directo de Twitch y disfruta del stream con tu comunidad."}
+                  ? "Create a room, share a Twitch stream, and enjoy watching together with shared real-time presence and chat."
+                  : "Crea una sala, comparte un directo de Twitch y disfruta del stream con presencia y chat compartidos en tiempo real."}
               </p>
 
               {/* CTAs */}
@@ -108,17 +106,17 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium mt-10">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  {isEn ? "No registration required (guest mode)" : "Sin registro obligatorio (modo invitado)"}
+                  {isEn ? "Disfrutad del mismo directo en una sala compartida" : "Disfrutad del mismo directo en una sala compartida"}
                 </span>
                 <span className="hidden sm:inline text-white/20">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                  {isEn ? "Real-time presence & chat" : "Presencia y chat en tiempo real"}
+                  {isEn ? "Real-time presence & live chat" : "Presencia y chat en tiempo real"}
                 </span>
                 <span className="hidden sm:inline text-white/20">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                  {isEn ? "Optional voice & camera" : "Voz y cámara opcionales"}
+                  {isEn ? "Optional voice & camera (Beta)" : "Voz y cámara opcionales (Beta)"}
                 </span>
               </div>
             </div>
@@ -332,78 +330,141 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Section: Características Técnicas Generales */}
+        {/* Section: Características Verificadas */}
         <section className="py-20 border-t border-white/10 bg-white/[0.01]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <span className="text-xs font-mono font-bold tracking-widest text-purple-400 uppercase mb-2 block">
-                {isEn ? "REAL-TIME TECHNOLOGY" : "TECNOLOGÍA EN TIEMPO REAL"}
+                {isEn ? "VERIFIED FEATURES" : "CARACTERÍSTICAS VERIFICADAS"}
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
-                {isEn ? "Engineered for uninterrupted streaming" : "Diseñado para disfrutar sin interrupciones"}
+                {isEn ? "Engineered for real community streams" : "Diseñado para disfrutar de Twitch en comunidad"}
               </h2>
               <p className="text-sm text-gray-400 leading-relaxed">
                 {isEn
-                  ? "Real tools designed to make watching live broadcasts together seamless and latency-free."
-                  : "Herramientas reales diseñadas para que ver emisiones en directo compartidas sea una experiencia fluida y sin desajustes."}
+                  ? "Real, tested features designed to make watching live Twitch broadcasts together seamless and transparent."
+                  : "Funcionalidades reales y probadas para ver directos de Twitch de forma fluida, compartida y honesta."}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Característica 1 */}
               <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-purple-500/40 transition">
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
-                    <Users className="w-6 h-6" />
+                    <Share2 className="w-6 h-6" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">
-                    {isEn ? "Shared Rooms & Presence" : "Salas Compartidas y Presencia"}
+                    {isEn ? "Private or Public Rooms" : "Salas Privadas o Públicas"}
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Real-time participant presence and host controls. Change Twitch channels, manage room settings, and chat with your community seamlessly."
-                      : "Presencia en tiempo real y controles de anfitrión. Cambia canales de Twitch, configura la sala y disfruta con tu comunidad sin cortes."}
+                      ? "Create open rooms listed in the directory or invite your inner circle via secure one-click link."
+                      : "Crea salas abiertas para la comunidad o privadas accesibles mediante enlace exclusivo con un solo clic."}
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  {isEn ? "Compatible with live Twitch streams." : "Compatible con directos de Twitch."}
+                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-purple-400 font-mono">
+                  {isEn ? "Configurable access & privacy." : "Acceso y privacidad configurables."}
                 </div>
               </div>
 
+              {/* Característica 2 */}
               <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-cyan-500/40 transition">
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-5">
-                    <Volume2 className="w-6 h-6" />
+                    <Users className="w-6 h-6" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">
-                    {isEn ? "Optional Voice & Camera" : "Voz y Cámara Opcionales"}
+                    {isEn ? "Visible Participants & Shared Presence" : "Participantes Visibles y Presencia"}
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Microphone and camera access only activate with your explicit permission. Built-in turn queue to request speaking turns easily."
-                      : "El acceso a micrófono y cámara solo se activa tras tu autorización explícita. Incluye cola para pedir la palabra de forma ordenada."}
+                      ? "See who is in the room in real time with active counters, host badges, and member presence."
+                      : "Visualiza quién está dentro de la sala en tiempo real con contador en vivo, insignias de anfitrión y lista compartida."}
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  {isEn ? "Peer-to-peer encryption (SRTP/DTLS)." : "Cifrado de punto a punto (SRTP/DTLS)."}
+                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-cyan-400 font-mono">
+                  {isEn ? "Multi-user live presence." : "Presencia multiusuario en vivo."}
                 </div>
               </div>
 
+              {/* Característica 3 */}
               <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-emerald-500/40 transition">
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
-                    <Layers className="w-6 h-6" />
+                    <MessageSquare className="w-6 h-6" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">
-                    {isEn ? "Cross-Platform & No Apps" : "Multiplataforma y Sin Apps"}
+                    {isEn ? "Live Chat Between Connected Users" : "Chat en Directo entre Personas"}
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {isEn
-                      ? "Zero downloads or installs required. Works on PCs, laptops, and tablets directly inside your favorite modern browser."
-                      : "Cero descargas o instalaciones requeridas. Funciona en ordenadores, portátiles y tablets directamente a través de tu navegador moderno favorito."}
+                      ? "Fast, bidirectional messaging without page reloads so you can comment on every highlight as it happens."
+                      : "Mensajería instantánea bidireccional sin recargar la página para comentar cada jugada y momento al instante."}
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-gray-400 font-mono">
-                  {isEn ? "Fully responsive for any screen." : "Responsive para cualquier dispositivo."}
+                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-emerald-400 font-mono">
+                  {isEn ? "Real-time bidirectional feed." : "Feed bidireccional en tiempo real."}
+                </div>
+              </div>
+
+              {/* Característica 4 */}
+              <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-purple-500/40 transition">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
+                    <Tv className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "Twitch Player for Desktop & Mobile" : "Reproductor Twitch 16:9 Adaptado"}
+                  </h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {isEn
+                      ? "Strict 16:9 aspect ratio frame with zero artificial black bars and fully unblocked native controls."
+                      : "Relación de aspecto 16:9 estricta, sin bandas negras artificiales de layout y con controles de Twitch despejados."}
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-purple-400 font-mono">
+                  {isEn ? "Desktop & mobile responsive." : "Adaptado a escritorio y móvil."}
+                </div>
+              </div>
+
+              {/* Característica 5 */}
+              <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-cyan-500/40 transition">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-5">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "Room Management for Hosts" : "Gestión de Sala para Anfitriones"}
+                  </h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {isEn
+                      ? "Hosts can switch the live Twitch channel at any time and securely delete the room with confirmation."
+                      : "El anfitrión puede cambiar de stream en cualquier momento y eliminar la sala de forma segura con confirmación explícita."}
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-cyan-400 font-mono">
+                  {isEn ? "Host-only protected controls." : "Controles protegidos para el creador."}
+                </div>
+              </div>
+
+              {/* Característica 6 */}
+              <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-between hover:border-emerald-500/40 transition">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
+                    <Volume2 className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {isEn ? "Optional Voice & Camera (Beta)" : "Voz y Cámara Opcionales (Beta)"}
+                  </h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {isEn
+                      ? "Microphone and camera only activate with your explicit consent. Never prompts on join, keeping your privacy first."
+                      : "Tus dispositivos solo se activan si decides pulsar y autorizarlos expresamente. Sin solicitudes invasivas al unirte."}
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-emerald-400 font-mono">
+                  {isEn ? "Voluntary opt-in via WebRTC." : "Opt-in voluntario vía WebRTC."}
                 </div>
               </div>
             </div>

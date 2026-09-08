@@ -386,7 +386,7 @@ export default function CreateRoomModal({
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Video className="w-4 h-4 text-pink-400 shrink-0" />
-                  <span className="text-xs font-bold">Chat + videollamada</span>
+                  <span className="text-xs font-bold">Chat + videollamada (Beta)</span>
                 </div>
                 <p className="text-[11px] text-gray-400 leading-tight">
                   Videollamada en directo con cuadrícula de cámaras de los participantes junto al stream.

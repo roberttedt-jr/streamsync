@@ -1,4 +1,4 @@
-﻿export type Language = "es" | "en";
+export type Language = "es" | "en";
 
 export const translations = {
   es: {
@@ -21,17 +21,17 @@ export const translations = {
       tagline: "Watch Parties de Twitch",
     },
     hero: {
-      badgeTag: "Watch Parties de Twitch",
+      badgeTag: "Twitch-only Watch Parties",
       badgeText: "Directos Compartidos con tu Comunidad",
-      titleStart: "StreamSync —",
-      titleGradient: "Watch Parties de Twitch",
+      titleStart: "Watch Parties de Twitch ",
+      titleGradient: "con tu comunidad",
       subtitle:
-        "Crea una sala, comparte un directo de Twitch y disfruta del stream con tu comunidad.",
+        "Crea una sala, comparte un directo de Twitch y disfruta del stream con presencia y chat compartidos en tiempo real.",
       ctaPrimary: "Crear sala gratis",
       ctaSecondary: "Cómo funciona",
-      trustNoRegister: "Presencia en tiempo real",
+      trustNoRegister: "Disfrutad del mismo directo en una sala compartida",
       trustNoLag: "Chat en directo",
-      trustVoice: "Voz y cámara opcionales",
+      trustVoice: "Voz y cámara opcionales (Beta)",
       mockupSynced: "En Vivo • Twitch",
       mockupGamers: "4 miembros",
       mockupTourney: "Watch Party en Directo",
@@ -77,34 +77,40 @@ export const translations = {
       practiceLabel: "En detalle:",
       items: [
         {
-          title: "Salas compartidas con presencia en tiempo real",
+          title: "Salas privadas o públicas",
+          subtitle: "Acceso flexible",
+          description: "Crea salas abiertas para la comunidad o privadas accesibles mediante enlace exclusivo con un solo clic.",
+          example: "Configura salas públicas visibles en el directorio o privadas para compartir solo con amigos.",
+        },
+        {
+          title: "Participantes visibles y presencia compartida",
           subtitle: "Presencia activa",
           description: "Visualiza qué participantes están conectados a la sala en todo momento con sincronización periódica y contador en vivo.",
           example: "Identificación clara de anfitriones y miembros en una lista compartida que se actualiza al instante.",
         },
         {
-          title: "Chat en directo entre participantes",
+          title: "Chat en directo entre personas conectadas",
           subtitle: "Mensajería en tiempo real",
           description: "Comenta jugadas, momentos épicos y debates del stream en un chat integrado, fluido y persistente durante la sesión.",
           example: "Envía mensajes sin salir de la sala con un feed adaptado a pantallas táctiles y escritorios.",
         },
         {
-          title: "Voz y cámara opcionales, solo tras autorización explícita",
-          subtitle: "Privacidad por defecto",
-          description: "La activación del micrófono y la cámara requiere siempre el consentimiento expreso del usuario mediante un diálogo previo.",
-          example: "Si solo deseas ver el stream y chatear por texto, tus dispositivos permanecen desactivados y seguros.",
-        },
-        {
-          title: "Controles y configuración de sala para anfitriones",
-          subtitle: "Gestión para creadores",
-          description: "El creador de la sala puede cambiar el canal de Twitch en directo, gestionar accesos y cerrar o eliminar la sala cuando termine.",
-          example: "Opciones accesibles para cambiar el canal de Twitch al instante o finalizar la Watch Party desde tu panel.",
-        },
-        {
-          title: "Reproductor Twitch adaptable para escritorio y móvil",
+          title: "Reproductor Twitch adaptado a escritorio y móvil",
           subtitle: "Diseño responsive 16:9",
           description: "Relación de aspecto 16:9 optimizada para rellenar la pantalla sin márgenes negros ni controles superpuestos.",
           example: "Disfruta del directo en tu ordenador o smartphone con una interfaz que se adapta dinámicamente.",
+        },
+        {
+          title: "Gestión de sala para anfitriones",
+          subtitle: "Gestión para creadores",
+          description: "El creador de la sala puede cambiar el canal de Twitch en directo, gestionar accesos y cerrar o eliminar la sala con confirmación.",
+          example: "Opciones accesibles para cambiar el canal de Twitch al instante o finalizar la Watch Party desde tu panel.",
+        },
+        {
+          title: "Voz y cámara opcionales (Beta WebRTC)",
+          subtitle: "Privacidad por defecto",
+          description: "La activación del micrófono y la cámara requiere siempre el consentimiento expreso del usuario mediante un diálogo previo.",
+          example: "Si solo deseas ver el stream y chatear por texto, tus dispositivos permanecen desactivados y seguros.",
         },
       ],
       feat1: {
@@ -218,17 +224,17 @@ export const translations = {
       tagline: "Twitch Watch Parties",
     },
     hero: {
-      badgeTag: "Twitch Watch Parties",
+      badgeTag: "Twitch-only Watch Parties",
       badgeText: "Shared Streams with Your Community",
-      titleStart: "StreamSync —",
-      titleGradient: "Twitch Watch Parties",
+      titleStart: "Twitch Watch Parties ",
+      titleGradient: "with your community",
       subtitle:
-        "Create a room, share a Twitch stream, and enjoy watching together with your community.",
+        "Create a room, share a Twitch stream, and enjoy watching together with shared real-time presence and chat.",
       ctaPrimary: "Create free room",
       ctaSecondary: "How it works",
-      trustNoRegister: "Real-time presence",
+      trustNoRegister: "Enjoy the same stream together in a shared room",
       trustNoLag: "Live chat",
-      trustVoice: "Optional voice & camera",
+      trustVoice: "Optional voice & camera (Beta)",
       mockupSynced: "Live • Twitch",
       mockupGamers: "4 members",
       mockupTourney: "Live Watch Party",
@@ -274,34 +280,40 @@ export const translations = {
       practiceLabel: "In detail:",
       items: [
         {
-          title: "Shared rooms with real-time presence",
+          title: "Private or Public Rooms",
+          subtitle: "Flexible access",
+          description: "Create open rooms listed in the directory or invite friends via secure one-click link.",
+          example: "Configure public rooms visible in the directory or private rooms for your inner circle.",
+        },
+        {
+          title: "Visible Participants & Shared Presence",
           subtitle: "Active presence",
           description: "See who is in the room at all times with real-time member counters and automatic status updates.",
           example: "Clear roles for hosts and guests in a shared participant list updated continuously.",
         },
         {
-          title: "Live chat between participants",
+          title: "Live Chat Between Connected Users",
           subtitle: "Real-time messaging",
           description: "Talk about plays, highlights, and community moments in a fast, integrated chat feed throughout the stream.",
           example: "Send messages seamlessly without leaving the video player across mobile and desktop.",
         },
         {
-          title: "Optional voice and camera, only after explicit authorization",
-          subtitle: "Privacy first",
-          description: "Microphone and camera access always require prior user confirmation through an explicit permission modal.",
-          example: "Participate with text chat only or request speech turn whenever you feel like joining the conversation.",
+          title: "Twitch Player for Desktop & Mobile",
+          subtitle: "16:9 responsive layout",
+          description: "Precise 16:9 aspect ratio that fills your screen cleanly without dead black space or overlapping docks.",
+          example: "Enjoy the official Twitch stream on full screen or side-by-side with chat on any device.",
         },
         {
-          title: "Room controls and configuration for hosts",
+          title: "Room Management for Hosts",
           subtitle: "Host management",
-          description: "Hosts can switch the live Twitch stream, customize room modes, and securely close or delete the room.",
+          description: "Hosts can switch the live Twitch stream at any time and securely delete the room with confirmation.",
           example: "One-click stream updates and safe room deletion directly from your creator dashboard.",
         },
         {
-          title: "Adaptive Twitch player for desktop and mobile",
-          subtitle: "16:9 adaptive layout",
-          description: "Precise 16:9 aspect ratio that fills your screen cleanly without dead black space or overlapping docks.",
-          example: "Enjoy the official Twitch stream on full screen or side-by-side with chat on any device.",
+          title: "Optional Voice & Camera (Beta WebRTC)",
+          subtitle: "Privacy first",
+          description: "Microphone and camera access always require prior user confirmation through an explicit permission modal.",
+          example: "Participate with text chat only or join voice and video whenever you feel like joining the conversation.",
         },
       ],
       feat1: {
