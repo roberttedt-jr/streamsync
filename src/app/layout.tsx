@@ -7,26 +7,40 @@ import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://streamsync-livid.vercel.app"),
-  title: "StreamSync | Watch Parties de Gaming en Directo",
-  description:
-    "Mira directos de Twitch y vídeos de YouTube sincronizados con amigos. Chat de voz integrado, cero lag, overlay de estadísticas de juegos y sincronización milimétrica.",
+  title: "StreamSync | Watch Parties",
+  description: "Crea salas para disfrutar directos de Twitch y YouTube con tu comunidad.",
   keywords: [
-    "watch party gaming",
+    "watch party",
+    "StreamSync",
     "ver Twitch con amigos",
     "ver YouTube con amigos",
     "stream sincronizado",
-    "watch party español",
-    "StreamSync",
+    "watch parties en directo",
   ],
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/streamsync-logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/streamsync-logo.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon-32x32.png",
   },
   openGraph: {
-    title: "StreamSync | Watch Parties de Gaming en Directo",
-    description:
-      "Mira directos de Twitch y vídeos de YouTube sincronizados con amigos. Chat de voz integrado, cero lag y overlay de estadísticas.",
+    title: "StreamSync | Watch Parties",
+    description: "Crea salas para disfrutar directos de Twitch y YouTube con tu comunidad.",
     type: "website",
     url: "https://streamsync-livid.vercel.app",
+    images: [
+      {
+        url: "/streamsync-logo-512.png",
+        width: 512,
+        height: 512,
+        alt: "StreamSync Logo",
+      },
+    ],
   },
 };
 

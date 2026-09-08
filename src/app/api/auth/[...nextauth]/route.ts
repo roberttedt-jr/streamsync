@@ -5,6 +5,7 @@ import { getToken } from "next-auth/jwt";
 
 export async function GET(req: NextRequest, ctx: any) {
   const scope = req.nextUrl?.searchParams?.get("scope") || null;
+  const nextauthAction = ctx?.params?.nextauth?.[0] || null;
   const targetProvider = ctx?.params?.nextauth?.[1] || null;
 
   const secret =
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest, ctx: any) {
 
   const token = await getToken({ req, secret });
   const sessionUserId = (token?.id || token?.sub) as string | undefined;
+
+  console.log(`[NextAuth GET] action=${nextauthAction} provider=${targetProvider || "none"} hasSession=${Boolean(sessionUserId)}`);
 
   const options = getAuthOptions(scope, targetProvider, sessionUserId);
   return (NextAuth as any)(options)(req, ctx);
@@ -21,6 +24,7 @@ export async function GET(req: NextRequest, ctx: any) {
 
 export async function POST(req: NextRequest, ctx: any) {
   const scope = req.nextUrl?.searchParams?.get("scope") || null;
+  const nextauthAction = ctx?.params?.nextauth?.[0] || null;
   const targetProvider = ctx?.params?.nextauth?.[1] || null;
 
   const secret =
@@ -30,6 +34,8 @@ export async function POST(req: NextRequest, ctx: any) {
 
   const token = await getToken({ req, secret });
   const sessionUserId = (token?.id || token?.sub) as string | undefined;
+
+  console.log(`[NextAuth POST] action=${nextauthAction} provider=${targetProvider || "none"} hasSession=${Boolean(sessionUserId)}`);
 
   const options = getAuthOptions(scope, targetProvider, sessionUserId);
   return (NextAuth as any)(options)(req, ctx);

@@ -14,10 +14,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div className="md:col-span-2 space-y-3">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 p-[1px] flex items-center justify-center">
-                <div className="h-full w-full rounded-[7px] bg-[#07090E] flex items-center justify-center">
-                  <Gamepad2 className="h-3.5 w-3.5 text-white" />
-                </div>
+              <div className="h-7 w-7 shrink-0">
+                <img
+                  src="/streamsync-logo.png"
+                  alt=""
+                  width={28}
+                  height={28}
+                  className="h-7 w-7 object-contain rounded-md"
+                />
               </div>
               <span className="text-sm font-bold text-white font-heading">
                 Stream<span className="text-violet-400">Sync</span>

@@ -70,6 +70,7 @@ export async function POST() {
     }
 
     const userId = session.user.id;
+    console.log("[YouTube Sync] Initiation request for user:", userId);
 
     // Retrieve account strictly from DB using session user ID
     const account = await prisma.account.findFirst({
@@ -77,6 +78,7 @@ export async function POST() {
     });
 
     if (!account || !account.access_token) {
+      console.warn("[YouTube Sync] Rejected: no Google account or token for user:", userId);
       return NextResponse.json(
         {
           ok: false,
@@ -287,6 +289,8 @@ export async function POST() {
         url: saved.url,
       });
     }
+
+    console.log("[YouTube Sync] Completed successfully. Channels synced:", savedChannels.length);
 
     return NextResponse.json({
       ok: true,

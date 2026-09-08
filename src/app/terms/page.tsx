@@ -64,7 +64,7 @@ export default function TermsPage() {
               4. Integraciones con Terceros (Twitch & Google/YouTube)
             </h2>
             <p>
-              Al utilizar la autenticación OAuth con Twitch o Google, autorizas a StreamSync a acceder únicamente a los datos públicos autorizados por ti en la pantalla de consentimiento. Puedes revocar estos permisos en cualquier momento desde la configuración de tu cuenta en Twitch o Google.
+              Al utilizar la autenticación OAuth con Twitch o Google, autorizas a StreamSync a acceder únicamente a los datos autorizados por ti en la pantalla de consentimiento. Al utilizar las funciones de YouTube en StreamSync, los usuarios aceptan quedar sujetos a las <a href="https://www.youtube.com/t/terms" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Condiciones de Servicio de YouTube (YouTube Terms of Service)</a>. Puedes revocar estos permisos en cualquier momento desde la configuración de tu cuenta en Twitch o Google.
             </p>
           </section>
 

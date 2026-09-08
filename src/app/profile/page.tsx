@@ -106,6 +106,8 @@ function ProfileContent() {
   const [syncingTwitch, setSyncingTwitch] = useState(false);
   const [syncingYoutube, setSyncingYoutube] = useState(false);
   const [youtubeSyncError, setYoutubeSyncError] = useState<string | null>(null);
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  const [authorizingYoutube, setAuthorizingYoutube] = useState(false);
 
   // Channels state
   const [twitchChannels, setTwitchChannels] = useState<FollowedChannelItem[]>([]);
@@ -158,10 +160,23 @@ function ProfileContent() {
           "Esta cuenta externa ya está vinculada a otro usuario. No es posible fusionarla.",
           "error"
         );
-      } else if (errorParam === "AccessDenied" || errorParam === "OAuthCallback") {
-        addToast("Autorización cancelada o denegada.", "info");
+      } else if (errorParam === "AccessDenied" || errorParam === "access_denied") {
+        addToast(
+          "Acceso cancelado o no autorizado. Si la app está en fase de prueba en Google Cloud, asegúrate de que tu cuenta de Google esté agregada como Usuario de Prueba.",
+          "error"
+        );
+      } else if (errorParam === "OAuthCallback" || errorParam === "redirect_uri_mismatch") {
+        addToast(
+          "Error en el callback OAuth. Comprueba que la URI de redirección coincida exactamente con la registrada en Google Cloud Console.",
+          "error"
+        );
+      } else if (errorParam === "Configuration") {
+        addToast(
+          "Error de configuración del proveedor OAuth. Comprueba las variables de entorno en Vercel.",
+          "error"
+        );
       } else {
-        addToast("Ocurrió un aviso durante la autenticación.", "info");
+        addToast("Aviso durante la autenticación (" + errorParam + ").", "info");
       }
       router.replace("/profile");
       return;
@@ -238,6 +253,7 @@ function ProfileContent() {
 
   // Safe Connect Provider
   const handleConnectProvider = (provider: "twitch" | "google") => {
+    if (provider === "google") setConnectingGoogle(true);
     signIn(provider, { callbackUrl: `/profile?linked=${provider}` });
   };
 
@@ -294,6 +310,7 @@ function ProfileContent() {
 
   // Safe Authorize YouTube Subscriptions
   const handleAuthorizeYoutube = () => {
+    setAuthorizingYoutube(true);
     signIn(
       "google",
       { callbackUrl: "/profile?sync=youtube" },
@@ -865,20 +882,40 @@ function ProfileContent() {
                   {!youtube.connected ? (
                     <button
                       onClick={() => handleConnectProvider("google")}
-                      className="w-full py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-red-600/25"
+                      disabled={connectingGoogle}
+                      className="w-full py-2.5 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50 shadow-lg shadow-red-600/25"
                     >
-                      <Tv className="w-4 h-4" />
-                      <span>Conectar YouTube</span>
+                      {connectingGoogle ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                          <span>Conectando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Tv className="w-4 h-4" />
+                          <span>Conectar YouTube</span>
+                        </>
+                      )}
                     </button>
                   ) : !youtube.hasYoutubePermission ? (
                     /* State 2: YouTube connected WITHOUT expanded permission -> ONLY "Autorizar suscripciones" */
                     <>
                       <button
                         onClick={handleAuthorizeYoutube}
-                        className="px-4 py-2 rounded-xl text-xs font-bold bg-[#FF0000] hover:bg-[#cc0000] text-white transition flex items-center gap-2 cursor-pointer shadow-lg shadow-red-600/20"
+                        disabled={authorizingYoutube}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-[#FF0000] hover:bg-[#cc0000] text-white transition flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-lg shadow-red-600/20"
                       >
-                        <KeyRound className="w-3.5 h-3.5" />
-                        <span>Autorizar suscripciones</span>
+                        {authorizingYoutube ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                            <span>Autorizando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <KeyRound className="w-3.5 h-3.5" />
+                            <span>Autorizar suscripciones</span>
+                          </>
+                        )}
                       </button>
 
                       <button
@@ -1187,18 +1224,38 @@ function ProfileContent() {
                 {!youtube.connected ? (
                   <button
                     onClick={() => handleConnectProvider("google")}
-                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shadow-lg shadow-red-600/25"
+                    disabled={connectingGoogle}
+                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition disabled:opacity-50 shadow-lg shadow-red-600/25"
                   >
-                    <Tv className="w-3.5 h-3.5" />
-                    <span>Conectar YouTube</span>
+                    {connectingGoogle ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                        <span>Conectando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Tv className="w-3.5 h-3.5" />
+                        <span>Conectar YouTube</span>
+                      </>
+                    )}
                   </button>
                 ) : !youtube.hasYoutubePermission ? (
                   <button
                     onClick={handleAuthorizeYoutube}
-                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shadow-lg shadow-red-600/20"
+                    disabled={authorizingYoutube}
+                    className="px-4 py-2 rounded-xl bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition disabled:opacity-50 shadow-lg shadow-red-600/20"
                   >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>Autorizar suscripciones</span>
+                    {authorizingYoutube ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                        <span>Autorizando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>Autorizar suscripciones</span>
+                      </>
+                    )}
                   </button>
                 ) : (
                   <button

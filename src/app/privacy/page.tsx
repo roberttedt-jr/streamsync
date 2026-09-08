@@ -49,10 +49,16 @@ export default function PrivacyPage() {
           <section className="space-y-2">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <Eye className="w-4 h-4 text-emerald-400" />
-              2. Uso de los datos
+              2. Uso de los datos e integración con YouTube API Services
             </h2>
             <p>
               Tus datos se utilizan exclusivamente para permitir la creación y participación en watch parties sincronizadas, gestionar los canales seguidos que desees consultar en tu perfil y mantener tus estadísticas de uso en la plataforma.
+            </p>
+            <p>
+              StreamSync utiliza los servicios de API de YouTube (YouTube API Services) para consultar y sincronizar los canales a los que estás suscrito cuando otorgas autorización explícita. Al utilizar estas funcionalidades, aceptas quedar vinculado a la <a href="http://www.google.com/policies/privacy" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Política de Privacidad de Google</a>.
+            </p>
+            <p>
+              Puedes revocar el acceso de StreamSync a tus datos de Google y YouTube en cualquier momento a través de la <a href="https://security.google.com/settings/security/permissions" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">página de configuración de seguridad de Google</a> o desconectando tu cuenta desde tu perfil en StreamSync.
             </p>
             <p>
               StreamSync <strong>nunca</strong> vende, comparte ni comercializa tu información personal con empresas de publicidad externas.

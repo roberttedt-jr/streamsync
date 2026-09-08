@@ -67,11 +67,14 @@ export default function Navbar({ onCreateRoom }: NavbarProps) {
         <div className="w-full glass-panel rounded-2xl px-4 sm:px-6 py-2.5 flex items-center justify-between pointer-events-auto transition-all">
           {/* Brand Logo & Isotype */}
           <Link href="/" className="flex items-center gap-2.5 group cursor-pointer">
-            <div className="relative h-8 w-8 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#06B6D4] p-[1px] flex items-center justify-center transition-transform group-hover:scale-105">
-              <div className="h-full w-full rounded-[11px] bg-[#0D111A] flex items-center justify-center">
-                <Gamepad2 className="h-4 w-4 text-white" />
-              </div>
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#10B981] animate-ping" />
+            <div className="relative h-8 w-8 shrink-0 transition-transform group-hover:scale-105">
+              <img
+                src="/streamsync-logo.png"
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain rounded-lg"
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight text-white flex items-center gap-1 font-heading">

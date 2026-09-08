@@ -58,14 +58,31 @@ function AuthFormContent() {
   const errorParam = searchParams?.get("error");
   useEffect(() => {
     if (errorParam) {
-      if (errorParam === "OAuthSignin" || errorParam === "OAuthCallback") {
-        addToast("Error durante la conexión OAuth. Por favor, intenta de nuevo.", "error");
-      } else if (errorParam === "OAuthCreateAccount") {
-        addToast("No se pudo vincular la cuenta OAuth.", "error");
+      if (errorParam === "AccessDenied" || errorParam === "access_denied") {
+        addToast(
+          "Acceso cancelado o no autorizado. Si la app está en fase de prueba en Google Cloud, comprueba que tu cuenta de Google esté agregada en 'Usuarios de prueba'.",
+          "error"
+        );
+      } else if (errorParam === "OAuthCallback" || errorParam === "redirect_uri_mismatch") {
+        addToast(
+          "Error en el callback OAuth. Comprueba que la URI de redirección coincida exactamente en Google Cloud Console.",
+          "error"
+        );
+      } else if (errorParam === "Configuration") {
+        addToast(
+          "Error de configuración del proveedor OAuth. Comprueba las variables de entorno en Vercel.",
+          "error"
+        );
+      } else if (errorParam === "OAuthSignin") {
+        addToast("No se pudo iniciar la conexión con el proveedor OAuth. Intenta de nuevo.", "error");
+      } else if (errorParam === "OAuthCreateAccount" || errorParam === "AccountAlreadyLinked") {
+        addToast("Esta cuenta externa ya está vinculada a otro usuario.", "error");
       } else if (errorParam === "TwitchNotConfigured") {
         addToast("Twitch OAuth pendiente de configuración en Vercel.", "info");
       } else if (errorParam === "GoogleNotConfigured") {
         addToast("Google/YouTube OAuth pendiente de configuración en Vercel.", "info");
+      } else {
+        addToast("Error durante la autenticación (" + errorParam + ")", "error");
       }
     }
   }, [errorParam, addToast]);
