@@ -96,5 +96,5 @@ Si al entrar en [Google Cloud Console](https://console.cloud.google.com/) no ves
 
 ## 📜 Licencia y Derechos
 
-© 2026 StreamSync. Desarrollado por **Roberto Tedt (roberttedt-jr)**. Todos los derechos reservados.
+© 2026 StreamSync. Desarrollado por **Roberto**. Todos los derechos reservados.
 Las marcas comerciales, nombres y logotipos de Twitch, YouTube, Discord y los videojuegos pertenecen a sus respectivos propietarios.
