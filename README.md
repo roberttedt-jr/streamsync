@@ -278,7 +278,7 @@ El repositorio cuenta con scripts de verificación automatizada mediante navegad
 
 ## 📜 Licencia y Avisos de Marca
 
-© 2026 **StreamSync**. Creado y mantenido por [Roberto Tedt](https://github.com/roberttedt-jr).
+© 2026 **StreamSync**. Creado y mantenido por [Roberto](https://github.com/roberttedt-jr).
 
 Este proyecto está bajo la licencia [MIT](LICENSE).
 
