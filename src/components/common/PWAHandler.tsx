@@ -21,7 +21,28 @@ export default function PWAHandler() {
       });
     }
 
-    // 2. Online / Offline network listeners
+    // 2. Prevent iOS Safari pinch-to-zoom and gesture zooming
+    const preventGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    let lastTouchEnd = 0;
+    const preventDoubleTapZoom = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("gesturestart", preventGesture, { passive: false });
+      document.addEventListener("gesturechange", preventGesture, { passive: false });
+      document.addEventListener("gestureend", preventGesture, { passive: false });
+      document.addEventListener("touchend", preventDoubleTapZoom, { passive: false });
+    }
+
+    // 3. Online / Offline network listeners
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -32,6 +53,12 @@ export default function PWAHandler() {
     }
 
     return () => {
+      if (typeof document !== "undefined") {
+        document.removeEventListener("gesturestart", preventGesture);
+        document.removeEventListener("gesturechange", preventGesture);
+        document.removeEventListener("gestureend", preventGesture);
+        document.removeEventListener("touchend", preventDoubleTapZoom);
+      }
       if (typeof window !== "undefined") {
         window.removeEventListener("online", handleOnline);
         window.removeEventListener("offline", handleOffline);

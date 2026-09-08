@@ -34,6 +34,8 @@ body {
   min-height: 100%;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
 }
 
 html {

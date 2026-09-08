@@ -393,19 +393,9 @@ function DashboardContent() {
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                          room.platform === "twitch"
-                            ? "bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30"
-                            : "bg-[#FF0000]/20 text-red-300 border border-[#FF0000]/30"
-                        }`}
-                      >
-                        {room.platform === "twitch" ? (
-                          <Radio className="w-3 h-3" />
-                        ) : (
-                          <Tv className="w-3 h-3" />
-                        )}
-                        <span>{room.platform}</span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#9146FF]/20 text-[#be99ff] border border-[#9146FF]/30">
+                        <Radio className="w-3 h-3" />
+                        <span>Twitch</span>
                       </span>
 
                       <div className="flex items-center gap-2">
@@ -456,7 +446,7 @@ function DashboardContent() {
                       <button
                         onClick={() =>
                           router.push(
-                            `/room/${room.code}?platform=${room.platform}&stream=${encodeURIComponent(
+                            `/room/${room.code}?platform=twitch&stream=${encodeURIComponent(
                               room.channel
                             )}`
                           )

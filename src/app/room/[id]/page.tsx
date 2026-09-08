@@ -843,48 +843,57 @@ export default function WatchPartyRoomPage() {
         )}
 
         {/* Mobile Segmented Control Bar */}
-        <div className="flex items-center bg-[#0C0F17] border-b border-white/10 px-2 py-1.5 shrink-0">
-          <div className="flex items-center w-full bg-white/[0.04] p-1 rounded-xl gap-1">
+        <div className="shrink-0 px-2 py-1.5 bg-[#0C0F17] border-b border-white/10 safe-x">
+          <div className={`grid ${allowsVoice ? "grid-cols-4" : "grid-cols-3"} w-full bg-white/[0.04] p-1 rounded-xl gap-1`}>
             <button
               onClick={() => setMobileTab("chat")}
-              className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`h-10 min-h-[40px] max-h-[40px] px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none whitespace-nowrap overflow-hidden ${
                 mobileTab === "chat"
                   ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              <MessageSquare className="w-3.5 h-3.5" />
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
               <span>Chat</span>
             </button>
 
             <button
               onClick={() => setMobileTab("stream")}
-              className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`h-10 min-h-[40px] max-h-[40px] px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none whitespace-nowrap overflow-hidden ${
                 mobileTab === "stream"
                   ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              <Radio className="w-3.5 h-3.5" />
+              <Radio className="w-3.5 h-3.5 shrink-0" />
               <span>Stream</span>
             </button>
 
             <button
               onClick={() => setMobileTab("participants")}
-              className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`h-10 min-h-[40px] max-h-[40px] px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none whitespace-nowrap overflow-hidden ${
                 mobileTab === "participants"
                   ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>Personas ({participants.length})</span>
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">Personas</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold leading-none shrink-0 ${
+                  mobileTab === "participants"
+                    ? "bg-white/20 text-white"
+                    : "bg-white/10 text-purple-300"
+                }`}
+              >
+                {participants.length}
+              </span>
             </button>
 
             {allowsVoice && (
               <button
                 onClick={() => setMobileTab("call")}
-                className={`flex-1 min-h-[40px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`h-10 min-h-[40px] max-h-[40px] px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none whitespace-nowrap overflow-hidden ${
                   mobileTab === "call"
                     ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                     : micActive || cameraActive
@@ -893,13 +902,13 @@ export default function WatchPartyRoomPage() {
                 }`}
               >
                 {micActive ? (
-                  <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                  <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0" />
                 ) : (
-                  <Phone className="w-3.5 h-3.5" />
+                  <Phone className="w-3.5 h-3.5 shrink-0" />
                 )}
                 <span>Llamada</span>
                 {(micActive || cameraActive) && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
                 )}
               </button>
             )}

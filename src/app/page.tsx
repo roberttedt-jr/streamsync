@@ -125,64 +125,66 @@ export default function HomePage() {
             <div className="relative max-w-4xl mx-auto">
               <div className="rounded-3xl bg-[#0D0F17] border border-white/10 shadow-2xl overflow-hidden backdrop-blur-xl">
                 {/* Window top bar */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.02]">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-red-500/80" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
-                    <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
-                    <span className="ml-3 text-xs font-mono text-purple-300 hidden sm:inline">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-2.5 sm:py-3 border-b border-white/10 bg-white/[0.02]">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="h-3 w-3 rounded-full bg-red-500/80 shrink-0" />
+                    <div className="h-3 w-3 rounded-full bg-yellow-500/80 shrink-0" />
+                    <div className="h-3 w-3 rounded-full bg-emerald-500/80 shrink-0" />
+                    <span className="ml-2 text-xs font-mono text-purple-300 hidden sm:inline truncate">
                       {isEn ? "Demo Room • Interactive Preview" : "Sala de demostración • Vista previa"}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="px-2.5 py-0.5 rounded-full text-emerald-400 text-xs flex items-center gap-1.5 font-mono bg-emerald-500/10 border border-emerald-500/20">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <div className="px-2.5 py-1 rounded-full text-emerald-400 text-[11px] sm:text-xs flex items-center gap-1.5 font-mono bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                       <span>{isEn ? "Live Twitch" : "En Vivo • Twitch"}</span>
                     </div>
                     <Link
                       href="/room/demo"
-                      className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 transition"
+                      className="text-[11px] sm:text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 transition whitespace-nowrap shrink-0"
                     >
                       <span>{isEn ? "Open demo" : "Abrir demostración"}</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3 h-3 shrink-0" />
                     </Link>
                   </div>
                 </div>
 
                 {/* Professional Empty State Interface */}
-                <div className="relative aspect-[16/9] w-full bg-[#07090E] overflow-hidden flex flex-col items-center justify-center p-6 text-center">
-                  <div className="w-16 h-16 rounded-3xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-4 shadow-xl shadow-purple-600/10">
-                    <Radio className="w-8 h-8" />
-                  </div>
+                <div className="w-full bg-[#07090E] p-5 sm:p-8 flex flex-col items-center justify-between text-center min-h-[360px] md:min-h-[420px]">
+                  <div className="flex flex-col items-center justify-center flex-1 my-auto w-full max-w-lg">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-3 sm:mb-4 shadow-xl shadow-purple-600/10 shrink-0">
+                      <Radio className="w-7 h-7 sm:w-8 sm:h-8" />
+                    </div>
 
-                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-2">
-                    {isEn ? "Add a stream to get started" : "Añadir stream para comenzar"}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
-                    {isEn
-                      ? "Enter any Twitch channel to share it with your community or explore the interactive demo."
-                      : "Introduce cualquier canal de Twitch para compartirlo con tu comunidad o explora la sala interactiva."}
-                  </p>
+                    <h3 className="text-lg sm:text-2xl font-black text-white tracking-tight mb-2">
+                      {isEn ? "Add a stream to get started" : "Añadir stream para comenzar"}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-5 sm:mb-6 leading-relaxed">
+                      {isEn
+                        ? "Enter any Twitch channel to share it with your community or explore the interactive demo."
+                        : "Introduce cualquier canal de Twitch para compartirlo con tu comunidad o explora la sala interactiva."}
+                    </p>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <Link
-                      href="/room/demo"
-                      className="liquid-btn-primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-purple-600/25"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>{isEn ? "Try Demo Room" : "Probar Sala de Demostración"}</span>
-                    </Link>
-                    <button
-                      onClick={() => handleCreateRoom()}
-                      className="liquid-btn-secondary px-5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white"
-                    >
-                      <span>{isEn ? "Create my own room" : "Crear mi propia sala"}</span>
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+                      <Link
+                        href="/room/demo"
+                        className="liquid-btn-primary w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-600/25 cursor-pointer"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>{isEn ? "Try Demo Room" : "Probar Sala de Demostración"}</span>
+                      </Link>
+                      <button
+                        onClick={() => handleCreateRoom()}
+                        className="liquid-btn-secondary w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white justify-center cursor-pointer"
+                      >
+                        <span>{isEn ? "Create my own room" : "Crear mi propia sala"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Clean bottom status indicator */}
-                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-white/5">
+                  <div className="w-full mt-6 pt-3 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] sm:text-[11px] text-gray-500 border-t border-white/5">
                     <span>{isEn ? "Chat ready • WebRTC voice enabled" : "Chat listo • Voz WebRTC disponible"}</span>
                     <span className="text-gray-400">{isEn ? "Compatible with Twitch" : "Compatible con Twitch"}</span>
                   </div>

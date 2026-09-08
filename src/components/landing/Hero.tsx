@@ -97,7 +97,7 @@ export default function Hero({ onCreateRoom }: HeroProps) {
               </div>
             </div>
 
-            <div className="relative aspect-[16/9] w-full bg-[#08090C] overflow-hidden flex flex-col justify-between p-4 sm:p-6">
+            <div className="relative aspect-auto sm:aspect-[16/9] min-h-[220px] w-full bg-[#08090C] overflow-hidden flex flex-col justify-between p-4 sm:p-6">
               <div className="relative z-10 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="px-2 py-0.5 rounded bg-red-600/90 text-white font-bold text-[10px] tracking-wider flex items-center gap-1">
