@@ -1,6 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Global in-memory room store to ensure resilience if DATABASE_URL is not configured
+declare global {
+  // eslint-disable-next-line no-var
+  var __IN_MEMORY_ROOMS__: Map<string, any> | undefined;
+}
+
+if (!globalThis.__IN_MEMORY_ROOMS__) {
+  globalThis.__IN_MEMORY_ROOMS__ = new Map();
+}
+
+const memoryStore = globalThis.__IN_MEMORY_ROOMS__;
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -18,7 +30,7 @@ export async function GET(request: Request) {
         name: "Sala de demostración",
         platform: "twitch",
         channel: "",
-        category: "Entretenimiento",
+        category: "Entretenimiento en directo",
         description: "Vista previa interactiva de StreamSync",
         isPrivate: false,
         maxParticipants: 10,
@@ -32,82 +44,115 @@ export async function GET(request: Request) {
   // If a specific room code is requested
   if (code) {
     try {
-      const room = await prisma.room.findUnique({
-        where: { code },
+      if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
+        const room = await prisma.room.findUnique({
+          where: { code },
+          include: {
+            participants: {
+              include: {
+                user: {
+                  select: { id: true, name: true, image: true, username: true },
+                },
+              },
+            },
+            host: {
+              select: { id: true, name: true, image: true, username: true },
+            },
+          },
+        });
+
+        if (room) {
+          return NextResponse.json({ room });
+        }
+      }
+    } catch {
+      // Database unavailable, fallback to memory store
+    }
+
+    // Check in-memory store
+    const memRoom = memoryStore.get(code);
+    if (memRoom) {
+      return NextResponse.json({ room: memRoom });
+    }
+
+    return NextResponse.json({ room: null }, { status: 404 });
+  }
+
+  // Otherwise, list active rooms from real database or active memory
+  let realRooms: any[] = [];
+
+  try {
+    if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
+      const whereClause: any = {
+        ...(hostId ? { hostId } : { isPrivate: false }),
+      };
+
+      if (platform && platform !== "all") {
+        whereClause.platform = platform;
+      }
+
+      if (category && category !== "all") {
+        whereClause.category = { equals: category, mode: "insensitive" };
+      }
+
+      if (search) {
+        whereClause.OR = [
+          { name: { contains: search, mode: "insensitive" } },
+          { channel: { contains: search, mode: "insensitive" } },
+          { category: { contains: search, mode: "insensitive" } },
+        ];
+      }
+
+      const dbRooms = await prisma.room.findMany({
+        where: whereClause,
         include: {
           participants: {
             include: {
-              user: {
-                select: { id: true, name: true, image: true, username: true },
-              },
+              user: { select: { id: true, name: true, image: true, username: true } },
             },
           },
           host: {
             select: { id: true, name: true, image: true, username: true },
           },
         },
+        orderBy: { createdAt: "desc" },
+        take: 50,
       });
 
-      if (!room) {
-        return NextResponse.json({ room: null, error: "Sala no encontrada" }, { status: 404 });
+      if (dbRooms && dbRooms.length > 0) {
+        realRooms = dbRooms.map((r) => ({
+          ...r,
+          participantCount: r.participants.length,
+        }));
       }
-
-      return NextResponse.json({ room });
-    } catch (error) {
-      console.error("Error fetching room:", error);
-      return NextResponse.json({ room: null, error: "Error al consultar la sala" }, { status: 500 });
     }
+  } catch {
+    // Database unavailable, fallback to memory
   }
 
-  // Otherwise, list active rooms from real database
-  try {
-    const whereClause: any = {
-      ...(hostId ? { hostId } : { isPrivate: false }),
-    };
+  // Also include matching rooms from memory store if not already in DB
+  const existingCodes = new Set(realRooms.map((r) => r.code));
+  for (const r of memoryStore.values()) {
+    if (existingCodes.has(r.code)) continue;
 
-    if (platform && platform !== "all") {
-      whereClause.platform = platform;
-    }
-
-    if (category && category !== "all") {
-      whereClause.category = { equals: category, mode: "insensitive" };
-    }
-
+    if (hostId && r.hostId !== hostId) continue;
+    if (!hostId && r.isPrivate) continue;
+    if (platform && platform !== "all" && r.platform !== platform) continue;
+    if (category && category !== "all" && r.category?.toLowerCase() !== category.toLowerCase()) continue;
     if (search) {
-      whereClause.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { channel: { contains: search, mode: "insensitive" } },
-        { category: { contains: search, mode: "insensitive" } },
-      ];
+      const matchName = r.name?.toLowerCase().includes(search);
+      const matchChannel = r.channel?.toLowerCase().includes(search);
+      const matchCat = r.category?.toLowerCase().includes(search);
+      if (!matchName && !matchChannel && !matchCat) continue;
     }
 
-    const dbRooms = await prisma.room.findMany({
-      where: whereClause,
-      include: {
-        participants: {
-          include: {
-            user: { select: { id: true, name: true, image: true, username: true } },
-          },
-        },
-        host: {
-          select: { id: true, name: true, image: true, username: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
-
-    const mapped = (dbRooms || []).map((r) => ({
-      ...r,
-      participantCount: r.participants.length,
-    }));
-
-    return NextResponse.json({ rooms: mapped });
-  } catch (error) {
-    console.error("Error listing rooms:", error);
-    // Never return fake data when DB is empty or fails
-    return NextResponse.json({ rooms: [] });
+    realRooms.push(r);
   }
+
+  // Sort descending by creation
+  realRooms.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return NextResponse.json({ rooms: realRooms });
 }
 
 export async function POST(request: Request) {
@@ -149,61 +194,69 @@ export async function POST(request: Request) {
       }
     }
 
-    try {
-      const room = await prisma.room.upsert({
-        where: { code },
-        update: {
-          name: name || undefined,
-          platform,
-          channel: cleanChannel || undefined,
-          streamUrl: streamUrl || undefined,
-          category: category || "Entretenimiento",
-          description: description || null,
-          isPrivate: Boolean(isPrivate),
-          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 10,
-          password: password ? String(password).trim() : null,
-        },
-        create: {
-          code,
-          name: name || `Watch Party de ${category}`,
-          platform,
-          channel: cleanChannel,
-          streamUrl: streamUrl || cleanChannel,
-          category: category || "Entretenimiento",
-          description: description || null,
-          isPrivate: Boolean(isPrivate),
-          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 10,
-          password: password ? String(password).trim() : null,
-          hostId: hostId || null,
-        },
-        include: {
-          host: {
-            select: { id: true, name: true, image: true, username: true },
-          },
-        },
-      });
+    const roomRecord = {
+      code,
+      name: name || `Watch Party de ${category}`,
+      platform,
+      channel: cleanChannel,
+      streamUrl: streamUrl || cleanChannel,
+      category: category || "Entretenimiento",
+      description: description || null,
+      isPrivate: Boolean(isPrivate),
+      maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : 10,
+      password: password ? String(password).trim() : null,
+      hostId: hostId || null,
+      createdAt: new Date().toISOString(),
+      participants: [],
+      participantCount: 0,
+    };
 
-      return NextResponse.json({ success: true, room });
-    } catch (dbErr) {
-      console.error("Database upsert error:", dbErr);
-      // Fallback in-memory response if DB connection has temporary issue
-      return NextResponse.json({
-        success: true,
-        room: {
-          code,
-          name: name || `Watch Party de ${category}`,
-          platform,
-          channel: cleanChannel,
-          streamUrl,
-          category,
-          description,
-          isPrivate: Boolean(isPrivate),
-          maxParticipants: maxParticipants || 10,
-          createdAt: new Date().toISOString(),
-          participants: [],
-        },
-      });
+    // Save to memory store first
+    memoryStore.set(code, roomRecord);
+
+    // If DATABASE_URL is configured, save to database
+    if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
+      try {
+        const room = await prisma.room.upsert({
+          where: { code },
+          update: {
+            name: roomRecord.name,
+            platform: roomRecord.platform,
+            channel: roomRecord.channel,
+            streamUrl: roomRecord.streamUrl,
+            category: roomRecord.category,
+            description: roomRecord.description,
+            isPrivate: roomRecord.isPrivate,
+            maxParticipants: roomRecord.maxParticipants,
+            password: roomRecord.password,
+          },
+          create: {
+            code: roomRecord.code,
+            name: roomRecord.name,
+            platform: roomRecord.platform,
+            channel: roomRecord.channel,
+            streamUrl: roomRecord.streamUrl,
+            category: roomRecord.category,
+            description: roomRecord.description,
+            isPrivate: roomRecord.isPrivate,
+            maxParticipants: roomRecord.maxParticipants,
+            password: roomRecord.password,
+            hostId: roomRecord.hostId,
+          },
+          include: {
+            host: {
+              select: { id: true, name: true, image: true, username: true },
+            },
+          },
+        });
+
+        return NextResponse.json({ success: true, room });
+      } catch (dbErr) {
+        console.error("Database upsert error, keeping memory store:", dbErr);
+      }
     }
+
+    return NextResponse.json({ success: true, room: roomRecord });
   } catch (error) {
     console.error("Error creating room:", error);
     return NextResponse.json({ error: "Payload inválido para crear la sala" }, { status: 400 });
