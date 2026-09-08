@@ -37,7 +37,6 @@ if (isTwitchConfigured) {
     TwitchProvider({
       clientId: process.env.TWITCH_CLIENT_ID as string,
       clientSecret: process.env.TWITCH_CLIENT_SECRET as string,
-      checks: ["none"],
       authorization: {
         params: {
           scope: "openid user:read:email",
@@ -52,7 +51,6 @@ if (isGoogleConfigured) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      checks: ["none"],
       authorization: {
         params: {
           // Minimal sign-in permissions requested initially as required
