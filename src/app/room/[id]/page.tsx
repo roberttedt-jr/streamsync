@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import TwitchPlayer from "@/components/video/TwitchPlayer";
+import TwitchPlayer, { parseTwitchTarget } from "@/components/video/TwitchPlayer";
 import MediaPermissionModal from "@/components/room/MediaPermissionModal";
 import VideoGrid from "@/components/room/VideoGrid";
 import HostOptionsModal from "@/components/room/HostOptionsModal";
@@ -211,7 +211,7 @@ export default function WatchPartyRoomPage() {
       if (data.room) {
         setRoomData(data.room);
         if (data.room.platform) setPlatform(data.room.platform);
-        if (data.room.channel && !activeStream) {
+        if (data.room.channel && data.room.channel !== activeStream) {
           setActiveStream(data.room.channel);
         }
       } else {
@@ -631,15 +631,23 @@ export default function WatchPartyRoomPage() {
     if (e) e.preventDefault();
     if (!streamInput.trim()) return;
 
-    const clean = streamInput
-      .replace("https://www.twitch.tv/", "")
-      .replace("https://twitch.tv/", "")
-      .replace("@", "")
-      .trim();
+    const parsed = parseTwitchTarget(streamInput);
+    const clean = parsed ? parsed.id : streamInput.trim();
+
     setActiveStream(clean);
     if (typeof addToast === "function") {
       addToast(`Canal de Twitch cargado: ${clean}`, "success");
     }
+
+    // Sincronizar con backend si es anfitrión en sala real
+    if (isHost && !isDemo && roomId) {
+      fetch(`/api/rooms/${encodeURIComponent(roomId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: clean }),
+      }).catch((err) => console.warn("[StreamSync] Error al sincronizar canal:", err));
+    }
+
     setStreamInput("");
   };
 
