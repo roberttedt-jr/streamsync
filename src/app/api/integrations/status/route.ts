@@ -23,13 +23,13 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || !process.env.DATABASE_URL) {
-      // Return safe unauthenticated status instead of throwing or breaking clients
+      // Devolver estado no autenticado seguro en lugar de fallar
       return NextResponse.json(DEFAULT_UNAUTHENTICATED_STATUS);
     }
 
     const userId = session.user.id;
 
-    // Fetch accounts and channels in parallel
+    // Obtener cuentas y canales en paralelo
     const [accounts, channels, dbUser] = await Promise.all([
       prisma.account.findMany({
         where: { userId },

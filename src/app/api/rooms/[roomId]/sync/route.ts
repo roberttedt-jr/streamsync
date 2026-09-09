@@ -40,7 +40,7 @@ function getMemoryRoom(roomId: string) {
   return r;
 }
 
-// Helper to resolve room ID from code or DB
+// Función auxiliar para resolver el ID de la sala desde el código o la BD
 async function resolveRoom(roomId: string) {
   if (roomId.toLowerCase() === "demo") {
     return { id: "demo", code: "demo", isDemo: true, isClosed: false };
@@ -55,7 +55,7 @@ async function resolveRoom(roomId: string) {
         select: { id: true, code: true, hostId: true, isClosed: true },
       });
       if (!room) {
-        // Auto-provision room in DB if user navigates via ad-hoc code/url
+        // Crear automáticamente la sala en BD si el usuario accede mediante código/URL directo
         room = await prisma.room.create({
           data: {
             code: roomId,
@@ -75,9 +75,9 @@ async function resolveRoom(roomId: string) {
   return { id: roomId, code: roomId, isDemo: false, isClosed: false };
 }
 
-// Prune stale participants (TTL 6 seconds) and stale signals (TTL 30 seconds)
+// Purgar participantes inactivos (TTL 6 s) y señales obsoletas (TTL 30 s)
 async function pruneStaleParticipants(dbRoomId: string) {
-  // 1. Prune memory
+  // 1. Purgar memoria
   const mem = getMemoryRoom(dbRoomId);
   const now = Date.now();
   for (const [connId, p] of mem.participants.entries()) {
@@ -86,7 +86,7 @@ async function pruneStaleParticipants(dbRoomId: string) {
     }
   }
 
-  // 2. Prune DB
+  // 2. Purgar BD
   if (dbRoomId !== "demo" && process.env.DATABASE_URL) {
     try {
       const participantCutoff = new Date(Date.now() - 6000);
@@ -191,7 +191,7 @@ export async function GET(
   });
 }
 
-// In-memory rate limiting map for chat: connectionId -> timestamps
+// Mapa en memoria para límite de frecuencia en chat: connectionId -> marcas de tiempo
 const messageRateLimits = new Map<string, number[]>();
 
 export async function POST(
@@ -213,7 +213,7 @@ export async function POST(
     const action = body.action || "sync";
     const connId = body.connectionId;
 
-    // 1. ACTION: LEAVE
+    // 1. ACCIÓN: ABANDONAR
     if (action === "leave") {
       if (connId) {
         if (room.id !== "demo" && process.env.DATABASE_URL) {
@@ -242,19 +242,19 @@ export async function POST(
       return NextResponse.json({ success: true, left: true });
     }
 
-    // 2. ACTION: SEND MESSAGE
+    // 2. ACCIÓN: ENVIAR MENSAJE
     if (action === "send_message") {
       let text = String(body.text || "").trim();
       if (!text) {
         return NextResponse.json({ error: "Empty message" }, { status: 400 });
       }
 
-      // Enforce max 500 characters
+      // Limitar a un máximo de 500 caracteres
       if (text.length > 500) {
         text = text.slice(0, 500);
       }
 
-      // Basic rate limiting: max 5 messages in 5 seconds per connectionId
+      // Control de frecuencia básico: máximo 5 mensajes en 5 segundos por connectionId
       if (connId) {
         const now = Date.now();
         const timestamps = (messageRateLimits.get(connId) || []).filter(
@@ -292,6 +292,7 @@ export async function POST(
         }
       }
 
+      // Memoria de mensajes
       const mem = getMemoryRoom(room.id);
       mem.messages.push({
         id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -308,7 +309,7 @@ export async function POST(
       if (mem.messages.length > 50) mem.messages.shift();
     }
 
-    // 3. PROCESS OUTGOING WEBRTC SIGNALS
+    // 3. PROCESAR SEÑALES SALIENTES DE WEBRTC
     if (Array.isArray(body.signals) && body.signals.length > 0 && connId) {
       const validSignals = body.signals
         .filter((s: any) => s && s.targetConnectionId && s.type && s.payload)
@@ -328,7 +329,7 @@ export async function POST(
         }
       }
 
-      // In-memory fallback for signaling
+      // Respaldo en memoria para señalización
       const mem = getMemoryRoom(room.id);
       if (!mem.signals) mem.signals = [];
       for (const vs of validSignals) {
@@ -341,7 +342,7 @@ export async function POST(
       if (mem.signals.length > 100) mem.signals = mem.signals.slice(-50);
     }
 
-    // 4. ACTION: HEARTBEAT / SYNC PARTICIPANT
+    // 4. ACCIÓN: LATIDO / SINCRONIZACIÓN DE PARTICIPANTE
     if (connId) {
       const name = body.name || "Invitado";
       const avatar = body.avatar || null;
@@ -385,7 +386,7 @@ export async function POST(
         }
       }
 
-      // Memory fallback
+      // Respaldo en memoria
       const mem = getMemoryRoom(room.id);
       mem.participants.set(connId, {
         id: connId,
@@ -403,10 +404,10 @@ export async function POST(
       });
     }
 
-    // Always prune dead participants and old signals
+    // Purgar siempre participantes inactivos y señales antiguas
     await pruneStaleParticipants(room.id);
 
-    // Fetch refreshed active participants, recent messages, and pending signals
+    // Obtener participantes activos actualizados, mensajes recientes y señales pendientes
     let activeParticipants: any[] = [];
     let recentMessages: any[] = [];
     let incomingSignals: any[] = [];
@@ -476,7 +477,7 @@ export async function POST(
             createdAt: s.createdAt,
           }));
 
-          // Delete consumed signals atomically
+          // Eliminar señales consumidas de forma atómica
           await prisma.roomSignal.deleteMany({
             where: { id: { in: dbSignals.map((s) => s.id) } },
           }).catch(() => {});

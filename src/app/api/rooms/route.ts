@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-// Global in-memory room store to ensure resilience if DATABASE_URL is not configured
+// Almacén global en memoria para garantizar resiliencia si DATABASE_URL no está configurada
 declare global {
   // eslint-disable-next-line no-var
   var __IN_MEMORY_ROOMS__: Map<string, any> | undefined;
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const search = searchParams.get("search")?.toLowerCase().trim();
   const hostId = searchParams.get("hostId");
 
-  // Specific demo room
+  // Sala de demostración específica
   if (code === "demo") {
     return NextResponse.json({
       room: {
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     });
   }
 
-  // If a specific room code is requested
+  // Si se solicita un código de sala específico
   if (code) {
     try {
       if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
@@ -68,10 +68,10 @@ export async function GET(request: Request) {
         }
       }
     } catch {
-      // Database unavailable, fallback to memory store
+      // Base de datos no disponible, recurrir al almacén en memoria
     }
 
-    // Check in-memory store
+    // Comprobar en el almacén en memoria
     const memRoom = memoryStore.get(code);
     if (memRoom) {
       return NextResponse.json({ room: memRoom });
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ room: null }, { status: 404 });
   }
 
-  // Otherwise, list active rooms from real database or active memory
+  // En caso contrario, listar salas activas desde la base de datos o memoria
   let realRooms: any[] = [];
 
   try {
@@ -130,10 +130,10 @@ export async function GET(request: Request) {
       }
     }
   } catch {
-    // Database unavailable, fallback to memory
+    // Base de datos no disponible, recurrir a memoria
   }
 
-  // Also include matching rooms from memory store if not already in DB
+  // Incluir también salas coincidentes del almacén en memoria si no están en BD
   const existingCodes = new Set(realRooms.map((r) => r.code));
   for (const r of memoryStore.values()) {
     if (r.isClosed) continue;
@@ -153,7 +153,7 @@ export async function GET(request: Request) {
     realRooms.push(r);
   }
 
-  // Sort descending by creation
+  // Ordenar de forma descendente por fecha de creación
   realRooms.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return NextResponse.json({ rooms: realRooms });
@@ -181,20 +181,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "El código de sala es requerido" }, { status: 400 });
     }
 
-    // Clean stream identifier
+    // Limpiar identificador del stream
     let cleanChannel = (channel.trim() || streamUrl.trim())
       .replace("https://www.twitch.tv/", "")
       .replace("https://twitch.tv/", "")
       .replace("@", "")
       .trim();
 
-    // Determine communication capabilities
+    // Determinar capacidades de comunicación
     const validModes = ["CHAT_ONLY", "VOICE", "VIDEO", "FLEXIBLE"];
     const mode = validModes.includes(communicationMode) ? communicationMode : "FLEXIBLE";
     const allowVoice = mode !== "CHAT_ONLY";
     const allowVideo = mode === "VIDEO" || mode === "FLEXIBLE";
 
-    // Securely resolve hostId from session or verified DB user
+    // Resolver hostId de forma segura desde la sesión o usuario verificado en BD
     let validHostId: string | null = null;
     try {
       const session = await getServerSession(authOptions).catch(() => null);
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
         if (existingUser) validHostId = existingUser.id;
       }
     } catch {
-      // Non-critical, fallback to null if validation fails
+      // No crítico, recurrir a null si la validación falla
     }
 
     const roomRecord = {
@@ -232,10 +232,10 @@ export async function POST(request: Request) {
       participantCount: 0,
     };
 
-    // Save to memory store first
+    // Guardar primero en el almacén en memoria
     memoryStore.set(code, roomRecord);
 
-    // If DATABASE_URL is configured, save to database
+    // Si DATABASE_URL está configurada, guardar en base de datos
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
       try {
         const room = await prisma.room.upsert({

@@ -67,7 +67,7 @@ export async function POST() {
       );
     }
 
-    // Require user:read:follows scope
+    // Requerir permiso user:read:follows
     if (!account.scope?.includes("user:read:follows")) {
       return NextResponse.json(
         {
@@ -78,7 +78,7 @@ export async function POST() {
       );
     }
 
-    // Refresh token if expired
+    // Refrescar token si ha expirado
     let token = account.access_token;
     const isExpired = account.expires_at ? account.expires_at * 1000 < Date.now() : false;
     if (isExpired) {
@@ -90,7 +90,7 @@ export async function POST() {
       return NextResponse.json({ error: "ServerConfigError" }, { status: 500 });
     }
 
-    // Call Twitch Helix API to get followed channels
+    // Consultar API Helix de Twitch para obtener canales seguidos
     const helixHeaders = {
       "Client-Id": clientId,
       Authorization: `Bearer ${token}`,
@@ -150,7 +150,7 @@ export async function POST() {
       return NextResponse.json({ success: true, count: 0, liveCount: 0 });
     }
 
-    // Check which of the followed broadcasters are currently live
+    // Comprobar cuáles de los creadores seguidos están en directo
     const broadcasterIds = followedList.map((f: any) => f.broadcaster_id);
     const liveStreamsMap = new Map<string, { game_name: string; title: string; thumbnail_url: string }>();
 
@@ -177,7 +177,7 @@ export async function POST() {
       console.warn("Could not fetch live streams status:", streamErr);
     }
 
-    // Upsert channels into database
+    // Insertar o actualizar canales en la base de datos
     const now = new Date();
     let liveCount = 0;
 

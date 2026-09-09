@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check how many accounts user currently has
+    // Comprobar cuántas cuentas tiene vinculadas el usuario
     const accounts = await prisma.account.findMany({
       where: { userId },
       select: { id: true, provider: true },

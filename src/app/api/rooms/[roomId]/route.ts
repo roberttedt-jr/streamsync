@@ -98,7 +98,7 @@ export async function PATCH(
     const sessionUserId = (session?.user as any)?.id;
     const callerHostId = body.hostId || sessionUserId;
 
-    // Find existing room
+    // Buscar sala existente
     let existingRoom: any = null;
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
       existingRoom = await prisma.room.findFirst({
@@ -114,7 +114,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: "Sala no encontrada" }, { status: 404 });
     }
 
-    // Verify host permission if room has a hostId
+    // Verificar permisos de anfitrión si la sala tiene hostId
     if (existingRoom.hostId && callerHostId && existingRoom.hostId !== callerHostId) {
       return NextResponse.json(
         { success: false, error: "Solo el anfitrión puede modificar los ajustes de la sala" },
@@ -138,7 +138,7 @@ export async function PATCH(
     if (body.platform !== undefined) updates.platform = body.platform;
     if (body.streamUrl !== undefined) updates.streamUrl = String(body.streamUrl).trim();
 
-    // Update in DB
+    // Actualizar en BD
     let updatedRoom = { ...existingRoom, ...updates };
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "" && existingRoom.id) {
       try {
@@ -175,7 +175,7 @@ export async function DELETE(
     const session = await getServerSession(authOptions).catch(() => null);
     const sessionUserId = (session?.user as any)?.id;
 
-    // Also check query param or body for hostId fallback
+    // Comprobar también parámetro de consulta o cuerpo como respaldo de hostId
     const { searchParams } = new URL(request.url);
     const queryHostId = searchParams.get("hostId");
 
@@ -194,7 +194,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "Sala no encontrada" }, { status: 404 });
     }
 
-    // Host verification
+    // Verificación del anfitrión
     const callerId = sessionUserId || queryHostId;
     if (existingRoom.hostId && (!callerId || existingRoom.hostId !== callerId)) {
       return NextResponse.json(
@@ -203,7 +203,7 @@ export async function DELETE(
       );
     }
 
-    // Mark closed / delete from DB
+    // Marcar como cerrada / actualizar en BD
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "" && existingRoom.id) {
       try {
         await prisma.room.update({
@@ -215,7 +215,7 @@ export async function DELETE(
       }
     }
 
-    // Remove from active memory store or mark closed
+    // Eliminar del almacén en memoria activa o marcar como cerrada
     if (memoryStore.has(existingRoom.code)) {
       const mem = memoryStore.get(existingRoom.code);
       if (mem) mem.isClosed = true;
