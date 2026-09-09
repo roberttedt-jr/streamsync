@@ -102,6 +102,16 @@ export default function WatchPartyRoomPage() {
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<"chat" | "stream" | "participants" | "call">("chat");
 
+  // Track viewport breakpoint to strictly ensure only ONE TwitchPlayer is ever mounted
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkViewport = () => setIsDesktop(window.innerWidth >= 1024);
+    checkViewport();
+    window.addEventListener("resize", checkViewport);
+    return () => window.removeEventListener("resize", checkViewport);
+  }, []);
+
   // Tab-unique connectionId for multi-user presence
   const [connectionId] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -784,6 +794,18 @@ export default function WatchPartyRoomPage() {
 
         {/* Right Tools */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {activeStream && (
+            <a
+              href={`https://twitch.tv/${activeStream}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 hover:text-white border border-purple-500/20 text-xs font-semibold transition"
+              title={`Abrir ${activeStream} en Twitch oficial`}
+            >
+              <span>Abrir en Twitch</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
           {/* Host Options Gear (Only for Room Host) */}
           {isHost && (
             <button
@@ -835,7 +857,7 @@ export default function WatchPartyRoomPage() {
         {/* Mobile Twitch Player Area (16:9 strict, zero letterboxing) */}
         {activeStream ? (
           <div className="w-full shrink-0 aspect-video bg-black relative flex items-center justify-center overflow-hidden border-b border-white/10">
-            <TwitchPlayer channel={activeStream} />
+            {isDesktop === false && <TwitchPlayer channel={activeStream} />}
           </div>
         ) : (
           <div className="w-full shrink-0 aspect-video bg-[#0C0F17] flex flex-col items-center justify-center p-4 text-center border-b border-white/10">
@@ -1236,7 +1258,7 @@ export default function WatchPartyRoomPage() {
                   maxWidth: "calc((100dvh - 120px) * 16 / 9)",
                 }}
               >
-                <TwitchPlayer channel={activeStream} />
+                {isDesktop === true && <TwitchPlayer channel={activeStream} />}
               </div>
             </div>
           ) : (

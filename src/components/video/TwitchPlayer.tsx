@@ -1,8 +1,8 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, ExternalLink, AlertCircle } from "lucide-react";
+import React, { useMemo } from "react";
+import { AlertCircle } from "lucide-react";
 
 export interface TwitchTarget {
   type: "channel" | "video" | "clip";
@@ -55,29 +55,13 @@ interface TwitchPlayerProps {
   className?: string;
 }
 
-export default function TwitchPlayer({ channel, className = "" }: TwitchPlayerProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [hostname, setHostname] = useState<string>("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setHostname(window.location.hostname);
-    }
-  }, []);
-
+function TwitchPlayerComponent({ channel, className = "" }: TwitchPlayerProps) {
   const target = useMemo(() => parseTwitchTarget(channel), [channel]);
-
-  // Reset loading state when channel/target changes
-  useEffect(() => {
-    setIsLoading(true);
-    setHasError(false);
-  }, [channel]);
 
   const embedUrl = useMemo(() => {
     if (!target) return null;
 
-    // Collect allowed parent domains
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "";
     const parentList = Array.from(
       new Set(
         [hostname, "streamsync-livid.vercel.app", "localhost", "127.0.0.1"].filter(Boolean)
@@ -85,24 +69,19 @@ export default function TwitchPlayer({ channel, className = "" }: TwitchPlayerPr
     );
     const parentParams = parentList.map((p) => `&parent=${encodeURIComponent(p)}`).join("");
 
+    // Twitch embed guidelines:
+    // 1. autoplay=true & muted=true ensures 100% compliance with modern browser autoplay policies (Chrome, Safari, Edge).
+    // 2. Setting muted=true prevents browsers from pausing/killing video when the tab is in the background.
     if (target.type === "channel") {
-      return `https://player.twitch.tv/?channel=${encodeURIComponent(target.id)}${parentParams}&autoplay=true&muted=false`;
+      return `https://player.twitch.tv/?channel=${encodeURIComponent(target.id)}${parentParams}&autoplay=true&muted=true`;
     }
     if (target.type === "video") {
-      return `https://player.twitch.tv/?video=${encodeURIComponent(target.id)}${parentParams}&autoplay=true&muted=false`;
+      return `https://player.twitch.tv/?video=${encodeURIComponent(target.id)}${parentParams}&autoplay=true&muted=true`;
     }
     if (target.type === "clip") {
-      return `https://clips.twitch.tv/embed?clip=${encodeURIComponent(target.id)}${parentParams}&autoplay=true&muted=false`;
+      return `https://clips.twitch.tv/embed?clip=${encodeURIComponent(target.id)}${parentParams}&autoplay=true&muted=true`;
     }
     return null;
-  }, [target, hostname]);
-
-  const twitchWebUrl = useMemo(() => {
-    if (!target) return "https://twitch.tv";
-    if (target.type === "channel") return `https://twitch.tv/${target.id}`;
-    if (target.type === "video") return `https://twitch.tv/videos/${target.id}`;
-    if (target.type === "clip") return `https://clips.twitch.tv/${target.id}`;
-    return "https://twitch.tv";
   }, [target]);
 
   if (!channel || !target || !embedUrl) {
@@ -119,47 +98,59 @@ export default function TwitchPlayer({ channel, className = "" }: TwitchPlayerPr
     );
   }
 
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  // Auto-resume stream if browser or Twitch paused it when switching tabs or losing visibility
+  React.useEffect(() => {
+    const resumePlayback = () => {
+      if (document.visibilityState === "visible" && iframeRef.current?.contentWindow) {
+        try {
+          iframeRef.current.contentWindow.postMessage(
+            { eventName: "Play", params: null, namespace: "twitch-embed-player-proxy" },
+            "*"
+          );
+        } catch {
+          // ignore cross-origin error if any
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", resumePlayback);
+    window.addEventListener("focus", resumePlayback);
+
+    return () => {
+      document.removeEventListener("visibilitychange", resumePlayback);
+      window.removeEventListener("focus", resumePlayback);
+    };
+  }, []);
+
+  // NOTE: Twitch enforces strict "style visibility" anti-clickjacking policies.
+  // NO OVERLAYS (such as loading spinners or floating action buttons) may be placed
+  // on top of the iframe, otherwise Twitch disables autoplay and throttles playback.
   return (
     <div
-      className={`relative w-full h-full min-h-0 min-w-0 bg-black overflow-hidden select-none group ${className}`}
+      className={`relative w-full h-full min-h-0 min-w-0 bg-black overflow-hidden select-none ${className}`}
     >
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity duration-300">
-          <Loader2 className="w-8 h-8 text-[#9146FF] animate-spin mb-2" />
-          <p className="text-xs text-gray-300 font-medium tracking-wide">
-            Cargando directo de <span className="text-[#bf94ff] font-bold">@{target.id}</span>...
-          </p>
-        </div>
-      )}
-
-      {/* Direct Twitch Embed iframe */}
       <iframe
-        key={embedUrl}
+        ref={iframeRef}
+        key={`twitch-${target.type}-${target.id}`}
         src={embedUrl}
         title={`Twitch Player - ${target.id}`}
-        className="absolute inset-0 w-full h-full border-0 block"
-        allow="autoplay; fullscreen"
+        className="w-full h-full border-0 block"
+        style={{
+          width: "100%",
+          height: "100%",
+          border: "none",
+          display: "block",
+          visibility: "visible",
+          opacity: 1,
+        }}
+        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; display-capture"
         allowFullScreen
         scrolling="no"
-        onLoad={() => setIsLoading(false)}
-        onError={() => {
-          setIsLoading(false);
-          setHasError(true);
-        }}
       />
-
-      {/* Floating external link shortcut */}
-      <a
-        href={twitchWebUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-200 px-2.5 py-1.5 rounded-lg bg-black/75 hover:bg-[#9146FF] text-white text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-md shadow-lg border border-white/10"
-        title="Abrir en Twitch oficial"
-      >
-        <span>Twitch</span>
-        <ExternalLink className="w-3 h-3" />
-      </a>
     </div>
   );
 }
+
+export default React.memo(TwitchPlayerComponent);
